@@ -82,16 +82,17 @@ export default function Dashboard() {
 
       // Calculate stats
       const totalContracts = contracts?.length || 0;
-      // Incluir tanto "active" como "draft" como contratos activos para mostrar los datos reales
+      // Solo contar contratos que realmente están en estado "active" + "draft" (que se muestran como activos)
       const activeContracts = contracts?.filter(c => c.status === 'active' || c.status === 'draft').length || 0;
-      const pendingReview = contracts?.filter(c => c.status === 'draft').length || 0;
+      // Eliminar "pendientes revisión" ya que no existe en la plataforma
+      const completedContracts = contracts?.filter(c => c.status === 'completed').length || 0;
       const totalAmount = contracts?.reduce((sum, c) => sum + Number(c.total_amount), 0) || 0;
       const completedPayments = payments?.length || 0;
 
       setStats({
         totalContracts,
         activeContracts,
-        pendingReview,
+        pendingReview: completedContracts, // Cambiar a mostrar completados en lugar de pendientes
         totalAmount,
         completedPayments
       });
@@ -106,10 +107,9 @@ export default function Dashboard() {
       }, {}) || {};
 
       const chartDataFormatted = [
-        { name: 'Borrador', value: statusCounts.draft || 0, color: '#6b7280' },
-        { name: 'Activo', value: statusCounts.active || 0, color: '#10b981' },
-        { name: 'Completado', value: statusCounts.completed || 0, color: '#8b5cf6' },
-        { name: 'Cancelado', value: statusCounts.cancelled || 0, color: '#ef4444' }
+        { name: 'Activos', value: (statusCounts.draft || 0) + (statusCounts.active || 0), color: '#06d6a0' },
+        { name: 'Completados', value: statusCounts.completed || 0, color: '#7c3aed' },
+        { name: 'Cancelados', value: statusCounts.cancelled || 0, color: '#f43f5e' }
       ].filter(item => item.value > 0);
 
       setChartData(chartDataFormatted);
@@ -178,10 +178,10 @@ export default function Dashboard() {
           trend={{ value: 8, isPositive: true }}
         />
         <StatsCard
-          title="Pendientes Revisión"
+          title="Contratos Completados"
           value={stats.pendingReview}
-          description="Requieren atención"
-          icon={AlertCircle}
+          description="Contratos finalizados"
+          icon={CheckCircle}
         />
         <StatsCard
           title="Valor Total"
@@ -189,7 +189,8 @@ export default function Dashboard() {
             style: 'currency',
             currency: 'COP',
             minimumFractionDigits: 0,
-            maximumFractionDigits: 0
+            maximumFractionDigits: 0,
+            useGrouping: true
           }).format(stats.totalAmount)}
           description="Valor total contratado"
           icon={DollarSign}
