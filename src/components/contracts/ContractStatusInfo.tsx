@@ -5,30 +5,6 @@ import { Badge } from "@/components/ui/badge";
 export function ContractStatusInfo() {
   const statuses = [
     {
-      status: 'draft',
-      label: 'Borrador',
-      description: 'Contrato recién creado, en proceso de elaboración',
-      color: 'bg-muted text-muted-foreground'
-    },
-    {
-      status: 'pending',
-      label: 'Pendiente',
-      description: 'Enviado para revisión, esperando aprobación',
-      color: 'bg-warning/10 text-warning border-warning/20'
-    },
-    {
-      status: 'in_review',
-      label: 'En Revisión',
-      description: 'Siendo revisado por el equipo de supervisión',
-      color: 'bg-primary/10 text-primary border-primary/20'
-    },
-    {
-      status: 'approved',
-      label: 'Aprobado',
-      description: 'Contrato aprobado, listo para firma',
-      color: 'bg-success/10 text-success border-success/20'
-    },
-    {
       status: 'active',
       label: 'Activo',
       description: 'Contrato firmado y en ejecución',
@@ -44,12 +20,6 @@ export function ContractStatusInfo() {
       status: 'cancelled',
       label: 'Cancelado',
       description: 'Contrato cancelado antes de finalizar',
-      color: 'bg-destructive/10 text-destructive border-destructive/20'
-    },
-    {
-      status: 'rejected',
-      label: 'Rechazado',
-      description: 'Contrato rechazado en el proceso de revisión',
       color: 'bg-destructive/10 text-destructive border-destructive/20'
     }
   ];
@@ -84,8 +54,8 @@ export function ContractStatusInfo() {
         </div>
         <div className="mt-4 p-4 bg-muted/50 rounded-lg">
           <p className="text-sm text-muted-foreground">
-            <strong>Nota:</strong> Todos los contratos nuevos inician en estado "Borrador". 
-            Los cambios de estado deben ser gestionados por usuarios con permisos administrativos.
+            <strong>Nota:</strong> Los contratos nuevos inician como "Activo" ya que se crean cuando están firmados. 
+            Los cambios de estado son gestionados por usuarios administrativos según el progreso del contrato.
           </p>
         </div>
       </CardContent>

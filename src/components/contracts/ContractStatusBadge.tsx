@@ -9,30 +9,6 @@ interface ContractStatusBadgeProps {
 export function ContractStatusBadge({ status, className }: ContractStatusBadgeProps) {
   const getStatusConfig = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'draft':
-        return {
-          label: 'Borrador',
-          variant: 'secondary' as const,
-          className: 'bg-muted text-muted-foreground'
-        };
-      case 'pending':
-        return {
-          label: 'Pendiente',
-          variant: 'secondary' as const,
-          className: 'bg-warning/10 text-warning border-warning/20'
-        };
-      case 'in_review':
-        return {
-          label: 'En Revisión',
-          variant: 'secondary' as const,
-          className: 'bg-primary/10 text-primary border-primary/20'
-        };
-      case 'approved':
-        return {
-          label: 'Aprobado',
-          variant: 'secondary' as const,
-          className: 'bg-success/10 text-success border-success/20'
-        };
       case 'active':
         return {
           label: 'Activo',
@@ -51,17 +27,11 @@ export function ContractStatusBadge({ status, className }: ContractStatusBadgePr
           variant: 'secondary' as const,
           className: 'bg-destructive/10 text-destructive border-destructive/20'
         };
-      case 'rejected':
-        return {
-          label: 'Rechazado',
-          variant: 'secondary' as const,
-          className: 'bg-destructive/10 text-destructive border-destructive/20'
-        };
       default:
         return {
-          label: status,
+          label: 'Activo',
           variant: 'secondary' as const,
-          className: 'bg-muted text-muted-foreground'
+          className: 'bg-success/20 text-success border-success/30'
         };
     }
   };

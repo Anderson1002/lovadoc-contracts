@@ -278,7 +278,7 @@ export default function CreateContract() {
         end_date: data.end_date?.toISOString().split('T')[0] || null,
         description: data.contract_object || null,
         created_by: userProfile.id,
-        status: 'draft' as any
+        status: 'active' as any
       };
 
       const { data: contract, error } = await supabase
