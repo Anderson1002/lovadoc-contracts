@@ -291,10 +291,13 @@ export default function CreateContract() {
       if (error) throw error;
 
       // Upload bank certification
+      console.log('Checking bank certification files:', data.bank_certification);
       if (data.bank_certification && data.bank_certification[0]) {
+        console.log('Uploading bank certification...');
         const bankCertFile = data.bank_certification[0];
         const bankCertPath = `${user?.id}/${contract.id}/bank-certification-${Date.now()}.${bankCertFile.name.split('.').pop()}`;
         
+        console.log('Bank cert upload path:', bankCertPath);
         const { error: uploadError } = await supabase.storage
           .from('contract-documents')
           .upload(bankCertPath, bankCertFile);
@@ -302,8 +305,9 @@ export default function CreateContract() {
         if (uploadError) {
           console.error('Error uploading bank certification:', uploadError);
         } else {
+          console.log('Bank certification uploaded successfully, saving document record...');
           // Save document record
-          await supabase
+          const { data: docData, error: docError } = await supabase
             .from('documents')
             .insert({
               contract_id: contract.id,
@@ -313,14 +317,25 @@ export default function CreateContract() {
               mime_type: bankCertFile.type,
               uploaded_by: userProfile.id
             });
+
+          if (docError) {
+            console.error('Error saving bank certification document:', docError);
+          } else {
+            console.log('Bank certification document saved successfully:', docData);
+          }
         }
+      } else {
+        console.log('No bank certification file provided');
       }
 
       // Upload signed contract if provided
+      console.log('Checking signed contract files:', data.signed_contract);
       if (data.signed_contract && data.signed_contract[0]) {
+        console.log('Uploading signed contract...');
         const signedContractFile = data.signed_contract[0];
         const signedContractPath = `${user?.id}/${contract.id}/signed-contract-${Date.now()}.${signedContractFile.name.split('.').pop()}`;
         
+        console.log('Signed contract upload path:', signedContractPath);
         const { error: uploadError } = await supabase.storage
           .from('contract-documents')
           .upload(signedContractPath, signedContractFile);
@@ -328,8 +343,9 @@ export default function CreateContract() {
         if (uploadError) {
           console.error('Error uploading signed contract:', uploadError);
         } else {
+          console.log('Signed contract uploaded successfully, saving document record...');
           // Save document record
-          await supabase
+          const { data: docData, error: docError } = await supabase
             .from('documents')
             .insert({
               contract_id: contract.id,
@@ -339,7 +355,15 @@ export default function CreateContract() {
               mime_type: signedContractFile.type,
               uploaded_by: userProfile.id
             });
+
+          if (docError) {
+            console.error('Error saving signed contract document:', docError);
+          } else {
+            console.log('Signed contract document saved successfully:', docData);
+          }
         }
+      } else {
+        console.log('No signed contract file provided');
       }
 
       toast({
