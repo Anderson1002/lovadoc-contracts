@@ -15,7 +15,7 @@ import {
   FileCheck,
   TrendingUp,
   Bell,
-  Clock,
+  Timer,
   User
 } from "lucide-react";
 import {
@@ -85,7 +85,7 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
         {
           title: "Pendientes Aprobación",
           url: "/contracts/pending",
-          icon: Clock,
+          icon: Timer,
           roles: ["super_admin", "admin", "supervisor"],
           badge: pendingApprovals > 0 ? pendingApprovals.toString() : undefined
         }
