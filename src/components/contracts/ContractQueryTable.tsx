@@ -370,14 +370,12 @@ export function ContractQueryTable({
                         <DropdownMenuContent align="end" className="bg-background border shadow-lg">
                           <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem asChild>
-                            <DialogTrigger
-                              className="flex w-full cursor-pointer hover:bg-muted p-2 text-sm"
-                              onClick={() => setSelectedContract(contract)}
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              Ver detalles
-                            </DialogTrigger>
+                          <DropdownMenuItem 
+                            className="cursor-pointer hover:bg-muted"
+                            onClick={() => setSelectedContract(contract)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Ver detalles
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="cursor-pointer hover:bg-muted"
