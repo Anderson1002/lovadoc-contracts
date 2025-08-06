@@ -137,7 +137,14 @@ export default function ContractQuery() {
     }
 
     if (filters.status && filters.status !== "all") {
-      filtered = filtered.filter(contract => contract.status === filters.status);
+      // Cuando se filtra por "active", incluir tanto "active" como "draft"
+      if (filters.status === "active") {
+        filtered = filtered.filter(contract => 
+          contract.status === "active" || contract.status === "draft"
+        );
+      } else {
+        filtered = filtered.filter(contract => contract.status === filters.status);
+      }
     }
 
     if (filters.clientName) {
