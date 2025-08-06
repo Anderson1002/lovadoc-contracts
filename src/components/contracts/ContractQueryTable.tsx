@@ -37,7 +37,6 @@ import { es } from "date-fns/locale";
 import {
   MoreHorizontal,
   Eye,
-  Edit,
   FileText,
   Calendar,
   DollarSign,
@@ -88,7 +87,8 @@ export function ContractQueryTable({
     const statusConfig = {
       active: { label: "Activo", variant: "default" as const },
       completed: { label: "Completado", variant: "outline" as const },
-      cancelled: { label: "Cancelado", variant: "destructive" as const }
+      cancelled: { label: "Cancelado", variant: "destructive" as const },
+      draft: { label: "Activo", variant: "default" as const } // Draft se muestra como Activo
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || 
@@ -360,35 +360,6 @@ export function ContractQueryTable({
                           )}
                         </DialogContent>
                       </Dialog>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-background border shadow-lg">
-                          <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="cursor-pointer hover:bg-muted"
-                            onClick={() => setSelectedContract(contract)}
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            Ver detalles
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="cursor-pointer hover:bg-muted"
-                            onClick={() => {
-                              console.log('Generando reporte para contrato:', contract.contract_number);
-                              // Aquí iría la lógica para generar reporte
-                            }}
-                          >
-                            <FileText className="w-4 h-4 mr-2" />
-                            Generar reporte
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
                   </TableCell>
                 </TableRow>
