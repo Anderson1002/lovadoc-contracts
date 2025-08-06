@@ -97,6 +97,9 @@ export default function ContractQuery() {
     try {
       setIsLoadingContracts(true);
       
+      // Actualizar estados de contratos basándose en fechas antes de cargarlos
+      await supabase.rpc('update_contract_statuses');
+      
       const { data: contracts, error } = await supabase
         .from('contracts')
         .select('*')

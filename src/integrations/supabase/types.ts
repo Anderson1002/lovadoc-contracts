@@ -378,6 +378,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["user_role_type"]
       }
+      update_contract_statuses: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       contract_status: "draft" | "active" | "completed" | "cancelled"

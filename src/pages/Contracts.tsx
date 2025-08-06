@@ -50,6 +50,9 @@ export default function Contracts() {
 
   const loadContracts = async (userId: string) => {
     try {
+      // Actualizar estados de contratos basándose en fechas antes de cargarlos
+      await supabase.rpc('update_contract_statuses');
+      
       const { data: profile } = await supabase
         .from('profiles')
         .select('*, roles!profiles_role_id_fkey(name)')
