@@ -107,10 +107,10 @@ export default function Dashboard() {
       }, {}) || {};
 
       const chartDataFormatted = [
-        { name: 'Activos', value: (statusCounts.draft || 0) + (statusCounts.active || 0), color: '#06d6a0' },
-        { name: 'Completados', value: statusCounts.completed || 0, color: '#7c3aed' },
-        { name: 'Cancelados', value: statusCounts.cancelled || 0, color: '#f43f5e' }
-      ].filter(item => item.value > 0);
+        { name: 'Activos', value: (statusCounts.draft || 0) + (statusCounts.active || 0), color: '#3b82f6' },
+        { name: 'Completados', value: statusCounts.completed || 0, color: '#10b981' },
+        { name: 'Cancelados', value: statusCounts.cancelled || 0, color: '#f59e0b' }
+      ]; // Mostrar todas las categorías siempre
 
       setChartData(chartDataFormatted);
 
@@ -166,22 +166,9 @@ export default function Dashboard() {
         <StatsCard
           title="Total Contratos"
           value={stats.totalContracts}
-          description="Contratos en el sistema"
+          description="Contratos encontrados"
           icon={FileText}
           trend={{ value: 12, isPositive: true }}
-        />
-        <StatsCard
-          title="Contratos Activos"
-          value={stats.activeContracts}
-          description="Contratos en ejecución"
-          icon={CheckCircle}
-          trend={{ value: 8, isPositive: true }}
-        />
-        <StatsCard
-          title="Contratos Completados"
-          value={stats.pendingReview}
-          description="Contratos finalizados"
-          icon={CheckCircle}
         />
         <StatsCard
           title="Valor Total"
@@ -189,12 +176,32 @@ export default function Dashboard() {
             style: 'currency',
             currency: 'COP',
             minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-            useGrouping: true
+            maximumFractionDigits: 0
           }).format(stats.totalAmount)}
-          description="Valor total contratado"
+          description="Suma de todos los contratos"
           icon={DollarSign}
           trend={{ value: 15, isPositive: true }}
+        />
+        <StatsCard
+          title="Valor Promedio"
+          value={stats.totalContracts > 0 ? 
+            new Intl.NumberFormat('es-CO', {
+              style: 'currency',
+              currency: 'COP',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            }).format(stats.totalAmount / stats.totalContracts) 
+            : "$0"
+          }
+          description="Promedio por contrato"
+          icon={TrendingUp}
+        />
+        <StatsCard
+          title="Contratos Activos"
+          value={stats.activeContracts}
+          description={`${stats.pendingReview} completados, 0 cancelados`}
+          icon={CheckCircle}
+          trend={{ value: 8, isPositive: true }}
         />
       </div>
 
