@@ -104,6 +104,7 @@ export default function ContractQuery() {
 
       if (error) throw error;
 
+      console.log('ContractQuery - Raw contracts from DB:', contracts);
       setContracts(contracts || []);
     } catch (error) {
       console.error('Error loading contracts:', error);

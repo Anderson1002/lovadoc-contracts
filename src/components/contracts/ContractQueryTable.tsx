@@ -370,14 +370,22 @@ export function ContractQueryTable({
                         <DropdownMenuContent align="end" className="bg-background border shadow-lg">
                           <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => setSelectedContract(contract)}
-                            className="cursor-pointer hover:bg-muted"
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            Ver detalles
+                          <DropdownMenuItem asChild>
+                            <DialogTrigger
+                              className="flex w-full cursor-pointer hover:bg-muted p-2 text-sm"
+                              onClick={() => setSelectedContract(contract)}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              Ver detalles
+                            </DialogTrigger>
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="cursor-pointer hover:bg-muted">
+                          <DropdownMenuItem 
+                            className="cursor-pointer hover:bg-muted"
+                            onClick={() => {
+                              console.log('Generando reporte para contrato:', contract.contract_number);
+                              // Aquí iría la lógica para generar reporte
+                            }}
+                          >
                             <FileText className="w-4 h-4 mr-2" />
                             Generar reporte
                           </DropdownMenuItem>

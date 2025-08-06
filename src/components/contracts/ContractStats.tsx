@@ -22,6 +22,8 @@ interface ContractStatsProps {
 }
 
 export function ContractStats({ contracts, isLoading = false }: ContractStatsProps) {
+  console.log('ContractStats - Contracts received:', contracts);
+  console.log('ContractStats - Contract statuses:', contracts.map(c => ({ id: c.id, status: c.status })));
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
