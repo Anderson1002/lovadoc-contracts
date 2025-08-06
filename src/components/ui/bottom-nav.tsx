@@ -139,9 +139,9 @@ export function BottomNav({ userRole, pendingApprovals = 0 }: BottomNavProps) {
   );
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 shadow-lg">
       <ScrollArea className="w-full">
-        <div className="flex items-center justify-start px-2 py-2 gap-1 min-w-max">
+        <div className="flex items-center justify-start px-4 py-3 gap-2 min-w-max">
           {filteredItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.url);
@@ -150,25 +150,24 @@ export function BottomNav({ userRole, pendingApprovals = 0 }: BottomNavProps) {
               <Button
                 key={item.title}
                 asChild
-                variant={active ? "default" : "ghost"}
-                size="sm"
+                variant="ghost"
                 className={`
-                  flex flex-col items-center gap-1 h-auto py-2 px-3 min-w-[4rem] relative
+                  flex items-center gap-2 h-10 px-4 py-2 rounded-full transition-all duration-200 relative
                   ${active 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'hover:bg-accent hover:text-accent-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-md font-medium' 
+                    : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
                   }
                 `}
               >
                 <Link to={item.url}>
                   <Icon className="h-4 w-4" />
-                  <span className="text-xs font-medium truncate max-w-12">
+                  <span className="text-sm font-medium whitespace-nowrap">
                     {item.title}
                   </span>
                   {item.badge && (
                     <Badge 
                       variant="destructive" 
-                      className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs flex items-center justify-center"
+                      className="h-5 w-5 p-0 text-xs flex items-center justify-center rounded-full"
                     >
                       {item.badge}
                     </Badge>
