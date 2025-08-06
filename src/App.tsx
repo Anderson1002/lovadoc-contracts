@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Contracts from "./pages/Contracts";
 import CreateContract from "./pages/CreateContract";
 import Users from "./pages/Users";
+import { Layout } from "@/components/Layout";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,11 +20,11 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/contracts" element={<Contracts />} />
-          <Route path="/contracts/new" element={<CreateContract />} />
-          <Route path="/users" element={<Users />} />
+          <Route path="/" element={<Layout><Index /></Layout>} />
+          <Route path="/contracts" element={<Layout><Contracts /></Layout>} />
+          <Route path="/contracts/new" element={<Layout><CreateContract /></Layout>} />
+          <Route path="/users" element={<Layout><Users /></Layout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
