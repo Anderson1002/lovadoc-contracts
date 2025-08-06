@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
   TableBody,
@@ -74,6 +75,9 @@ export function ContractQueryTable({
   sortDirection
 }: ContractQueryTableProps) {
   const [selectedContract, setSelectedContract] = useState<any>(null);
+  const [documentsDialog, setDocumentsDialog] = useState(false);
+  const [selectedContractId, setSelectedContractId] = useState<string>("");
+  const [documents, setDocuments] = useState<any[]>([]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -135,6 +139,28 @@ export function ContractQueryTable({
     return sortDirection === 'asc' ? 
       <ArrowUp className="w-4 h-4" /> : 
       <ArrowDown className="w-4 h-4" />;
+  };
+
+  const handleDocuments = async (contractId: string) => {
+    setSelectedContractId(contractId);
+    setDocumentsDialog(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('contract_id', contractId);
+      
+      if (error) {
+        console.error('Error fetching documents:', error);
+        setDocuments([]);
+      } else {
+        setDocuments(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      setDocuments([]);
+    }
   };
 
   if (isLoading) {
@@ -360,6 +386,32 @@ export function ContractQueryTable({
                           )}
                         </DialogContent>
                       </Dialog>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-background border shadow-lg">
+                          <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            className="cursor-pointer hover:bg-muted"
+                            onClick={() => setSelectedContract(contract)}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Ver detalles
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="cursor-pointer hover:bg-muted"
+                            onClick={() => handleDocuments(contract.id)}
+                          >
+                            <FileText className="w-4 h-4 mr-2" />
+                            Documentos
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -367,6 +419,51 @@ export function ContractQueryTable({
             </TableBody>
           </Table>
         </div>
+
+        {/* Dialog de Documentos */}
+        <Dialog open={documentsDialog} onOpenChange={setDocumentsDialog}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Documentos del Contrato</DialogTitle>
+              <DialogDescription>
+                Documentos anexos al contrato {selectedContractId}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {documents.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                    No hay documentos anexos
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Este contrato no tiene documentos anexos registrados.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {documents.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-blue-500" />
+                        <div>
+                          <p className="font-medium">{doc.file_name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Tamaño: {doc.file_size ? `${(doc.file_size / 1024 / 1024).toFixed(2)} MB` : 'N/A'} • 
+                            Subido: {format(new Date(doc.created_at), "dd/MM/yyyy", { locale: es })}
+                          </p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        Ver archivo
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Paginación */}
         {totalPages > 1 && (
