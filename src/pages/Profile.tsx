@@ -91,7 +91,7 @@ export default function Profile() {
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('*, roles!role_id(name, display_name)')
+        .select('*, roles!profiles_role_id_fkey(name, display_name)')
         .eq('user_id', userId)
         .maybeSingle();
 

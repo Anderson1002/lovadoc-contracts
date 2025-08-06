@@ -87,9 +87,9 @@ export default function Users() {
 
       const { data: currentProfile } = await supabase
         .from('profiles')
-        .select('*, roles!role_id(name)')
+        .select('*, roles!profiles_role_id_fkey(name)')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (currentProfile && currentProfile.roles) {
         setUserRole((currentProfile.roles as any).name);
@@ -100,7 +100,7 @@ export default function Users() {
         .from('profiles')
         .select(`
           *,
-          roles!role_id (
+          roles!profiles_role_id_fkey (
             name,
             display_name
           )

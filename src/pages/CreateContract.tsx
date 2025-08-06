@@ -182,7 +182,7 @@ export default function CreateContract() {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('*, roles!role_id(name)')
+        .select('*, roles!profiles_role_id_fkey(name)')
         .eq('user_id', userId)
         .single();
 

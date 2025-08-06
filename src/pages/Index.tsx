@@ -52,9 +52,9 @@ const Index = () => {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('*, roles!role_id(name)')
+        .select('*, roles!profiles_role_id_fkey(name)')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (profile && profile.roles) {
         setUserRole((profile.roles as any).name);
