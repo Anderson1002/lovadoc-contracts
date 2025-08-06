@@ -90,7 +90,7 @@ const contractTypes = [
     ]
   },
   {
-    value: "company_contract",
+    value: "contractor",
     label: "Contrato Empresa",
     description: "Contrato con empresas prestadoras de servicios",
     icon: Building2,
