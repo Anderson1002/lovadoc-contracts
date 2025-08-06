@@ -1,8 +1,7 @@
 import { ReactNode, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/ui/app-sidebar";
+import { BottomNav } from "@/components/ui/bottom-nav";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
@@ -89,32 +88,30 @@ export function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar userRole={userRole} />
-        <main className="flex-1">
-          <header className="h-12 flex items-center border-b bg-card px-4">
-            <SidebarTrigger />
-            <div className="ml-auto flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                Bienvenido, {user?.email}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="flex items-center gap-2 text-destructive hover:text-destructive"
-              >
-                <LogOut className="w-4 h-4" />
-                Salir
-              </Button>
-            </div>
-          </header>
-          <div className="flex-1">
-            {children}
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+    <div className="min-h-screen flex flex-col bg-background">
+      <header className="h-12 flex items-center border-b bg-card px-4">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium">Sistema de Contratos</span>
+        </div>
+        <div className="ml-auto flex items-center gap-4">
+          <span className="text-sm text-muted-foreground">
+            Bienvenido, {user?.email}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-destructive hover:text-destructive"
+          >
+            <LogOut className="w-4 h-4" />
+            Salir
+          </Button>
+        </div>
+      </header>
+      <main className="flex-1 pb-16">
+        {children}
+      </main>
+      <BottomNav userRole={userRole} />
+    </div>
   );
 }

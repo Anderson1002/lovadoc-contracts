@@ -1,0 +1,184 @@
+import { Link, useLocation } from "react-router-dom";
+import { 
+  Home,
+  FileText, 
+  Users, 
+  DollarSign,
+  Settings, 
+  BarChart3,
+  UserCheck,
+  Building2,
+  Shield,
+  Award,
+  Calendar,
+  FileCheck,
+  TrendingUp,
+  Bell,
+  Timer,
+  User
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+interface NavigationItem {
+  title: string;
+  url: string;
+  icon: any;
+  roles: string[];
+  badge?: string;
+}
+
+interface BottomNavProps {
+  userRole: string;
+  pendingApprovals?: number;
+}
+
+export function BottomNav({ userRole, pendingApprovals = 0 }: BottomNavProps) {
+  const location = useLocation();
+  const currentPath = location.pathname;
+
+  const navigationItems: NavigationItem[] = [
+    {
+      title: "Dashboard",
+      url: "/",
+      icon: Home,
+      roles: ["super_admin", "admin", "supervisor", "employee"]
+    },
+    {
+      title: "Contratos",
+      url: "/contracts",
+      icon: FileText,
+      roles: ["super_admin", "admin", "supervisor", "employee"]
+    },
+    {
+      title: "Nuevo",
+      url: "/contracts/new",
+      icon: FileText,
+      roles: ["super_admin", "admin", "supervisor", "employee"]
+    },
+    {
+      title: "Consulta",
+      url: "/contracts/query",
+      icon: FileCheck,
+      roles: ["super_admin", "admin", "supervisor", "employee"]
+    },
+    {
+      title: "Pendientes",
+      url: "/contracts/pending",
+      icon: Timer,
+      roles: ["super_admin", "admin", "supervisor"],
+      badge: pendingApprovals > 0 ? pendingApprovals.toString() : undefined
+    },
+    {
+      title: "Cuentas",
+      url: "/billing",
+      icon: DollarSign,
+      roles: ["super_admin", "admin", "supervisor", "employee"]
+    },
+    {
+      title: "Trámites",
+      url: "/procedures",
+      icon: FileCheck,
+      roles: ["super_admin", "admin", "supervisor", "employee"]
+    },
+    {
+      title: "Equipos",
+      url: "/equipment",
+      icon: Building2,
+      roles: ["super_admin", "admin", "supervisor"]
+    },
+    {
+      title: "Personal",
+      url: "/users",
+      icon: Users,
+      roles: ["super_admin", "admin"]
+    },
+    {
+      title: "Jurídica",
+      url: "/legal",
+      icon: Shield,
+      roles: ["super_admin", "admin"]
+    },
+    {
+      title: "Supervisión",
+      url: "/supervision",
+      icon: Award,
+      roles: ["super_admin", "admin", "supervisor"]
+    },
+    {
+      title: "Reportes",
+      url: "/reports",
+      icon: BarChart3,
+      roles: ["super_admin", "admin", "supervisor"]
+    },
+    {
+      title: "Perfil",
+      url: "/profile",
+      icon: User,
+      roles: ["super_admin", "admin", "supervisor", "employee"]
+    },
+    {
+      title: "Notif.",
+      url: "/notifications",
+      icon: Bell,
+      roles: ["super_admin", "admin", "supervisor", "employee"]
+    },
+    {
+      title: "Config",
+      url: "/settings",
+      icon: Settings,
+      roles: ["super_admin", "admin"]
+    }
+  ];
+
+  const isActive = (path: string) => currentPath === path;
+
+  const filteredItems = navigationItems.filter(item => 
+    item.roles.includes(userRole)
+  );
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
+      <ScrollArea className="w-full">
+        <div className="flex items-center justify-start px-2 py-2 gap-1 min-w-max">
+          {filteredItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.url);
+            
+            return (
+              <Button
+                key={item.title}
+                asChild
+                variant={active ? "default" : "ghost"}
+                size="sm"
+                className={`
+                  flex flex-col items-center gap-1 h-auto py-2 px-3 min-w-[4rem] relative
+                  ${active 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'hover:bg-accent hover:text-accent-foreground'
+                  }
+                `}
+              >
+                <Link to={item.url}>
+                  <Icon className="h-4 w-4" />
+                  <span className="text-xs font-medium truncate max-w-12">
+                    {item.title}
+                  </span>
+                  {item.badge && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs flex items-center justify-center"
+                    >
+                      {item.badge}
+                    </Badge>
+                  )}
+                </Link>
+              </Button>
+            );
+          })}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
