@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/ui/app-sidebar";
-import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { Layout } from "@/components/Layout";
 import Dashboard from "./Dashboard";
 
 const Index = () => {
@@ -86,33 +83,9 @@ const Index = () => {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar userRole={userRole} />
-        <main className="flex-1">
-          <header className="h-12 flex items-center border-b bg-card px-4">
-            <SidebarTrigger />
-            <div className="ml-auto flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                Bienvenido, {user?.email}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="flex items-center gap-2 text-destructive hover:text-destructive"
-              >
-                <LogOut className="w-4 h-4" />
-                Salir
-              </Button>
-            </div>
-          </header>
-          <div className="flex-1">
-            <Dashboard />
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+    <Layout>
+      <Dashboard />
+    </Layout>
   );
 };
 

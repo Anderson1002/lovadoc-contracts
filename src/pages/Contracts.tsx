@@ -6,9 +6,7 @@ import { Plus, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/ui/app-sidebar";
-import { LogOut } from "lucide-react";
+import { Layout } from "@/components/Layout";
 
 export default function Contracts() {
   const [contracts, setContracts] = useState([]);
@@ -124,61 +122,37 @@ export default function Contracts() {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar userRole={userRole} />
-        <main className="flex-1">
-          <header className="h-12 flex items-center border-b bg-card px-4">
-            <SidebarTrigger />
-            <div className="ml-auto flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                Bienvenido, {user?.email}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="flex items-center gap-2 text-destructive hover:text-destructive"
-              >
-                <LogOut className="w-4 h-4" />
-                Salir
-              </Button>
-            </div>
-          </header>
-          <div className="flex-1">
-            <div className="container mx-auto px-4 py-8 space-y-6">
-              {/* Header */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                    <FileText className="w-8 h-8" />
-                    Control de Contratos
-                  </h1>
-                  <p className="text-muted-foreground">
-                    Sistema de administración y seguimiento contractual
-                  </p>
-                </div>
-                {(userRole === "super_admin" || userRole === "admin" || userRole === "employee") && (
-                  <Link to="/contracts/new">
-                    <Button className="flex items-center gap-2">
-                      <Plus className="w-4 h-4" />
-                      Nuevo Contrato
-                    </Button>
-                  </Link>
-                )}
-              </div>
-
-              {/* Contracts Table */}
-              <ContractTable
-                contracts={contracts}
-                userRole={userRole}
-                onView={handleView}
-                onEdit={handleEdit}
-              />
-            </div>
+    <Layout>
+      <div className="container mx-auto px-4 py-8 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+              <FileText className="w-8 h-8" />
+              Control de Contratos
+            </h1>
+            <p className="text-muted-foreground">
+              Sistema de administración y seguimiento contractual
+            </p>
           </div>
-        </main>
+          {(userRole === "super_admin" || userRole === "admin" || userRole === "employee") && (
+            <Link to="/contracts/new">
+              <Button className="flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Nuevo Contrato
+              </Button>
+            </Link>
+          )}
+        </div>
+
+        {/* Contracts Table */}
+        <ContractTable
+          contracts={contracts}
+          userRole={userRole}
+          onView={handleView}
+          onEdit={handleEdit}
+        />
       </div>
-    </SidebarProvider>
+    </Layout>
   );
 }
