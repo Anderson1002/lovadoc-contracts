@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -78,6 +79,7 @@ export function ContractQueryTable({
   const [documentsDialog, setDocumentsDialog] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState<string>("");
   const [documents, setDocuments] = useState<any[]>([]);
+  const { toast } = useToast();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -160,6 +162,46 @@ export function ContractQueryTable({
     } catch (error) {
       console.error('Error fetching documents:', error);
       setDocuments([]);
+    }
+  };
+
+  const handleDownloadDocument = async (document: any) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('contract-documents')
+        .download(document.file_path);
+
+      if (error) {
+        console.error('Error downloading document:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo descargar el documento",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Create download link
+      const url = URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = document.file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Descarga exitosa",
+        description: "El documento se ha descargado correctamente"
+      });
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo descargar el documento",
+        variant: "destructive"
+      });
     }
   };
 
@@ -454,7 +496,11 @@ export function ContractQueryTable({
                           </p>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDownloadDocument(doc)}
+                      >
                         Ver archivo
                       </Button>
                     </div>

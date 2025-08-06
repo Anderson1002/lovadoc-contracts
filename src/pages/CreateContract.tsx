@@ -267,6 +267,7 @@ export default function CreateContract() {
 
     setIsLoading(true);
     try {
+      // First create the contract
       const contractData = {
         contract_number: data.contract_number,
         client_name: data.client_name,
@@ -278,7 +279,7 @@ export default function CreateContract() {
         end_date: data.end_date?.toISOString().split('T')[0] || null,
         description: data.contract_object || null,
         created_by: userProfile.id,
-        status: 'active' as any
+        status: 'draft' as any
       };
 
       const { data: contract, error } = await supabase
@@ -289,9 +290,61 @@ export default function CreateContract() {
 
       if (error) throw error;
 
+      // Upload bank certification
+      if (data.bank_certification && data.bank_certification[0]) {
+        const bankCertFile = data.bank_certification[0];
+        const bankCertPath = `${user?.id}/${contract.id}/bank-certification-${Date.now()}.${bankCertFile.name.split('.').pop()}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('contract-documents')
+          .upload(bankCertPath, bankCertFile);
+
+        if (uploadError) {
+          console.error('Error uploading bank certification:', uploadError);
+        } else {
+          // Save document record
+          await supabase
+            .from('documents')
+            .insert({
+              contract_id: contract.id,
+              file_name: `Certificación Bancaria - ${bankCertFile.name}`,
+              file_path: bankCertPath,
+              file_size: bankCertFile.size,
+              mime_type: bankCertFile.type,
+              uploaded_by: userProfile.id
+            });
+        }
+      }
+
+      // Upload signed contract if provided
+      if (data.signed_contract && data.signed_contract[0]) {
+        const signedContractFile = data.signed_contract[0];
+        const signedContractPath = `${user?.id}/${contract.id}/signed-contract-${Date.now()}.${signedContractFile.name.split('.').pop()}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('contract-documents')
+          .upload(signedContractPath, signedContractFile);
+
+        if (uploadError) {
+          console.error('Error uploading signed contract:', uploadError);
+        } else {
+          // Save document record
+          await supabase
+            .from('documents')
+            .insert({
+              contract_id: contract.id,
+              file_name: `Contrato Firmado - ${signedContractFile.name}`,
+              file_path: signedContractPath,
+              file_size: signedContractFile.size,
+              mime_type: signedContractFile.type,
+              uploaded_by: userProfile.id
+            });
+        }
+      }
+
       toast({
         title: "¡Contrato creado exitosamente!",
-        description: `El contrato ${contract.contract_number} ha sido creado`,
+        description: `El contrato ${contract.contract_number} ha sido creado con sus documentos`,
       });
 
       navigate(`/contracts`);
