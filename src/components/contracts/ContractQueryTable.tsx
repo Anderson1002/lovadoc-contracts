@@ -78,23 +78,21 @@ export function ContractQueryTable({
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
+      style: 'decimal',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+      maximumFractionDigits: 0
+    }).format(amount * 1000000).replace(/^/, '$ ');
   };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      draft: { label: "Borrador", variant: "secondary" as const },
       active: { label: "Activo", variant: "default" as const },
       completed: { label: "Completado", variant: "outline" as const },
       cancelled: { label: "Cancelado", variant: "destructive" as const }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || 
-                   { label: status, variant: "secondary" as const };
+                   { label: "Activo", variant: "default" as const };
 
     return (
       <Badge variant={config.variant}>

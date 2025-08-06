@@ -63,11 +63,10 @@ export function ContractStats({ contracts, isLoading = false }: ContractStatsPro
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
+      style: 'decimal',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+      maximumFractionDigits: 0
+    }).format(amount * 1000000).replace(/^/, '$ ');
   };
 
   const stats = [
@@ -98,7 +97,7 @@ export function ContractStats({ contracts, isLoading = false }: ContractStatsPro
     {
       title: "Contratos Activos",
       value: activeContracts.toString(),
-      description: `${completedContracts} completados, ${draftContracts} borradores`,
+      description: `${completedContracts} completados, ${cancelledContracts} cancelados`,
       icon: CheckCircle,
       color: "text-emerald-600",
       bgColor: "bg-emerald-100"
@@ -181,21 +180,6 @@ export function ContractStats({ contracts, isLoading = false }: ContractStatsPro
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                  <span className="text-sm">Borradores</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                    {draftContracts}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {totalContracts > 0 ? Math.round((draftContracts / totalContracts) * 100) : 0}%
-                  </span>
-                </div>
-              </div>
-
               {cancelledContracts > 0 && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -233,7 +217,7 @@ export function ContractStats({ contracts, isLoading = false }: ContractStatsPro
                 const typeLabels: Record<string, string> = {
                   fixed_amount: "Monto Fijo",
                   variable_amount: "Monto Variable",
-                  company_contract: "Contrato Empresa"
+                  contractor: "Contrato Empresa"
                 };
 
                 const countNumber = typeof count === 'number' ? count : 0;

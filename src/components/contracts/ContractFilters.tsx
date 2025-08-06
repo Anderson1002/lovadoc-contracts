@@ -55,12 +55,11 @@ const contractTypes = [
   { value: "all", label: "Todos los tipos" },
   { value: "fixed_amount", label: "Monto Fijo" },
   { value: "variable_amount", label: "Monto Variable" },
-  { value: "company_contract", label: "Contrato Empresa" }
+  { value: "contractor", label: "Contrato Empresa" }
 ];
 
 const contractStatuses = [
   { value: "all", label: "Todos los estados" },
-  { value: "draft", label: "Borrador" },
   { value: "active", label: "Activo" },
   { value: "completed", label: "Completado" },
   { value: "cancelled", label: "Cancelado" }
