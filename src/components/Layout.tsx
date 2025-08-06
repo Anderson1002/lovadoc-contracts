@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { BottomNav } from "@/components/ui/bottom-nav";
+import { TopNav } from "@/components/ui/top-nav";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
@@ -108,10 +108,10 @@ export function Layout({ children }: LayoutProps) {
           </Button>
         </div>
       </header>
-      <main className="flex-1 pb-16">
+      <TopNav userRole={userRole} />
+      <main className="flex-1">
         {children}
       </main>
-      <BottomNav userRole={userRole} />
     </div>
   );
 }

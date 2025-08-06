@@ -29,12 +29,12 @@ interface NavigationItem {
   badge?: string;
 }
 
-interface BottomNavProps {
+interface TopNavProps {
   userRole: string;
   pendingApprovals?: number;
 }
 
-export function BottomNav({ userRole, pendingApprovals = 0 }: BottomNavProps) {
+export function TopNav({ userRole, pendingApprovals = 0 }: TopNavProps) {
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -139,9 +139,9 @@ export function BottomNav({ userRole, pendingApprovals = 0 }: BottomNavProps) {
   );
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 shadow-lg">
+    <div className="bg-card border-b border-border shadow-sm">
       <ScrollArea className="w-full">
-        <div className="flex items-center justify-start px-4 py-3 gap-2 min-w-max">
+        <div className="flex items-center justify-start px-6 py-3 gap-1 min-w-max">
           {filteredItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.url);
@@ -152,10 +152,10 @@ export function BottomNav({ userRole, pendingApprovals = 0 }: BottomNavProps) {
                 asChild
                 variant="ghost"
                 className={`
-                  flex items-center gap-2 h-10 px-4 py-2 rounded-full transition-all duration-200 relative
+                  flex items-center gap-2 h-10 px-4 py-2 rounded-lg transition-all duration-200 relative
                   ${active 
-                    ? 'bg-primary text-primary-foreground shadow-md font-medium' 
-                    : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-sm font-medium border-b-2 border-primary' 
+                    : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground border-b-2 border-transparent'
                   }
                 `}
               >
@@ -167,7 +167,7 @@ export function BottomNav({ userRole, pendingApprovals = 0 }: BottomNavProps) {
                   {item.badge && (
                     <Badge 
                       variant="destructive" 
-                      className="h-5 w-5 p-0 text-xs flex items-center justify-center rounded-full"
+                      className="h-5 w-5 p-0 text-xs flex items-center justify-center rounded-full ml-1"
                     >
                       {item.badge}
                     </Badge>
