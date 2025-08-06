@@ -60,6 +60,7 @@ interface ContractFormData {
   client_document_number: string;
   bank_certification: FileList | null;
   contract_type: string;
+  contract_template: string;
   total_amount: string;
   start_date: Date | undefined;
   end_date: Date | undefined;
@@ -72,19 +73,31 @@ const contractTypes = [
     value: "fixed_amount",
     label: "Monto Fijo",
     description: "Valor total definido al inicio del contrato",
-    icon: DollarSign
+    icon: DollarSign,
+    templates: [
+      { value: "template_fixed_medical", label: "Plantilla Servicios Médicos - Monto Fijo" },
+      { value: "template_fixed_admin", label: "Plantilla Servicios Administrativos - Monto Fijo" }
+    ]
   },
   {
     value: "variable_amount", 
     label: "Monto Variable",
     description: "Valor basado en horas trabajadas o unidades",
-    icon: Clock
+    icon: Clock,
+    templates: [
+      { value: "template_variable_hourly", label: "Plantilla Por Horas" },
+      { value: "template_variable_units", label: "Plantilla Por Unidades" }
+    ]
   },
   {
     value: "company_contract",
     label: "Contrato Empresa",
     description: "Contrato con empresas prestadoras de servicios",
-    icon: Building2
+    icon: Building2,
+    templates: [
+      { value: "template_company_services", label: "Plantilla Empresa Servicios" },
+      { value: "template_company_equipment", label: "Plantilla Empresa Equipos" }
+    ]
   }
 ];
 
@@ -113,6 +126,7 @@ export default function CreateContract() {
   } = useForm<ContractFormData>();
 
   const watchedType = watch("contract_type");
+  const watchedTemplate = watch("contract_template");
   const watchedStartDate = watch("start_date");
   const watchedEndDate = watch("end_date");
   const watchedAmount = watch("total_amount");
@@ -242,6 +256,15 @@ export default function CreateContract() {
       return;
     }
 
+    if (!data.contract_object || data.contract_object.trim() === "") {
+      toast({
+        title: "Error",
+        description: "El objeto del contrato es requerido",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const contractData = {
@@ -342,19 +365,34 @@ export default function CreateContract() {
                   variant="outline" 
                   size="sm" 
                   onClick={() => navigate("/contracts")}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 hover:bg-muted"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Volver
                 </Button>
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                    <FileText className="w-8 h-8 text-primary" />
-                    Crear Nuevo Contrato
-                  </h1>
-                  <p className="text-muted-foreground">
-                    Complete la información para crear un nuevo contrato
-                  </p>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl">
+                      <FileText className="w-8 h-8 text-primary" />
+                    </div>
+                    <div>
+                      <h1 className="text-3xl font-bold text-foreground">
+                        Crear Nuevo Contrato
+                      </h1>
+                      <p className="text-muted-foreground text-lg">
+                        Complete la información para crear un nuevo contrato hospitalario
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Breadcrumb */}
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>Inicio</span>
+                    <span>/</span>
+                    <span>Gestión de Contratos</span>
+                    <span>/</span>
+                    <span className="font-medium text-foreground">Nuevo Contrato</span>
+                  </div>
                 </div>
               </div>
 
@@ -397,11 +435,14 @@ export default function CreateContract() {
 
                             <div className="space-y-2">
                               <Label htmlFor="contract_type" className="text-base font-semibold">Tipo de Contrato *</Label>
-                              <Select onValueChange={(value) => setValue("contract_type", value)}>
+                              <Select onValueChange={(value) => {
+                                setValue("contract_type", value);
+                                setValue("contract_template", ""); // Reset template when type changes
+                              }}>
                                 <SelectTrigger className="text-lg">
                                   <SelectValue placeholder="Selecciona el tipo de contrato" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="bg-background border shadow-lg z-50">
                                   {contractTypes.map((type) => {
                                     const Icon = type.icon;
                                     return (
@@ -424,6 +465,41 @@ export default function CreateContract() {
                                 <p className="text-destructive text-sm">El tipo de contrato es requerido</p>
                               )}
                             </div>
+
+                            {/* Template Selection */}
+                            {watchedType && (
+                              <div className="space-y-2">
+                                <Label htmlFor="contract_template" className="text-base font-semibold">
+                                  Plantilla de Contrato
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground ml-1" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Selecciona una plantilla predefinida para este tipo de contrato</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </Label>
+                                <Select 
+                                  value={watchedTemplate} 
+                                  onValueChange={(value) => setValue("contract_template", value)}
+                                >
+                                  <SelectTrigger className="text-lg">
+                                    <SelectValue placeholder="Selecciona una plantilla" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-background border shadow-lg z-50">
+                                    {contractTypes
+                                      .find(t => t.value === watchedType)
+                                      ?.templates.map((template) => (
+                                        <SelectItem key={template.value} value={template.value}>
+                                          {template.label}
+                                        </SelectItem>
+                                      ))
+                                    }
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
                           </div>
 
                           {watchedType && (
@@ -686,7 +762,7 @@ export default function CreateContract() {
                               {...register("contract_object", { required: "El objeto del contrato es requerido" })}
                               placeholder="Descripción detallada del objeto del contrato y alcance del trabajo a realizar..."
                               rows={4}
-                              className="text-lg"
+                              className="text-lg resize-none"
                             />
                             {errors.contract_object && (
                               <p className="text-destructive text-sm">{errors.contract_object.message}</p>
@@ -697,6 +773,14 @@ export default function CreateContract() {
                             <Label htmlFor="signed_contract" className="text-base font-semibold flex items-center gap-2">
                               Subir Contrato Firmado
                               <span className="text-sm text-muted-foreground">(Opcional)</span>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="w-4 h-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Adjunta el contrato firmado en formato PDF si ya está disponible</p>
+                                </TooltipContent>
+                              </Tooltip>
                             </Label>
                             <div className="flex items-center gap-4">
                               <Input
@@ -742,7 +826,7 @@ export default function CreateContract() {
                       type="submit"
                       disabled={isLoading}
                       size="lg"
-                      className="flex items-center gap-2 px-8 bg-gradient-to-r from-primary to-primary-foreground hover:from-primary/90 hover:to-primary-foreground/90"
+                      className="flex items-center gap-2 px-8 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg"
                     >
                       <FileText className="w-5 h-5" />
                       {isLoading ? "Creando Contrato..." : "Crear Contrato"}

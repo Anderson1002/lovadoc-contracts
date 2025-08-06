@@ -14,7 +14,9 @@ import {
   Calendar,
   FileCheck,
   TrendingUp,
-  Bell
+  Bell,
+  Clock,
+  User
 } from "lucide-react";
 import {
   Sidebar,
@@ -57,20 +59,20 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
       roles: ["super_admin", "admin", "supervisor", "employee"]
     },
     {
-      title: "Contratos",
+      title: "Gestión de Contratos",
       url: "/contracts",
       icon: FileText,
       roles: ["super_admin", "admin", "supervisor", "employee"],
       children: [
         {
-          title: "Todos los Contratos",
-          url: "/contracts",
+          title: "Nuevo Contrato",
+          url: "/contracts/new",
           icon: FileText,
           roles: ["super_admin", "admin", "supervisor", "employee"]
         },
         {
-          title: "Crear Contrato",
-          url: "/contracts/new",
+          title: "Gestionar Contratos",
+          url: "/contracts",
           icon: FileText,
           roles: ["super_admin", "admin", "supervisor", "employee"]
         },
@@ -83,60 +85,170 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
         {
           title: "Pendientes Aprobación",
           url: "/contracts/pending",
-          icon: FileCheck,
+          icon: Clock,
           roles: ["super_admin", "admin", "supervisor"],
           badge: pendingApprovals > 0 ? pendingApprovals.toString() : undefined
         }
       ]
     },
     {
-      title: "Pagos y Facturación",
-      url: "/payments",
+      title: "Cuentas de Cobro",
+      url: "/billing",
       icon: DollarSign,
-      roles: ["super_admin", "admin", "supervisor"],
+      roles: ["super_admin", "admin", "supervisor", "employee"],
       children: [
         {
-          title: "Gestión de Pagos",
-          url: "/payments",
+          title: "Registro Cuenta de Cobro",
+          url: "/billing/new",
           icon: DollarSign,
-          roles: ["super_admin", "admin", "supervisor"]
+          roles: ["super_admin", "admin", "supervisor", "employee"]
         },
         {
-          title: "Facturas",
-          url: "/payments/invoices",
+          title: "Consultar Cuentas",
+          url: "/billing/query",
           icon: FileText,
-          roles: ["super_admin", "admin", "supervisor"]
+          roles: ["super_admin", "admin", "supervisor", "employee"]
         },
         {
-          title: "Reportes Financieros",
-          url: "/payments/reports",
-          icon: TrendingUp,
-          roles: ["super_admin", "admin"]
+          title: "Apoyo Supervisor",
+          url: "/billing/supervision",
+          icon: UserCheck,
+          roles: ["super_admin", "admin", "supervisor"]
         }
       ]
     },
     {
-      title: "Usuarios y Roles",
+      title: "Trámites y Firmas",
+      url: "/procedures",
+      icon: FileCheck,
+      roles: ["super_admin", "admin", "supervisor", "employee"],
+      children: [
+        {
+          title: "Buscar Trámite",
+          url: "/procedures/search",
+          icon: FileText,
+          roles: ["super_admin", "admin", "supervisor", "employee"]
+        },
+        {
+          title: "Firma Electrónica",
+          url: "/procedures/signature",
+          icon: FileCheck,
+          roles: ["super_admin", "admin", "supervisor", "employee"]
+        },
+        {
+          title: "Causado",
+          url: "/procedures/causado",
+          icon: TrendingUp,
+          roles: ["super_admin", "admin", "supervisor"]
+        }
+      ]
+    },
+    {
+      title: "Equipos Biomédicos",
+      url: "/equipment",
+      icon: Building2,
+      roles: ["super_admin", "admin", "supervisor"],
+      children: [
+        {
+          title: "Registro Equipos",
+          url: "/equipment/new",
+          icon: Building2,
+          roles: ["super_admin", "admin", "supervisor"]
+        },
+        {
+          title: "Consultar Equipos",
+          url: "/equipment/query",
+          icon: FileText,
+          roles: ["super_admin", "admin", "supervisor"]
+        },
+        {
+          title: "Mantenimiento",
+          url: "/equipment/maintenance",
+          icon: Settings,
+          roles: ["super_admin", "admin", "supervisor"]
+        },
+        {
+          title: "Cronograma",
+          url: "/equipment/schedule",
+          icon: Calendar,
+          roles: ["super_admin", "admin", "supervisor"]
+        }
+      ]
+    },
+    {
+      title: "Gestión de Personal",
       url: "/users",
       icon: Users,
       roles: ["super_admin", "admin"],
       children: [
         {
-          title: "Gestión de Usuarios",
+          title: "Usuarios del Sistema",
           url: "/users",
           icon: Users,
           roles: ["super_admin", "admin"]
+        },
+        {
+          title: "Contratistas",
+          url: "/users/contractors",
+          icon: UserCheck,
+          roles: ["super_admin", "admin", "supervisor"]
         },
         {
           title: "Roles y Permisos",
           url: "/users/roles",
           icon: Shield,
           roles: ["super_admin"]
+        }
+      ]
+    },
+    {
+      title: "Área Jurídica",
+      url: "/legal",
+      icon: Shield,
+      roles: ["super_admin", "admin"],
+      children: [
+        {
+          title: "Documentos Legales",
+          url: "/legal/documents",
+          icon: FileText,
+          roles: ["super_admin", "admin"]
         },
         {
-          title: "Contratistas",
-          url: "/users/contractors",
-          icon: UserCheck,
+          title: "Plantillas Contrato",
+          url: "/legal/templates",
+          icon: FileText,
+          roles: ["super_admin", "admin"]
+        },
+        {
+          title: "Revisión Legal",
+          url: "/legal/review",
+          icon: FileCheck,
+          roles: ["super_admin", "admin"]
+        }
+      ]
+    },
+    {
+      title: "Supervisión",
+      url: "/supervision",
+      icon: Award,
+      roles: ["super_admin", "admin", "supervisor"],
+      children: [
+        {
+          title: "Apoyo Supervisor Contratos",
+          url: "/supervision/contracts",
+          icon: FileText,
+          roles: ["super_admin", "admin", "supervisor"]
+        },
+        {
+          title: "Apoyo Supervisor Cuentas",
+          url: "/supervision/billing",
+          icon: DollarSign,
+          roles: ["super_admin", "admin", "supervisor"]
+        },
+        {
+          title: "Reportes Supervisión",
+          url: "/supervision/reports",
+          icon: BarChart3,
           roles: ["super_admin", "admin", "supervisor"]
         }
       ]
@@ -164,40 +276,20 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
           url: "/reports/performance",
           icon: Award,
           roles: ["super_admin", "admin", "supervisor"]
+        },
+        {
+          title: "Indicadores Hospitalarios",
+          url: "/reports/hospital",
+          icon: Building2,
+          roles: ["super_admin", "admin"]
         }
       ]
     },
     {
       title: "Mi Área",
       url: "/profile",
-      icon: Building2,
-      roles: ["super_admin", "admin", "supervisor", "employee"],
-      children: [
-        {
-          title: "Mis Contratos",
-          url: "/my-area/contracts",
-          icon: FileText,
-          roles: ["supervisor", "employee"]
-        },
-        {
-          title: "Mis Pagos",
-          url: "/my-area/payments",
-          icon: DollarSign,
-          roles: ["employee"]
-        },
-        {
-          title: "Documentos",
-          url: "/my-area/documents",
-          icon: FileCheck,
-          roles: ["supervisor", "employee"]
-        },
-        {
-          title: "Calendario",
-          url: "/my-area/calendar",
-          icon: Calendar,
-          roles: ["supervisor", "employee"]
-        }
-      ]
+      icon: User,
+      roles: ["super_admin", "admin", "supervisor", "employee"]
     },
     {
       title: "Notificaciones",
@@ -227,6 +319,12 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
           title: "Flujos de Aprobación",
           url: "/settings/approval-flows",
           icon: FileCheck,
+          roles: ["super_admin"]
+        },
+        {
+          title: "Plantillas de Documentos",
+          url: "/settings/templates",
+          icon: FileText,
           roles: ["super_admin"]
         }
       ]
@@ -292,19 +390,33 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent>
-        {/* Main Navigation */}
+        {/* Gestión Hospitalaria */}
         <SidebarGroup>
           <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-            Navegación Principal
+            Gestión Hospitalaria
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredItems.slice(0, 3).map(item => renderMenuItem(item))}
+              {filteredItems.slice(0, 4).map(item => renderMenuItem(item))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Management Section */}
+        {/* Equipos y Mantenimiento */}
+        {(userRole === "super_admin" || userRole === "admin" || userRole === "supervisor") && (
+          <SidebarGroup>
+            <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+              Equipos y Mantenimiento
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filteredItems.filter(item => item.url === "/equipment").map(item => renderMenuItem(item))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Administración */}
         {(userRole === "super_admin" || userRole === "admin") && (
           <SidebarGroup>
             <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
@@ -312,7 +424,7 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {filteredItems.slice(3, 5).map(item => renderMenuItem(item))}
+                {filteredItems.slice(5, 9).map(item => renderMenuItem(item))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -325,24 +437,26 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredItems.filter(item => item.url === "/profile").map(item => renderMenuItem(item))}
+              {filteredItems.filter(item => 
+                item.url === "/profile" || item.url === "/notifications"
+              ).map(item => renderMenuItem(item))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         {/* System Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-            Sistema
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredItems.filter(item => 
-                item.url === "/notifications" || item.url === "/settings"
-              ).map(item => renderMenuItem(item))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {(userRole === "super_admin" || userRole === "admin") && (
+          <SidebarGroup>
+            <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+              Sistema
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filteredItems.filter(item => item.url === "/settings").map(item => renderMenuItem(item))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>
   );
