@@ -367,18 +367,17 @@ export function ContractQueryTable({
                             <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="bg-background border shadow-lg">
                           <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setSelectedContract(contract)}
+                            className="cursor-pointer hover:bg-muted"
+                          >
                             <Eye className="w-4 h-4 mr-2" />
                             Ver detalles
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem className="cursor-pointer hover:bg-muted">
                             <FileText className="w-4 h-4 mr-2" />
                             Generar reporte
                           </DropdownMenuItem>

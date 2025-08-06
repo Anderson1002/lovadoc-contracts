@@ -30,7 +30,14 @@ import {
   Search,
   X,
   Filter,
-  Download
+  Download,
+  Building2,
+  DollarSign,
+  FileText,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  User
 } from "lucide-react";
 
 export interface ContractFilters {
@@ -52,17 +59,17 @@ interface ContractFiltersProps {
 }
 
 const contractTypes = [
-  { value: "all", label: "Todos los tipos" },
-  { value: "fixed_amount", label: "Monto Fijo" },
-  { value: "variable_amount", label: "Monto Variable" },
-  { value: "contractor", label: "Contrato Empresa" }
+  { value: "all", label: "Todos los tipos", icon: FileText },
+  { value: "fixed_amount", label: "Monto Fijo", icon: DollarSign },
+  { value: "variable_amount", label: "Monto Variable", icon: DollarSign },
+  { value: "contractor", label: "Contrato Empresa", icon: Building2 }
 ];
 
 const contractStatuses = [
-  { value: "all", label: "Todos los estados" },
-  { value: "active", label: "Activo" },
-  { value: "completed", label: "Completado" },
-  { value: "cancelled", label: "Cancelado" }
+  { value: "all", label: "Todos los estados", icon: Clock },
+  { value: "active", label: "Activo", icon: CheckCircle2 },
+  { value: "completed", label: "Completado", icon: CheckCircle2 },
+  { value: "cancelled", label: "Cancelado", icon: XCircle }
 ];
 
 export function ContractFilters({ 
@@ -165,12 +172,18 @@ export function ContractFilters({
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar tipo" />
               </SelectTrigger>
-              <SelectContent>
-                {contractTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
+              <SelectContent className="bg-background border shadow-lg">
+                {contractTypes.map((type) => {
+                  const Icon = type.icon;
+                  return (
+                    <SelectItem key={type.value} value={type.value}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" />
+                        {type.label}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -184,24 +197,34 @@ export function ContractFilters({
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar estado" />
               </SelectTrigger>
-              <SelectContent>
-                {contractStatuses.map((status) => (
-                  <SelectItem key={status.value} value={status.value}>
-                    {status.label}
-                  </SelectItem>
-                ))}
+              <SelectContent className="bg-background border shadow-lg">
+                {contractStatuses.map((status) => {
+                  const Icon = status.icon;
+                  return (
+                    <SelectItem key={status.value} value={status.value}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" />
+                        {status.label}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="clientName">Cliente</Label>
-            <Input
-              id="clientName"
-              placeholder="Nombre del cliente"
-              value={filters.clientName}
-              onChange={(e) => updateFilter("clientName", e.target.value)}
-            />
+            <div className="relative">
+              <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="clientName"
+                placeholder="Nombre del cliente"
+                value={filters.clientName}
+                onChange={(e) => updateFilter("clientName", e.target.value)}
+                className="pl-9"
+              />
+            </div>
           </div>
         </div>
 
