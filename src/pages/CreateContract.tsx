@@ -273,7 +273,7 @@ export default function CreateContract() {
         client_email: data.client_email || null,
         client_phone: data.client_phone || null,
         contract_type: data.contract_type as any,
-        total_amount: parseFloat(data.total_amount.replace(/[^\d.-]/g, '')),
+        total_amount: parseFloat(data.total_amount.replace(/[^\d.-]/g, '').replace(',', '.')) || 0,
         start_date: data.start_date?.toISOString().split('T')[0],
         end_date: data.end_date?.toISOString().split('T')[0] || null,
         description: data.contract_object || null,
@@ -309,9 +309,9 @@ export default function CreateContract() {
   };
 
   const formatAmountInput = (value: string) => {
-    const numberValue = value.replace(/[^\d]/g, '');
-    const formattedValue = new Intl.NumberFormat('es-CO').format(Number(numberValue));
-    return formattedValue;
+    // Allow numbers, decimals, and commas
+    const numberValue = value.replace(/[^\d.,]/g, '');
+    return numberValue;
   };
 
   const handleLogout = async () => {
@@ -660,7 +660,7 @@ export default function CreateContract() {
                                 className="text-lg"
                                 onChange={(e) => {
                                   const formatted = formatAmountInput(e.target.value);
-                                  setValue("total_amount", `$${formatted}`);
+                                  setValue("total_amount", formatted);
                                 }}
                               />
                               {errors.total_amount && (

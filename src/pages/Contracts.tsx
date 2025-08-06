@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ContractTable } from "@/components/contracts/ContractTable";
+import { ContractStatusInfo } from "@/components/contracts/ContractStatusInfo";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -152,6 +153,9 @@ export default function Contracts() {
           onView={handleView}
           onEdit={handleEdit}
         />
+
+        {/* Contract Status Information */}
+        <ContractStatusInfo />
       </div>
     </Layout>
   );
