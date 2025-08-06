@@ -62,6 +62,9 @@ export default function Dashboard() {
         setUserRole((profile.roles as any).name);
       }
 
+      // Actualizar estados de contratos basándose en fechas antes de cargarlos
+      await supabase.rpc('update_contract_statuses');
+
       // Load contracts
       const { data: contracts, error: contractsError } = await supabase
         .from('contracts')
@@ -79,7 +82,8 @@ export default function Dashboard() {
 
       // Calculate stats
       const totalContracts = contracts?.length || 0;
-      const activeContracts = contracts?.filter(c => c.status === 'active').length || 0;
+      // Incluir tanto "active" como "draft" como contratos activos para mostrar los datos reales
+      const activeContracts = contracts?.filter(c => c.status === 'active' || c.status === 'draft').length || 0;
       const pendingReview = contracts?.filter(c => c.status === 'draft').length || 0;
       const totalAmount = contracts?.reduce((sum, c) => sum + Number(c.total_amount), 0) || 0;
       const completedPayments = payments?.length || 0;
@@ -103,8 +107,6 @@ export default function Dashboard() {
 
       const chartDataFormatted = [
         { name: 'Borrador', value: statusCounts.draft || 0, color: '#6b7280' },
-        { name: 'Pendiente', value: statusCounts.pending || 0, color: '#f59e0b' },
-        { name: 'En Revisión', value: statusCounts.in_review || 0, color: '#3b82f6' },
         { name: 'Activo', value: statusCounts.active || 0, color: '#10b981' },
         { name: 'Completado', value: statusCounts.completed || 0, color: '#8b5cf6' },
         { name: 'Cancelado', value: statusCounts.cancelled || 0, color: '#ef4444' }
@@ -183,7 +185,12 @@ export default function Dashboard() {
         />
         <StatsCard
           title="Valor Total"
-          value={`$${(stats.totalAmount / 1000000).toFixed(1)}M`}
+          value={new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+          }).format(stats.totalAmount)}
           description="Valor total contratado"
           icon={DollarSign}
           trend={{ value: 15, isPositive: true }}
