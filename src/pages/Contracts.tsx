@@ -1,16 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ContractTable } from "@/components/contracts/ContractTable";
-import { ContractStatusInfo } from "@/components/contracts/ContractStatusInfo";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ContractTable } from "@/components/contracts/ContractTable";
+import { ContractStatusInfo } from "@/components/contracts/ContractStatusInfo";
 import { Layout } from "@/components/Layout";
 
 export default function Contracts() {
-  const [contracts, setContracts] = useState([]);
+  const [contracts, setContracts] = useState<any[]>([]);
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState("employee");
@@ -19,7 +18,6 @@ export default function Contracts() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -35,7 +33,6 @@ export default function Contracts() {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -53,7 +50,6 @@ export default function Contracts() {
 
   const loadContracts = async (userId: string) => {
     try {
-      // Get user profile and role
       const { data: profile } = await supabase
         .from('profiles')
         .select('*, roles!profiles_role_id_fkey(name)')
@@ -64,24 +60,18 @@ export default function Contracts() {
         setUserRole((profile.roles as any).name);
       }
 
-      // Load contracts based on role
-      let query = supabase
-        .from('contracts')
-        .select('*')
-        .order('created_at', { ascending: false });
+      let contractsQuery = supabase.from('contracts').select('*');
 
-      // If employee, only show their contracts
-      if (profile && (profile.roles as any).name === 'employee') {
-        query = query.eq('created_by', profile.id);
+      if (profile && profile.roles && (profile.roles as any).name === 'employee') {
+        contractsQuery = contractsQuery.eq('created_by', profile.id);
       }
 
-      const { data: contracts, error } = await query;
+      const { data: contractsData, error } = await contractsQuery.order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setContracts(contracts || []);
-
-    } catch (error: any) {
+      setContracts(contractsData || []);
+    } catch (error) {
       console.error('Error loading contracts:', error);
       toast({
         title: "Error",
@@ -92,22 +82,11 @@ export default function Contracts() {
   };
 
   const handleView = (contract: any) => {
-    // Navigate to contract details
     navigate(`/contracts/${contract.id}`);
   };
 
   const handleEdit = (contract: any) => {
-    // Navigate to contract edit
     navigate(`/contracts/${contract.id}/edit`);
-  };
-
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate("/auth");
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
   };
 
   if (loading) {
@@ -119,30 +98,28 @@ export default function Contracts() {
   }
 
   if (!session) {
-    return null; // Will redirect to auth
+    return null;
   }
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8 space-y-6">
+      <div className="container mx-auto px-4 py-8 max-w-7xl space-y-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-              <FileText className="w-8 h-8" />
-              Control de Contratos
-            </h1>
+            <h1 className="text-3xl font-bold text-foreground">Control de Contratos</h1>
             <p className="text-muted-foreground">
-              Sistema de administración y seguimiento contractual
+              Gestiona todos los contratos del hospital
             </p>
           </div>
-          {(userRole === "super_admin" || userRole === "admin" || userRole === "employee") && (
-            <Link to="/contracts/new">
-              <Button className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Nuevo Contrato
-              </Button>
-            </Link>
+          {["super_admin", "admin", "employee"].includes(userRole) && (
+            <Button 
+              onClick={() => navigate("/contracts/new")}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Nuevo Contrato
+            </Button>
           )}
         </div>
 

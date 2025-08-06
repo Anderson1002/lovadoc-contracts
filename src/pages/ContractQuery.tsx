@@ -2,12 +2,11 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/ui/app-sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { ContractFilters, ContractFilters as ContractFiltersComponent } from "@/components/contracts/ContractFilters";
 import { ContractStats } from "@/components/contracts/ContractStats";
 import { ContractQueryTable } from "@/components/contracts/ContractQueryTable";
+import { Layout } from "@/components/Layout";
 import {
   Search,
   LogOut,
@@ -276,15 +275,6 @@ export default function ContractQuery() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate("/auth");
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -298,74 +288,49 @@ export default function ContractQuery() {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar userRole={userRole} />
-        <main className="flex-1">
-          <header className="h-12 flex items-center border-b bg-card px-4">
-            <SidebarTrigger />
-            <div className="ml-auto flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                Bienvenido, {user?.email}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="flex items-center gap-2 text-destructive hover:text-destructive"
-              >
-                <LogOut className="w-4 h-4" />
-                Salir
-              </Button>
-            </div>
-          </header>
-          
-          <div className="flex-1 overflow-auto">
-            <div className="container mx-auto px-4 py-8 max-w-7xl">
-              {/* Header */}
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <FileSearch className="w-8 h-8 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground">Consulta de Contratos</h1>
-                  <p className="text-muted-foreground">
-                    Busca, filtra y analiza contratos con herramientas avanzadas
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-8">
-                {/* Filters */}
-                <ContractFiltersComponent
-                  filters={filters}
-                  onFiltersChange={handleFiltersChange}
-                  onExport={handleExport}
-                  isLoading={isLoadingContracts}
-                />
-
-                {/* Stats */}
-                <ContractStats 
-                  contracts={processedContracts}
-                  isLoading={isLoadingContracts}
-                />
-
-                {/* Results Table */}
-                <ContractQueryTable
-                  contracts={paginatedContracts}
-                  isLoading={isLoadingContracts}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                  onSort={handleSort}
-                  sortColumn={sortColumn}
-                  sortDirection={sortDirection}
-                />
-              </div>
-            </div>
+    <Layout>
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <FileSearch className="w-8 h-8 text-primary" />
           </div>
-        </main>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Consulta de Contratos</h1>
+            <p className="text-muted-foreground">
+              Busca, filtra y analiza contratos con herramientas avanzadas
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-8">
+          {/* Filters */}
+          <ContractFiltersComponent
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onExport={handleExport}
+            isLoading={isLoadingContracts}
+          />
+
+          {/* Stats */}
+          <ContractStats 
+            contracts={processedContracts}
+            isLoading={isLoadingContracts}
+          />
+
+          {/* Results Table */}
+          <ContractQueryTable
+            contracts={paginatedContracts}
+            isLoading={isLoadingContracts}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            onSort={handleSort}
+            sortColumn={sortColumn}
+            sortDirection={sortDirection}
+          />
+        </div>
       </div>
-    </SidebarProvider>
+    </Layout>
   );
 }

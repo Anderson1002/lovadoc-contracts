@@ -12,8 +12,17 @@ import {
   Bell, 
   BarChart3,
   Building2,
-  Settings
+  Settings,
+  ChevronDown
 } from "lucide-react";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 interface MenuItem {
   label: string;
@@ -57,7 +67,7 @@ export function ProfessionalNav({ userRole, userEmail, onLogout }: ProfessionalN
       ]
     },
     {
-      label: "Gestión de Contratos",
+      label: "Control de Contratos",
       icon: FileText,
       items: [
         {
@@ -142,121 +152,166 @@ export function ProfessionalNav({ userRole, userEmail, onLogout }: ProfessionalN
   };
 
   return (
-    <nav className="bg-card border-b border-border shadow-sm">
-      <div className="container mx-auto px-4">
+    <nav className="bg-gradient-to-r from-card via-card to-card border-b border-border shadow-lg">
+      <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo/Brand */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold text-foreground">ContractPro</span>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl">
+                <Building2 className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold text-foreground">HospitalPro</span>
+                <span className="text-xs text-muted-foreground">Sistema de Contratos</span>
+              </div>
             </div>
           </div>
 
           {/* Navigation Menu */}
-          <div className="flex items-center space-x-1">
-            {getFilteredMenuItems().map((menu) => {
-              const Icon = menu.icon;
-              const isActive = isActiveMenu(menu.items);
-              
-              return (
-                <DropdownMenu key={menu.label}>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      className={`
-                        flex items-center gap-2 px-4 py-2 h-10 rounded-lg transition-all duration-200
-                        ${isActive 
-                          ? 'bg-primary text-primary-foreground shadow-sm font-medium' 
-                          : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
-                        }
-                      `}
+          <NavigationMenu className="flex-1 mx-8">
+            <NavigationMenuList className="flex items-center space-x-1">
+              {getFilteredMenuItems().map((menu) => {
+                const Icon = menu.icon;
+                const isActive = isActiveMenu(menu.items);
+                
+                return (
+                  <NavigationMenuItem key={menu.label}>
+                    <NavigationMenuTrigger 
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 h-10 rounded-lg transition-all duration-300 font-medium",
+                        "bg-transparent hover:bg-accent/50 hover:text-accent-foreground",
+                        "data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+                        "focus:bg-accent focus:text-accent-foreground",
+                        isActive && "bg-primary/10 text-primary border border-primary/20"
+                      )}
                     >
                       <Icon className="h-4 w-4" />
-                      <span className="font-medium">{menu.label}</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    align="start" 
-                    className="w-64 bg-card border border-border shadow-lg rounded-lg p-2 z-50"
-                  >
-                    {menu.items.map((item, index) => {
-                      const ItemIcon = item.icon;
-                      const itemActive = isActiveItem(item.url);
-                      
-                      return (
-                        <DropdownMenuItem 
-                          key={item.url} 
-                          asChild
-                          className={`
-                            rounded-md transition-colors duration-200 cursor-pointer
-                            ${itemActive 
-                              ? 'bg-primary text-primary-foreground' 
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                            }
-                          `}
-                        >
-                          <Link 
-                            to={item.url}
-                            className="flex items-start gap-3 p-3 no-underline"
-                          >
-                            <ItemIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                            <div className="flex flex-col gap-1">
-                              <span className="font-medium text-sm">{item.label}</span>
-                              {item.description && (
-                                <span className="text-xs text-muted-foreground">
-                                  {item.description}
-                                </span>
-                              )}
-                            </div>
-                          </Link>
-                        </DropdownMenuItem>
-                      );
-                    })}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              );
-            })}
-          </div>
+                      <span>{menu.label}</span>
+                      <ChevronDown className="h-3 w-3 transition-transform duration-300 group-data-[state=open]:rotate-180" />
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent className="w-80 p-4 bg-card border border-border shadow-xl rounded-lg">
+                      <div className="grid gap-2">
+                        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
+                          <Icon className="h-5 w-5 text-primary" />
+                          <span className="font-semibold text-foreground">{menu.label}</span>
+                        </div>
+                        {menu.items.map((item) => {
+                          const ItemIcon = item.icon;
+                          const itemActive = isActiveItem(item.url);
+                          
+                          return (
+                            <NavigationMenuLink key={item.url} asChild>
+                              <Link
+                                to={item.url}
+                                className={cn(
+                                  "group flex items-start gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-accent hover:text-accent-foreground no-underline",
+                                  itemActive && "bg-primary text-primary-foreground shadow-sm"
+                                )}
+                              >
+                                <div className={cn(
+                                  "p-2 rounded-md transition-colors duration-200",
+                                  itemActive 
+                                    ? "bg-primary-foreground/20" 
+                                    : "bg-primary/10 group-hover:bg-primary/20"
+                                )}>
+                                  <ItemIcon className="h-4 w-4" />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                  <span className="font-medium text-sm leading-none">{item.label}</span>
+                                  {item.description && (
+                                    <span className="text-xs text-muted-foreground leading-relaxed">
+                                      {item.description}
+                                    </span>
+                                  )}
+                                </div>
+                              </Link>
+                            </NavigationMenuLink>
+                          );
+                        })}
+                      </div>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                );
+              })}
+            </NavigationMenuList>
+          </NavigationMenu>
 
           {/* User Menu */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden md:block">
-              {userEmail}
-            </span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  <span className="hidden md:inline">Cuenta</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                align="end" 
-                className="w-48 bg-card border border-border shadow-lg rounded-lg z-50"
-              >
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="flex items-center gap-2 cursor-pointer">
-                    <User className="h-4 w-4" />
-                    Mi Perfil
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/notifications" className="flex items-center gap-2 cursor-pointer">
-                    <Bell className="h-4 w-4" />
-                    Notificaciones
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={onLogout}
-                  className="flex items-center gap-2 text-destructive hover:text-destructive cursor-pointer"
+          <div className="flex items-center gap-4">
+            {/* Notifications Quick Access */}
+            <Link 
+              to="/notifications"
+              className={cn(
+                "p-2 rounded-lg transition-all duration-200 hover:bg-accent hover:text-accent-foreground",
+                currentPath === "/notifications" && "bg-primary/10 text-primary"
+              )}
+            >
+              <Bell className="h-5 w-5" />
+            </Link>
+
+            <div className="h-6 w-px bg-border" />
+
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex flex-col items-end">
+                <span className="text-sm font-medium text-foreground">{userEmail}</span>
+                <span className="text-xs text-muted-foreground capitalize">{userRole.replace('_', ' ')}</span>
+              </div>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="flex items-center gap-2 h-10 rounded-lg hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <div className="p-1 bg-primary/10 rounded-full">
+                      <User className="h-4 w-4 text-primary" />
+                    </div>
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  align="end" 
+                  className="w-56 bg-card border border-border shadow-xl rounded-lg p-2 z-50"
                 >
-                  <LogOut className="h-4 w-4" />
-                  Cerrar Sesión
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <div className="px-3 py-2 border-b border-border mb-2">
+                    <p className="font-medium text-sm text-foreground">{userEmail}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{userRole.replace('_', ' ')}</p>
+                  </div>
+                  
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/profile" 
+                      className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <User className="h-4 w-4" />
+                      <span>Mi Perfil</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      to="/notifications" 
+                      className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <Bell className="h-4 w-4" />
+                      <span>Notificaciones</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator className="my-2" />
+                  
+                  <DropdownMenuItem 
+                    onClick={onLogout}
+                    className="flex items-center gap-3 px-3 py-2 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer rounded-md"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Cerrar Sesión</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </div>
