@@ -7,6 +7,8 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Contracts from "./pages/Contracts";
 import CreateContract from "./pages/CreateContract";
+import ContractDetails from "./pages/ContractDetails";
+import EditContract from "./pages/EditContract";
 import ContractQuery from "./pages/ContractQuery";
 import Users from "./pages/Users";
 import Profile from "./pages/Profile";
@@ -27,6 +29,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/contracts" element={<Contracts />} />
           <Route path="/contracts/new" element={<CreateContract />} />
+          <Route path="/contracts/:id" element={<ContractDetails />} />
+          <Route path="/contracts/:id/edit" element={<EditContract />} />
           <Route path="/contracts/query" element={<ContractQuery />} />
           <Route path="/users" element={<Users />} />
           <Route path="/profile" element={<Profile />} />

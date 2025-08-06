@@ -94,12 +94,12 @@ export default function Contracts() {
 
   const handleView = (contract: any) => {
     // Navigate to contract details
-    window.open(`/contracts/${contract.id}`, '_blank');
+    navigate(`/contracts/${contract.id}`);
   };
 
   const handleEdit = (contract: any) => {
     // Navigate to contract edit
-    window.open(`/contracts/${contract.id}/edit`, '_blank');
+    navigate(`/contracts/${contract.id}/edit`);
   };
 
   const handleLogout = async () => {
@@ -152,10 +152,10 @@ export default function Contracts() {
                 <div>
                   <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
                     <FileText className="w-8 h-8" />
-                    Gestión de Contratos
+                    Control de Contratos
                   </h1>
                   <p className="text-muted-foreground">
-                    Administra todos los contratos del hospital
+                    Sistema de administración y seguimiento contractual
                   </p>
                 </div>
                 {(userRole === "super_admin" || userRole === "admin" || userRole === "employee") && (

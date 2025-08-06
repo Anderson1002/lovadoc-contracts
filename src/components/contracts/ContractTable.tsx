@@ -152,7 +152,7 @@ export function ContractTable({
                     <ContractStatusBadge status={contract.status} />
                   </TableCell>
                   <TableCell className="font-mono">
-                    {formatCurrency(contract.total_amount)}
+                    {formatCurrency(contract.total_amount * 1000000)}
                   </TableCell>
                   <TableCell>{formatDate(contract.start_date)}</TableCell>
                   <TableCell>
@@ -182,14 +182,12 @@ export function ContractTable({
                             Editar
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem asChild>
-                          <Link 
-                            to={`/contracts/${contract.id}/documents`}
-                            className="flex items-center gap-2"
-                          >
-                            <FileText className="h-4 w-4" />
-                            Documentos
-                          </Link>
+                        <DropdownMenuItem 
+                          onClick={() => console.log('Documentos clicked for:', contract.id)}
+                          className="flex items-center gap-2"
+                        >
+                          <FileText className="h-4 w-4" />
+                          Documentos
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
