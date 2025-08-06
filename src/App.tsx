@@ -8,6 +8,8 @@ import Auth from "./pages/Auth";
 import Contracts from "./pages/Contracts";
 import CreateContract from "./pages/CreateContract";
 import Users from "./pages/Users";
+import Profile from "./pages/Profile";
+import Notifications from "./pages/Notifications";
 import { Layout } from "@/components/Layout";
 import NotFound from "./pages/NotFound";
 
@@ -25,6 +27,8 @@ const App = () => (
           <Route path="/contracts" element={<Contracts />} />
           <Route path="/contracts/new" element={<CreateContract />} />
           <Route path="/users" element={<Users />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/notifications" element={<Notifications />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

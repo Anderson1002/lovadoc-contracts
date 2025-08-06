@@ -163,9 +163,9 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
     },
     {
       title: "Mi Área",
-      url: "/my-area",
+      url: "/profile",
       icon: Building2,
-      roles: ["supervisor", "employee"],
+      roles: ["super_admin", "admin", "supervisor", "employee"],
       children: [
         {
           title: "Mis Contratos",
@@ -313,18 +313,16 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
         )}
 
         {/* Personal Section */}
-        {(userRole === "supervisor" || userRole === "employee") && (
-          <SidebarGroup>
-            <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-              Mi Área de Trabajo
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {filteredItems.filter(item => item.url === "/my-area").map(item => renderMenuItem(item))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        <SidebarGroup>
+          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+            Personal
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {filteredItems.filter(item => item.url === "/profile").map(item => renderMenuItem(item))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
         {/* System Section */}
         <SidebarGroup>

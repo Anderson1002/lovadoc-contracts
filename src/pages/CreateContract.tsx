@@ -388,8 +388,7 @@ export default function CreateContract() {
                                 id="contract_number"
                                 {...register("contract_number", { required: "El número de contrato es requerido" })}
                                 placeholder="CON-2024-001"
-                                readOnly
-                                className="bg-muted text-lg"
+                                className="text-lg"
                               />
                               {errors.contract_number && (
                                 <p className="text-destructive text-sm">{errors.contract_number.message}</p>
