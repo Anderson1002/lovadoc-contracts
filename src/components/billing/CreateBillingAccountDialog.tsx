@@ -151,6 +151,15 @@ export function CreateBillingAccountDialog({
     }
 
     try {
+      console.log('Saving activity with data:', {
+        selectedContract,
+        amount,
+        startDate,
+        endDate,
+        currentActivity: currentActivity.activityName,
+        userProfile: userProfile.id
+      });
+      
       // Create draft billing account if it doesn't exist
       let billingAccountId = currentDraftId;
       
@@ -259,9 +268,15 @@ export function CreateBillingAccountDialog({
       });
     } catch (error: any) {
       console.error('Error saving activity:', error);
+      console.error('Error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       toast({
         title: "Error",
-        description: "No se pudo registrar la actividad",
+        description: `No se pudo registrar la actividad: ${error.message || 'Error desconocido'}`,
         variant: "destructive"
       });
     }
