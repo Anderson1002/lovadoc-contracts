@@ -70,6 +70,8 @@ interface ContractFormData {
   end_date: Date | undefined;
   contract_object: string;
   signed_contract: FileList | null;
+  area_responsable: string;
+  supervisor_asignado: string;
 }
 
 const contractTypes = [
@@ -127,7 +129,12 @@ export default function CreateContract() {
     watch,
     formState: { errors },
     reset
-  } = useForm<ContractFormData>();
+  } = useForm<ContractFormData>({
+    defaultValues: {
+      area_responsable: "",
+      supervisor_asignado: ""
+    }
+  });
 
   const watchedType = watch("contract_type");
   const watchedTemplate = watch("contract_template");
@@ -269,6 +276,24 @@ export default function CreateContract() {
       return;
     }
 
+    if (!data.area_responsable || data.area_responsable.trim() === "") {
+      toast({
+        title: "Error",
+        description: "El área responsable es requerida",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!data.supervisor_asignado || data.supervisor_asignado.trim() === "") {
+      toast({
+        title: "Error",
+        description: "El supervisor responsable es requerido",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       // First create the contract
@@ -277,13 +302,20 @@ export default function CreateContract() {
         client_name: data.client_name,
         client_email: data.client_email || null,
         client_phone: data.client_phone || null,
+        client_address: data.client_address || null,
+        client_account_number: data.client_account_number || null,
+        client_bank_name: data.client_bank_name || null,
         contract_type: data.contract_type as any,
         total_amount: parseFloat(data.total_amount.replace(/[^\d.-]/g, '').replace(',', '.')) || 0,
+        hourly_rate: data.hourly_rate ? parseFloat(data.hourly_rate.replace(/[^\d.-]/g, '').replace(',', '.')) : null,
         start_date: data.start_date?.toISOString().split('T')[0],
         end_date: data.end_date?.toISOString().split('T')[0] || null,
         description: data.contract_object || null,
+        area_responsable: data.area_responsable,
+        supervisor_asignado: data.supervisor_asignado,
         created_by: userProfile.id,
-        status: 'draft' as any
+        status: 'draft' as any,
+        estado: 'registrado' as any
       };
 
       const { data: contract, error } = await supabase
@@ -592,6 +624,60 @@ export default function CreateContract() {
                                 </Select>
                               </div>
                             )}
+                          </div>
+
+                          {/* New required fields */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                              <Label htmlFor="area_responsable" className="text-base font-semibold">Área Responsable *</Label>
+                              <Select onValueChange={(value) => setValue("area_responsable", value)} {...register("area_responsable", { required: "El área responsable es requerida" })}>
+                                <SelectTrigger className="text-lg">
+                                  <SelectValue placeholder="Selecciona el área responsable" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-background border shadow-lg z-50">
+                                  <SelectItem value="enfermeria">Enfermería</SelectItem>
+                                  <SelectItem value="medicina_general">Medicina General</SelectItem>
+                                  <SelectItem value="medicina_especializada">Medicina Especializada</SelectItem>
+                                  <SelectItem value="cirugia">Cirugía</SelectItem>
+                                  <SelectItem value="urgencias">Urgencias</SelectItem>
+                                  <SelectItem value="hospitalizacion">Hospitalización</SelectItem>
+                                  <SelectItem value="cuidados_intensivos">Cuidados Intensivos</SelectItem>
+                                  <SelectItem value="laboratorio">Laboratorio Clínico</SelectItem>
+                                  <SelectItem value="radiologia">Radiología e Imágenes</SelectItem>
+                                  <SelectItem value="farmacia">Farmacia</SelectItem>
+                                  <SelectItem value="fisioterapia">Fisioterapia</SelectItem>
+                                  <SelectItem value="nutricion">Nutrición</SelectItem>
+                                  <SelectItem value="psicologia">Psicología</SelectItem>
+                                  <SelectItem value="trabajo_social">Trabajo Social</SelectItem>
+                                  <SelectItem value="servicios_generales">Servicios Generales</SelectItem>
+                                  <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
+                                  <SelectItem value="seguridad">Seguridad</SelectItem>
+                                  <SelectItem value="administracion">Administración</SelectItem>
+                                  <SelectItem value="recursos_humanos">Recursos Humanos</SelectItem>
+                                  <SelectItem value="sistemas">Sistemas</SelectItem>
+                                  <SelectItem value="juridica">Jurídica</SelectItem>
+                                  <SelectItem value="contabilidad">Contabilidad</SelectItem>
+                                  <SelectItem value="auditoria">Auditoría</SelectItem>
+                                  <SelectItem value="calidad">Calidad</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              {errors.area_responsable && (
+                                <p className="text-destructive text-sm">El área responsable es requerida</p>
+                              )}
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="supervisor_asignado" className="text-base font-semibold">Supervisor Responsable *</Label>
+                              <Input
+                                id="supervisor_asignado"
+                                {...register("supervisor_asignado", { required: "El supervisor responsable es requerido" })}
+                                placeholder="Nombre completo del supervisor"
+                                className="text-lg"
+                              />
+                              {errors.supervisor_asignado && (
+                                <p className="text-destructive text-sm">{errors.supervisor_asignado.message}</p>
+                              )}
+                            </div>
                           </div>
 
                           {watchedType && (

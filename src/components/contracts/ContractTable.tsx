@@ -35,6 +35,9 @@ interface Contract {
   client_name: string;
   contract_type: string;
   status: string;
+  estado?: string;
+  area_responsable?: string;
+  supervisor_asignado?: string;
   total_amount: number;
   start_date: string;
   end_date: string | null;
@@ -109,6 +112,7 @@ export function ContractTable({
               <TableHead>Número</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Tipo</TableHead>
+              <TableHead>Área</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>
                 <div className="flex items-center gap-1">
@@ -130,7 +134,7 @@ export function ContractTable({
             {filteredContracts.length === 0 ? (
               <TableRow>
                 <TableCell 
-                  colSpan={8} 
+                  colSpan={9} 
                   className="text-center py-8 text-muted-foreground"
                 >
                   No se encontraron contratos
@@ -149,7 +153,12 @@ export function ContractTable({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <ContractStatusBadge status={contract.status} />
+                    <span className="text-sm text-muted-foreground">
+                      {contract.area_responsable ? contract.area_responsable.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <ContractStatusBadge status={contract.estado || contract.status} />
                   </TableCell>
                   <TableCell className="font-mono">
                     {formatCurrency(contract.total_amount)}

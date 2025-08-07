@@ -9,6 +9,30 @@ interface ContractStatusBadgeProps {
 export function ContractStatusBadge({ status, className }: ContractStatusBadgeProps) {
   const getStatusConfig = (status: string) => {
     switch (status.toLowerCase()) {
+      case 'registrado':
+        return {
+          label: 'Registrado',
+          variant: 'secondary' as const,
+          className: 'bg-slate-500/20 text-slate-600 border-slate-500/30'
+        };
+      case 'devuelto':
+        return {
+          label: 'Devuelto',
+          variant: 'secondary' as const,
+          className: 'bg-destructive/10 text-destructive border-destructive/20'
+        };
+      case 'en_ejecucion':
+        return {
+          label: 'En Ejecución',
+          variant: 'secondary' as const,
+          className: 'bg-blue-500/20 text-blue-600 border-blue-500/30'
+        };
+      case 'completado':
+        return {
+          label: 'Completado',
+          variant: 'secondary' as const,
+          className: 'bg-success/20 text-success border-success/30'
+        };
       case 'active':
         return {
           label: 'Activo',
@@ -29,9 +53,9 @@ export function ContractStatusBadge({ status, className }: ContractStatusBadgePr
         };
       default:
         return {
-          label: 'Activo',
+          label: 'Registrado',
           variant: 'secondary' as const,
-          className: 'bg-success/20 text-success border-success/30'
+          className: 'bg-slate-500/20 text-slate-600 border-slate-500/30'
         };
     }
   };
