@@ -342,7 +342,7 @@ export default function CreateContract() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="description">Descripción del Contrato *</Label>
+                <Label htmlFor="description">Objeto del Contrato *</Label>
                 <Textarea
                   id="description"
                   placeholder="Describa el objeto del contrato, servicios a prestar, etc."
@@ -365,10 +365,20 @@ export default function CreateContract() {
                   </Label>
                   <Input
                     id="totalAmount"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
+                    type="text"
+                    placeholder="$0"
                     {...register("totalAmount")}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d]/g, '');
+                      const formatted = value ? `$${parseInt(value).toLocaleString('es-CO')}` : '';
+                      e.target.value = formatted;
+                      setValue("totalAmount", value);
+                    }}
+                    onBlur={(e) => {
+                      const value = e.target.value.replace(/[^\d]/g, '');
+                      const formatted = value ? `$${parseInt(value).toLocaleString('es-CO')}` : '';
+                      e.target.value = formatted;
+                    }}
                   />
                   {errors.totalAmount && (
                     <p className="text-sm text-destructive">
@@ -506,7 +516,7 @@ export default function CreateContract() {
                     <SelectContent className="bg-background border shadow-lg">
                       {supervisors.map((supervisor) => (
                         <SelectItem key={supervisor.id} value={supervisor.name}>
-                          {supervisor.name}
+                          {supervisor.roles?.name === 'supervisor' ? `Supervisor (${supervisor.name})` : supervisor.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
