@@ -61,6 +61,26 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				'state-registered': {
+					DEFAULT: 'hsl(var(--state-registered))',
+					foreground: 'hsl(var(--state-registered-foreground))'
+				},
+				'state-returned': {
+					DEFAULT: 'hsl(var(--state-returned))',
+					foreground: 'hsl(var(--state-returned-foreground))'
+				},
+				'state-executing': {
+					DEFAULT: 'hsl(var(--state-executing))',
+					foreground: 'hsl(var(--state-executing-foreground))'
+				},
+				'state-completed': {
+					DEFAULT: 'hsl(var(--state-completed))',
+					foreground: 'hsl(var(--state-completed-foreground))'
+				},
+				'state-cancelled': {
+					DEFAULT: 'hsl(var(--state-cancelled))',
+					foreground: 'hsl(var(--state-cancelled-foreground))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',

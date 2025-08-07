@@ -29,6 +29,18 @@
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
     
+    /* Contract specific state colors */
+    --state-registered: 210 15% 55%;
+    --state-registered-foreground: 0 0% 100%;
+    --state-returned: 0 75% 60%;
+    --state-returned-foreground: 0 0% 100%;
+    --state-executing: 145 60% 45%;
+    --state-executing-foreground: 0 0% 100%;
+    --state-completed: 210 90% 50%;
+    --state-completed-foreground: 0 0% 100%;
+    --state-cancelled: 0 65% 50%;
+    --state-cancelled-foreground: 0 0% 100%;
+    
     /* Neutral grays */
     --secondary: 210 15% 96%;
     --secondary-foreground: 215 25% 25%;
