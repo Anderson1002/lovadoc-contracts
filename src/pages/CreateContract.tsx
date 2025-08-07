@@ -42,7 +42,7 @@ const contractFormSchema = z.object({
   clientPhone: z.string().optional(),
   clientAddress: z.string().optional(),
   clientAccountNumber: z.string().optional(),
-  clientBankName: z.string().optional(),
+  clientBankName: z.string().min(1, "El banco es requerido"),
   description: z.string().min(1, "La descripción es requerida"),
   totalAmount: z.string().min(1, "El valor total es requerido"),
   hourlyRate: z.string().optional(),
@@ -52,6 +52,7 @@ const contractFormSchema = z.object({
   endDate: z.date().optional(),
   area_responsable: z.string().min(1, "El área responsable es requerida"),
   supervisor_asignado: z.string().min(1, "El supervisor asignado es requerido"),
+  bankCertification: z.any().optional(),
 });
 
 type ContractFormData = z.infer<typeof contractFormSchema>;
@@ -65,6 +66,21 @@ const areaOptions = [
   { value: "mantenimiento", label: "Mantenimiento" },
   { value: "seguridad", label: "Seguridad" },
   { value: "servicios_generales", label: "Servicios Generales" },
+];
+
+const bankOptions = [
+  { value: "bancolombia", label: "Bancolombia" },
+  { value: "banco_bogota", label: "Banco de Bogotá" },
+  { value: "banco_popular", label: "Banco Popular" },
+  { value: "bbva", label: "BBVA Colombia" },
+  { value: "davivienda", label: "Davivienda" },
+  { value: "banco_occidente", label: "Banco de Occidente" },
+  { value: "banco_caja_social", label: "Banco Caja Social" },
+  { value: "banco_av_villas", label: "Banco AV Villas" },
+  { value: "citibank", label: "Citibank" },
+  { value: "banco_agrario", label: "Banco Agrario" },
+  { value: "banco_santander", label: "Banco Santander" },
+  { value: "otro", label: "Otro" },
 ];
 
 export default function CreateContract() {
@@ -82,10 +98,16 @@ export default function CreateContract() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, roles!profiles_role_id_fkey(name)')
+        .select(`
+          id, 
+          name, 
+          email,
+          roles!inner(name, display_name)
+        `)
         .eq('roles.name', 'supervisor');
 
       if (error) throw error;
+      console.log('Supervisors loaded:', data);
       setSupervisors(data || []);
     } catch (error) {
       console.error('Error loading supervisors:', error);
@@ -321,13 +343,43 @@ export default function CreateContract() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="clientBankName">Banco</Label>
-                  <Input
-                    id="clientBankName"
-                    placeholder="Nombre del banco"
-                    {...register("clientBankName")}
-                  />
+                  <Label htmlFor="clientBankName">Banco *</Label>
+                  <Select
+                    value={watch("clientBankName")}
+                    onValueChange={(value) => setValue("clientBankName", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar banco" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg z-50">
+                      {bankOptions.map((bank) => (
+                        <SelectItem key={bank.value} value={bank.label}>
+                          {bank.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.clientBankName && (
+                    <p className="text-sm text-destructive">
+                      {errors.clientBankName.message}
+                    </p>
+                  )}
                 </div>
+              </div>
+
+              {/* Certificación Bancaria */}
+              <div className="space-y-2">
+                <Label htmlFor="bankCertification">Certificación Bancaria</Label>
+                <Input
+                  id="bankCertification"
+                  type="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                  {...register("bankCertification")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Formatos permitidos: PDF, Word, JPG, PNG (máx. 10MB)
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -526,10 +578,10 @@ export default function CreateContract() {
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar supervisor" />
                     </SelectTrigger>
-                    <SelectContent className="bg-background border shadow-lg">
+                    <SelectContent className="bg-background border shadow-lg z-50">
                       {supervisors.map((supervisor) => (
                         <SelectItem key={supervisor.id} value={supervisor.name}>
-                          {supervisor.roles?.name === 'supervisor' ? `Supervisor (${supervisor.name})` : supervisor.name}
+                          Supervisor ({supervisor.name})
                         </SelectItem>
                       ))}
                     </SelectContent>
