@@ -174,29 +174,53 @@ export function CreateBillingAccountDialog({
         }
 
         const startDateString = format(startDate, 'yyyy-MM-dd');
-        const { data: draftBilling, error: draftError } = await supabase
+        
+        // First check if a billing account already exists for this contract and month
+        const { data: existingBilling, error: searchError } = await supabase
           .from('billing_accounts')
-          .insert({
-            contract_id: selectedContract,
-            amount: parseFloat(amount),
-            billing_month: startDateString,
-            billing_start_date: startDateString,
-            billing_end_date: format(endDate, 'yyyy-MM-dd'),
-            created_by: userProfile.id,
-            status: 'draft',
-            account_number: ''
-          })
-          .select()
+          .select('*')
+          .eq('contract_id', selectedContract)
+          .eq('billing_month', startDateString)
+          .eq('created_by', userProfile.id)
           .single();
 
-        if (draftError) {
-          console.error('Error creating draft billing account:', draftError);
-          throw draftError;
+        if (searchError && searchError.code !== 'PGRST116') {
+          // PGRST116 is "no rows returned", which is expected if no billing account exists
+          console.error('Error searching for existing billing account:', searchError);
+          throw searchError;
         }
-        
-        billingAccountId = draftBilling.id;
-        setCurrentDraftId(draftBilling.id);
-        setBillingStatus('draft');
+
+        if (existingBilling) {
+          // Use existing billing account
+          billingAccountId = existingBilling.id;
+          setCurrentDraftId(existingBilling.id);
+          setBillingStatus(existingBilling.status as 'draft' | 'pending_review' | 'approved' | 'rejected' | 'paid');
+        } else {
+          // Create new billing account
+          const { data: draftBilling, error: draftError } = await supabase
+            .from('billing_accounts')
+            .insert({
+              contract_id: selectedContract,
+              amount: parseFloat(amount),
+              billing_month: startDateString,
+              billing_start_date: startDateString,
+              billing_end_date: format(endDate, 'yyyy-MM-dd'),
+              created_by: userProfile.id,
+              status: 'draft',
+              account_number: ''
+            })
+            .select()
+            .single();
+
+          if (draftError) {
+            console.error('Error creating draft billing account:', draftError);
+            throw draftError;
+          }
+          
+          billingAccountId = draftBilling.id;
+          setCurrentDraftId(draftBilling.id);
+          setBillingStatus('draft');
+        }
       }
 
       // Save activity to database
