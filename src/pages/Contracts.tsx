@@ -48,7 +48,7 @@ export default function Contracts() {
       active: statusCounts.active || 0,
       completed: statusCounts.completed || 0,
       cancelled: statusCounts.cancelled || 0,
-      registered: statusCounts.draft || 0,
+      registered: statusCounts.draft || statusCounts.registered || 0,
       returned: statusCounts.returned || 0
     });
   };

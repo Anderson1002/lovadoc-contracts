@@ -79,9 +79,13 @@ export function ContractTable({
 
   const getContractTypeLabel = (type: string) => {
     switch (type) {
+      case 'monto_fijo': return 'Monto Fijo';
+      case 'monto_variable': return 'Monto Variable';
+      case 'contrato_empresa': return 'Empresarial';
       case 'fixed_amount': return 'Monto Fijo';
       case 'variable_amount': return 'Monto Variable';
-      case 'company_contract': return 'Contrato Empresa';
+      case 'company_contract': return 'Empresarial';
+      case 'contrator': return 'Empresarial';
       default: return type;
     }
   };
