@@ -383,6 +383,7 @@ export type Database = {
           client_account_number: string | null
           client_address: string | null
           client_bank_name: string | null
+          client_document_number: string | null
           client_email: string | null
           client_name: string
           client_phone: string | null
@@ -408,6 +409,7 @@ export type Database = {
           client_account_number?: string | null
           client_address?: string | null
           client_bank_name?: string | null
+          client_document_number?: string | null
           client_email?: string | null
           client_name: string
           client_phone?: string | null
@@ -433,6 +435,7 @@ export type Database = {
           client_account_number?: string | null
           client_address?: string | null
           client_bank_name?: string | null
+          client_document_number?: string | null
           client_email?: string | null
           client_name?: string
           client_phone?: string | null

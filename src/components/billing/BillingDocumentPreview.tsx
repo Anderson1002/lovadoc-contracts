@@ -6,6 +6,7 @@ interface Contract {
   id: string;
   contract_number: string;
   client_name: string;
+  client_document_number?: string;
   client_email?: string;
   client_phone?: string;
   client_address?: string;
@@ -93,7 +94,7 @@ export function BillingDocumentPreview({
             <div>
               <p><strong>Ciudad y fecha:</strong> Facatativá, {format(new Date(), 'dd \'de\' MMMM \'de\' yyyy')}</p>
               <p><strong>Cliente:</strong> {selectedContract.client_name}</p>
-              <p><strong>NIT:</strong> {selectedContract.client_email || '[NIT del Cliente]'}</p>
+              <p><strong>NIT:</strong> {selectedContract.client_document_number || '[NIT del Cliente]'}</p>
               <p><strong>Dirección:</strong> {selectedContract.client_address || '[Dirección del Cliente]'}</p>
               <p><strong>Teléfono:</strong> {selectedContract.client_phone || '[Teléfono del Cliente]'}</p>
             </div>
