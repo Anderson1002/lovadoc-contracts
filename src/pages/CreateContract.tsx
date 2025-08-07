@@ -57,11 +57,15 @@ interface ContractFormData {
   client_name: string;
   client_email: string;
   client_phone: string;
+  client_address: string;
+  client_account_number: string;
+  client_bank_name: string;
   client_document_number: string;
   bank_certification: FileList | null;
   contract_type: string;
   contract_template: string;
   total_amount: string;
+  hourly_rate: string;
   start_date: Date | undefined;
   end_date: Date | undefined;
   contract_object: string;
@@ -543,8 +547,8 @@ export default function CreateContract() {
                               )}
                             </div>
 
-                            {/* Template Selection */}
-                            {watchedType && (
+                            {/* Template Selection - Only show for non-variable amount contracts */}
+                            {watchedType && watchedType !== "variable_amount" && (
                               <div className="space-y-2">
                                 <Label htmlFor="contract_template" className="text-base font-semibold">
                                   Plantilla de Contrato
@@ -674,6 +678,60 @@ export default function CreateContract() {
                             </div>
 
                             <div className="space-y-2 md:col-span-2">
+                              <Label htmlFor="client_address" className="text-base font-semibold">Dirección</Label>
+                              <Input
+                                id="client_address"
+                                {...register("client_address")}
+                                placeholder="Dirección completa del cliente"
+                                className="text-lg"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="client_account_number" className="text-base font-semibold">Número de Cuenta</Label>
+                              <Input
+                                id="client_account_number"
+                                {...register("client_account_number")}
+                                placeholder="1234567890"
+                                className="text-lg"
+                                onInput={(e) => {
+                                  const target = e.target as HTMLInputElement;
+                                  target.value = target.value.replace(/[^0-9]/g, '');
+                                }}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="client_bank_name" className="text-base font-semibold">Banco</Label>
+                              <Select onValueChange={(value) => setValue("client_bank_name", value)}>
+                                <SelectTrigger className="text-lg">
+                                  <SelectValue placeholder="Selecciona el banco" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-background border shadow-lg z-50">
+                                  <SelectItem value="bancolombia">Bancolombia</SelectItem>
+                                  <SelectItem value="banco_de_bogota">Banco de Bogotá</SelectItem>
+                                  <SelectItem value="bbva">BBVA</SelectItem>
+                                  <SelectItem value="davivienda">Davivienda</SelectItem>
+                                  <SelectItem value="banco_popular">Banco Popular</SelectItem>
+                                  <SelectItem value="colpatria">Scotiabank Colpatria</SelectItem>
+                                  <SelectItem value="av_villas">AV Villas</SelectItem>
+                                  <SelectItem value="banco_caja_social">Banco Caja Social</SelectItem>
+                                  <SelectItem value="banco_falabella">Banco Falabella</SelectItem>
+                                  <SelectItem value="banco_pichincha">Banco Pichincha</SelectItem>
+                                  <SelectItem value="citibank">Citibank</SelectItem>
+                                  <SelectItem value="banco_gnb_sudameris">Banco GNB Sudameris</SelectItem>
+                                  <SelectItem value="banco_santander">Banco Santander</SelectItem>
+                                  <SelectItem value="banco_itau">Banco Itaú</SelectItem>
+                                  <SelectItem value="bancamia">Bancamía</SelectItem>
+                                  <SelectItem value="cooperativa_financiera">Cooperativa Financiera</SelectItem>
+                                  <SelectItem value="nequi">Nequi</SelectItem>
+                                  <SelectItem value="daviplata">DaviPlata</SelectItem>
+                                  <SelectItem value="otros">Otros</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2 md:col-span-2">
                               <Label htmlFor="bank_certification" className="text-base font-semibold flex items-center gap-2">
                                 Certificación Bancaria *
                                 <Tooltip>
@@ -728,22 +786,43 @@ export default function CreateContract() {
                       <CollapsibleContent>
                         <CardContent className="space-y-6">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="space-y-2">
-                              <Label htmlFor="total_amount" className="text-base font-semibold">Valor Total *</Label>
-                              <Input
-                                id="total_amount"
-                                {...register("total_amount", { required: "El valor total es requerido" })}
-                                placeholder="$0"
-                                className="text-lg"
-                                onChange={(e) => {
-                                  const formatted = formatAmountInput(e.target.value);
-                                  setValue("total_amount", formatted);
-                                }}
-                              />
-                              {errors.total_amount && (
-                                <p className="text-destructive text-sm">{errors.total_amount.message}</p>
-                              )}
-                            </div>
+                            {watchedType === "variable_amount" ? (
+                              <div className="space-y-2">
+                                <Label htmlFor="hourly_rate" className="text-base font-semibold">Valor por Hora *</Label>
+                                <Input
+                                  id="hourly_rate"
+                                  {...register("hourly_rate", { required: "El valor por hora es requerido" })}
+                                  placeholder="$0"
+                                  className="text-lg"
+                                  onChange={(e) => {
+                                    const formatted = formatAmountInput(e.target.value);
+                                    setValue("hourly_rate", formatted);
+                                    // Also set total_amount to the hourly rate for now
+                                    setValue("total_amount", formatted);
+                                  }}
+                                />
+                                {errors.hourly_rate && (
+                                  <p className="text-destructive text-sm">{errors.hourly_rate.message}</p>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <Label htmlFor="total_amount" className="text-base font-semibold">Valor Total *</Label>
+                                <Input
+                                  id="total_amount"
+                                  {...register("total_amount", { required: "El valor total es requerido" })}
+                                  placeholder="$0"
+                                  className="text-lg"
+                                  onChange={(e) => {
+                                    const formatted = formatAmountInput(e.target.value);
+                                    setValue("total_amount", formatted);
+                                  }}
+                                />
+                                {errors.total_amount && (
+                                  <p className="text-destructive text-sm">{errors.total_amount.message}</p>
+                                )}
+                              </div>
+                            )}
 
                             <div className="space-y-2">
                               <Label htmlFor="start_date" className="text-base font-semibold">Fecha de Inicio *</Label>
@@ -824,21 +903,30 @@ export default function CreateContract() {
 
                           <div className="space-y-2">
                             <Label htmlFor="contract_object" className="text-base font-semibold flex items-center gap-2">
-                              Objeto del Contrato *
+                              {watchedType === "variable_amount" ? "Detalles del Contrato (Incluir valor por hora) *" : "Objeto del Contrato *"}
                               <Tooltip>
                                 <TooltipTrigger>
                                   <Info className="w-4 h-4 text-muted-foreground" />
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>Descripción detallada del objeto y alcance del contrato</p>
+                                  <p>
+                                    {watchedType === "variable_amount" 
+                                      ? "Descripción del trabajo y valor por hora. Este valor se usará para calcular las cuentas de cobro por horas trabajadas."
+                                      : "Descripción detallada del objeto y alcance del contrato"
+                                    }
+                                  </p>
                                 </TooltipContent>
                               </Tooltip>
                             </Label>
                             <Textarea
                               id="contract_object"
-                              {...register("contract_object", { required: "El objeto del contrato es requerido" })}
-                              placeholder="Descripción detallada del objeto del contrato y alcance del trabajo a realizar..."
-                              rows={4}
+                              {...register("contract_object", { required: "Los detalles del contrato son requeridos" })}
+                              placeholder={
+                                watchedType === "variable_amount" 
+                                  ? "Descripción del trabajo a realizar por horas. Incluir detalles sobre el valor por hora y las actividades a desarrollar..."
+                                  : "Descripción detallada del objeto del contrato y alcance del trabajo a realizar..."
+                              }
+                              rows={6}
                               className="text-lg resize-none"
                             />
                             {errors.contract_object && (
