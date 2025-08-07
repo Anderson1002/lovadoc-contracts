@@ -27,6 +27,16 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
     try {
       setLoading(true);
       
+      console.log('Loading billing accounts with userProfile:', userProfile);
+      console.log('Filter type:', filterType);
+      console.log('User role:', userRole);
+      
+      if (!userProfile?.id) {
+        console.log('No userProfile id found, skipping load');
+        setBillingAccounts([]);
+        return;
+      }
+      
       let query = supabase
         .from('billing_accounts')
         .select(`
@@ -37,14 +47,17 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
 
       // Apply filters based on type and user role
       if (filterType === 'own') {
-        query = query.eq('created_by', userProfile?.id);
+        console.log('Filtering by created_by:', userProfile.id);
+        query = query.eq('created_by', userProfile.id);
       } else if (filterType === 'all' && !['super_admin', 'admin', 'supervisor'].includes(userRole)) {
         // If user is not admin/supervisor, only show their own accounts even in "all" view
-        query = query.eq('created_by', userProfile?.id);
+        console.log('Non-admin filtering by created_by:', userProfile.id);
+        query = query.eq('created_by', userProfile.id);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
 
+      console.log('Query result:', { data, error });
       if (error) throw error;
       setBillingAccounts(data || []);
     } catch (error: any) {
@@ -61,6 +74,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
 
   const getBillingStatusLabel = (status: string) => {
     switch (status) {
+      case 'draft': return 'Borrador';
       case 'pending_review': return 'Pendiente Revisión';
       case 'approved': return 'Aprobado';
       case 'rejected': return 'Rechazado';
@@ -71,6 +85,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
 
   const getBillingStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
+      case 'draft': return 'outline';
       case 'pending_review': return 'outline';
       case 'approved': return 'default';
       case 'rejected': return 'destructive';
