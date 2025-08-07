@@ -83,9 +83,10 @@ export default function Dashboard() {
 
       if (paymentsError) throw paymentsError;
 
-      // Calculate stats
+      // Calculate stats usando el campo status existente
       const totalContracts = contracts?.length || 0;
-      const activeContracts = contracts?.filter(c => c.status === 'active' || c.status === 'draft').length || 0;
+      const activeContracts = contracts?.filter(c => c.status === 'active').length || 0;
+      const pendingReview = contracts?.filter(c => c.status === 'draft').length || 0;
       const completedContracts = contracts?.filter(c => c.status === 'completed').length || 0;
       const cancelledContracts = contracts?.filter(c => c.status === 'cancelled').length || 0;
       const totalAmount = contracts?.reduce((sum, c) => sum + Number(c.total_amount), 0) || 0;
@@ -94,7 +95,7 @@ export default function Dashboard() {
       setStats({
         totalContracts,
         activeContracts,
-        pendingReview: completedContracts,
+        pendingReview,
         cancelledContracts,
         totalAmount,
         completedPayments
@@ -103,17 +104,18 @@ export default function Dashboard() {
       // Recent contracts (last 5)
       setRecentContracts(contracts?.slice(0, 5) || []);
 
-      // Chart data
+      // Chart data usando el campo status existente
       const statusCounts = contracts?.reduce((acc: any, contract: any) => {
         acc[contract.status] = (acc[contract.status] || 0) + 1;
         return acc;
       }, {}) || {};
 
       const chartDataFormatted = [
-        { name: 'Activos', value: (statusCounts.draft || 0) + (statusCounts.active || 0), color: '#3b82f6' },
+        { name: 'Borradores', value: statusCounts.draft || 0, color: '#6b7280' },
+        { name: 'Activos', value: statusCounts.active || 0, color: '#3b82f6' },
         { name: 'Completados', value: statusCounts.completed || 0, color: '#10b981' },
-        { name: 'Cancelados', value: statusCounts.cancelled || 0, color: '#f59e0b' }
-      ]; // Mostrar todas las categorías siempre
+        { name: 'Cancelados', value: statusCounts.cancelled || 0, color: '#ef4444' }
+      ].filter(item => item.value > 0); // Solo mostrar categorías con datos
 
       setChartData(chartDataFormatted);
 
@@ -192,7 +194,7 @@ export default function Dashboard() {
         <StatsCard
           title="Contratos Activos"
           value={stats.activeContracts}
-          description={`${stats.pendingReview} completados, ${stats.cancelledContracts} cancelados`}
+          description={`${stats.pendingReview} pendientes, ${stats.cancelledContracts} cancelados`}
           icon={CheckCircle}
           trend={{ value: 8, isPositive: true }}
         />

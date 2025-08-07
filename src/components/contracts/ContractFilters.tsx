@@ -62,14 +62,15 @@ const contractTypes = [
   { value: "all", label: "Todos los tipos", icon: FileText },
   { value: "fixed_amount", label: "Monto Fijo", icon: DollarSign },
   { value: "variable_amount", label: "Monto Variable", icon: DollarSign },
-  { value: "contractor", label: "Contrato Empresa", icon: Building2 }
+  { value: "company_contract", label: "Contrato Empresa", icon: Building2 }
 ];
 
 const contractStatuses = [
   { value: "all", label: "Todos los estados", icon: Clock },
-  { value: "active", label: "Activo", icon: CheckCircle2 },
-  { value: "completed", label: "Completado", icon: CheckCircle2 },
-  { value: "cancelled", label: "Cancelado", icon: XCircle }
+  { value: "registrado", label: "Registrado", icon: Clock },
+  { value: "en_ejecucion", label: "En Ejecución", icon: CheckCircle2 },
+  { value: "completado", label: "Completado", icon: CheckCircle2 },
+  { value: "cancelado", label: "Cancelado", icon: XCircle }
 ];
 
 export function ContractFilters({ 

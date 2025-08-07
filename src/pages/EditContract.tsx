@@ -28,7 +28,9 @@ export default function EditContract() {
     total_amount: '',
     start_date: '',
     end_date: '',
-    description: ''
+    description: '',
+    area_responsable: '',
+    supervisor_asignado: ''
   });
 
   useEffect(() => {
@@ -68,7 +70,9 @@ export default function EditContract() {
         total_amount: data.total_amount?.toString() || '',
         start_date: data.start_date || '',
         end_date: data.end_date || '',
-        description: data.description || ''
+        description: data.description || '',
+        area_responsable: (data as any).area_responsable || '',
+        supervisor_asignado: (data as any).supervisor_asignado || ''
       });
     } catch (error: any) {
       console.error('Error loading contract:', error);

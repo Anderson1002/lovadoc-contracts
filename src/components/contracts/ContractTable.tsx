@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ContractStatusBadge } from "./ContractStatusBadge";
+import { ContractStateActions } from "./ContractStateActions";
 import { formatCurrency } from "@/lib/utils";
 
 interface Contract {
@@ -49,13 +50,15 @@ interface ContractTableProps {
   userRole: string;
   onEdit?: (contract: Contract) => void;
   onView?: (contract: Contract) => void;
+  onRefresh?: () => void;
 }
 
 export function ContractTable({ 
   contracts, 
   userRole, 
   onEdit, 
-  onView 
+  onView,
+  onRefresh 
 }: ContractTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -158,7 +161,14 @@ export function ContractTable({
                     </span>
                   </TableCell>
                   <TableCell>
-                    <ContractStatusBadge status={contract.estado || contract.status} />
+                    <div className="flex items-center gap-2">
+                      <ContractStatusBadge status={contract.status} />
+                      <ContractStateActions 
+                        contract={contract}
+                        userRole={userRole}
+                        onStateChange={onRefresh}
+                      />
+                    </div>
                   </TableCell>
                   <TableCell className="font-mono">
                     {formatCurrency(contract.total_amount)}

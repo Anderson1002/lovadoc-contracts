@@ -132,6 +132,7 @@ export default function Contracts() {
           userRole={userRole}
           onView={handleView}
           onEdit={handleEdit}
+          onRefresh={() => loadContracts(user?.id || '')}
         />
 
         {/* Contract Status Information */}

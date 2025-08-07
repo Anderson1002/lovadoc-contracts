@@ -140,14 +140,16 @@ export default function ContractQuery() {
     }
 
     if (filters.status && filters.status !== "all") {
-      // Cuando se filtra por "active", incluir tanto "active" como "draft"
-      if (filters.status === "active") {
-        filtered = filtered.filter(contract => 
-          contract.status === "active" || contract.status === "draft"
-        );
-      } else {
-        filtered = filtered.filter(contract => contract.status === filters.status);
-      }
+      // Mapear los nuevos valores de estado a los existentes
+      const statusMapping: { [key: string]: string } = {
+        'registrado': 'draft',
+        'en_ejecucion': 'active',
+        'completado': 'completed',
+        'cancelado': 'cancelled'
+      };
+      
+      const mappedStatus = statusMapping[filters.status] || filters.status;
+      filtered = filtered.filter(contract => contract.status === mappedStatus);
     }
 
     if (filters.clientName) {
