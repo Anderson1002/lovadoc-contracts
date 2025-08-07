@@ -13,7 +13,8 @@ import {
   BarChart3,
   Building2,
   Settings,
-  ChevronDown
+  ChevronDown,
+  Receipt
 } from "lucide-react";
 import {
   NavigationMenu,
@@ -87,6 +88,18 @@ export function ProfessionalNav({ userRole, userEmail, onLogout }: ProfessionalN
           icon: Search,
           url: "/contracts/query",
           description: "Búsqueda avanzada de contratos"
+        }
+      ]
+    },
+    {
+      label: "Cuentas de Cobro",
+      icon: Receipt,
+      items: [
+        {
+          label: "Gestionar Cuentas",
+          icon: Receipt,
+          url: "/billing",
+          description: "Gestión de cuentas de cobro y revisiones"
         }
       ]
     },
