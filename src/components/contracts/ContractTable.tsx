@@ -152,7 +152,7 @@ export function ContractTable({
                     <ContractStatusBadge status={contract.status} />
                   </TableCell>
                   <TableCell className="font-mono">
-                    {formatCurrency(contract.total_amount * 1000000)}
+                    {formatCurrency(contract.total_amount)}
                   </TableCell>
                   <TableCell>{formatDate(contract.start_date)}</TableCell>
                   <TableCell>

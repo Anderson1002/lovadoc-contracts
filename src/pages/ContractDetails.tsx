@@ -200,7 +200,7 @@ export default function ContractDetails() {
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Valor Total</label>
                 <p className="text-2xl font-bold font-mono text-green-600">
-                  {formatCurrency(contract.total_amount * 1000000)}
+                  {formatCurrency(contract.total_amount)}
                 </p>
               </div>
             </CardContent>
