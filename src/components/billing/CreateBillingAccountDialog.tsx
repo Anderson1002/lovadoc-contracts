@@ -152,7 +152,9 @@ export function CreateBillingAccountDialog({
 
     try {
       // Create draft billing account if it doesn't exist
-      if (!currentDraftId) {
+      let billingAccountId = currentDraftId;
+      
+      if (!billingAccountId) {
         if (!selectedContract || !amount || !startDate || !endDate) {
           toast({
             title: "Error",
@@ -178,13 +180,17 @@ export function CreateBillingAccountDialog({
           .select()
           .single();
 
-        if (draftError) throw draftError;
+        if (draftError) {
+          console.error('Error creating draft billing account:', draftError);
+          throw draftError;
+        }
+        
+        billingAccountId = draftBilling.id;
         setCurrentDraftId(draftBilling.id);
         setBillingStatus('draft');
       }
 
       // Save activity to database
-      const billingAccountId = currentDraftId || 'temp';
       const { data: savedActivity, error: activityError } = await supabase
         .from('billing_activities')
         .insert({
@@ -197,13 +203,16 @@ export function CreateBillingAccountDialog({
         .select()
         .single();
 
-      if (activityError) throw activityError;
+      if (activityError) {
+        console.error('Error saving activity:', activityError);
+        throw activityError;
+      }
 
       // Upload evidence files if any
       if (currentActivity.evidences.length > 0) {
         const evidencePromises = currentActivity.evidences.map(async (file) => {
           const fileExt = file.name.split('.').pop();
-          const fileName = `${userProfile.user_id}/${currentDraftId}/evidence_${savedActivity.id}_${Date.now()}.${fileExt}`;
+          const fileName = `${userProfile.user_id}/${billingAccountId}/evidence_${savedActivity.id}_${Date.now()}.${fileExt}`;
           
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('billing-documents')
