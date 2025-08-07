@@ -136,7 +136,7 @@ export function CreateBillingAccountDialog({
 
     setUploads(prev => ({
       ...prev,
-      [type]: { ...prev[type], file, uploaded: false }
+      [type]: { ...prev[type], file, uploaded: true }
     }));
   };
 
