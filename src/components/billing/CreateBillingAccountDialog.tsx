@@ -25,7 +25,7 @@ interface CreateBillingAccountDialogProps {
 }
 
 interface FileUpload {
-  type: 'billing_invoice' | 'social_security';
+  type: 'social_security';
   file: File | null;
   uploaded: boolean;
   uploading: boolean;
@@ -53,16 +53,26 @@ export function CreateBillingAccountDialog({
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [currentActivity, setCurrentActivity] = useState<Activity>({
+    id: crypto.randomUUID(),
+    activityName: '',
+    actions: '',
+    evidences: [],
+    status: 'draft'
+  });
+  const [showCurrentActivity, setShowCurrentActivity] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [contractsLoading, setContractsLoading] = useState(true);
-  const [draftSaving, setDraftSaving] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [billingStatus, setBillingStatus] = useState<'draft' | 'pending_review' | 'approved' | 'rejected' | 'paid'>('draft');
   
-  const [files, setFiles] = useState<Record<string, FileUpload>>({
-    billing_invoice: { type: 'billing_invoice', file: null, uploaded: false, uploading: false },
-    social_security: { type: 'social_security', file: null, uploaded: false, uploading: false }
+  const [uploads, setUploads] = useState<Record<string, Omit<FileUpload, 'type'>>>({
+    social_security: { file: null, uploaded: false, uploading: false }
   });
+  
+  const canSubmitForReview = selectedContract && amount && startDate && endDate && 
+                            activities.filter(a => a.status === 'saved').length > 0 && 
+                            uploads.social_security.uploaded;
 
   useEffect(() => {
     if (open) {
@@ -79,7 +89,6 @@ export function CreateBillingAccountDialog({
         .select('*')
         .in('status', ['active']);
 
-      // If user is not admin/supervisor, only show their own contracts
       if (!['super_admin', 'admin', 'supervisor'].includes(userProfile?.roles?.name)) {
         query = query.eq('created_by', userProfile?.id);
       }
@@ -106,111 +115,33 @@ export function CreateBillingAccountDialog({
     setStartDate(undefined);
     setEndDate(undefined);
     setActivities([]);
+    setCurrentActivity({
+      id: crypto.randomUUID(),
+      activityName: '',
+      actions: '',
+      evidences: [],
+      status: 'draft'
+    });
+    setShowCurrentActivity(false);
     setCurrentDraftId(null);
     setBillingStatus('draft');
-    setFiles({
-      billing_invoice: { type: 'billing_invoice', file: null, uploaded: false, uploading: false },
-      social_security: { type: 'social_security', file: null, uploaded: false, uploading: false }
+    setUploads({
+      social_security: { file: null, uploaded: false, uploading: false }
     });
   };
 
-  const handleFileChange = (type: keyof typeof files, file: File | null) => {
-    setFiles(prev => ({
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploads(prev => ({
       ...prev,
       [type]: { ...prev[type], file, uploaded: false }
     }));
   };
 
-  const validateForm = () => {
-    if (!selectedContract) {
-      toast({
-        title: "Error",
-        description: "Debe seleccionar un contrato",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (!amount || parseFloat(amount) <= 0) {
-      toast({
-        title: "Error",
-        description: "Debe ingresar un valor válido",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (!startDate || !endDate) {
-      toast({
-        title: "Error",
-        description: "Debe seleccionar el período de facturación (fecha inicio y fin)",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (activities.length === 0) {
-      toast({
-        title: "Error",
-        description: "Debe agregar al menos una actividad",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    // Validate each activity
-    for (const activity of activities) {
-      if (!activity.activityName.trim() || !activity.actions.trim()) {
-        toast({
-          title: "Error",
-          description: "Todas las actividades deben tener nombre y acciones completadas",
-          variant: "destructive"
-        });
-        return false;
-      }
-    }
-
-    // Validate required files (only social security is required now)
-    const requiredFiles = ['social_security'];
-    for (const fileType of requiredFiles) {
-      if (!files[fileType].file) {
-        toast({
-          title: "Error",
-          description: `Debe subir el archivo: ${getFileTypeLabel(fileType)}`,
-          variant: "destructive"
-        });
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-  const uploadFile = async (fileUpload: FileUpload, billingAccountId: string) => {
-    if (!fileUpload.file) return null;
-
-    const fileExt = fileUpload.file.name.split('.').pop();
-    const fileName = `${userProfile.user_id}/${billingAccountId}/${fileUpload.type}.${fileExt}`;
-
-    const { data, error } = await supabase.storage
-      .from('billing-documents')
-      .upload(fileName, fileUpload.file);
-
-    if (error) throw error;
-
-    return {
-      file_name: fileUpload.file.name,
-      file_path: data.path,
-      file_size: fileUpload.file.size,
-      mime_type: fileUpload.file.type
-    };
-  };
-
-  const saveActivityIndividually = async (activityId: string) => {
-    const activity = activities.find(a => a.id === activityId);
-    if (!activity) return;
-
-    if (!activity.activityName.trim() || !activity.actions.trim()) {
+  const saveActivityIndividually = async () => {
+    if (!currentActivity.activityName.trim() || !currentActivity.actions.trim()) {
       toast({
         title: "Error", 
         description: "Complete el nombre de la actividad y las acciones desarrolladas",
@@ -257,9 +188,9 @@ export function CreateBillingAccountDialog({
         .from('billing_activities')
         .insert({
           billing_account_id: currentDraftId,
-          activity_name: activity.activityName,
-          actions_developed: activity.actions,
-          activity_order: activities.indexOf(activity) + 1,
+          activity_name: currentActivity.activityName,
+          actions_developed: currentActivity.actions,
+          activity_order: activities.length + 1,
           status: 'saved'
         })
         .select()
@@ -268,8 +199,8 @@ export function CreateBillingAccountDialog({
       if (activityError) throw activityError;
 
       // Upload evidence files if any
-      if (activity.evidences.length > 0) {
-        const evidencePromises = activity.evidences.map(async (file) => {
+      if (currentActivity.evidences.length > 0) {
+        const evidencePromises = currentActivity.evidences.map(async (file) => {
           const fileExt = file.name.split('.').pop();
           const fileName = `${userProfile.user_id}/${currentDraftId}/evidence_${savedActivity.id}_${Date.now()}.${fileExt}`;
           
@@ -295,16 +226,26 @@ export function CreateBillingAccountDialog({
         await Promise.all(evidencePromises);
       }
       
-      // Update local activity state
-      setActivities(prev => prev.map(a => 
-        a.id === activityId 
-          ? { ...a, status: 'saved', dbId: savedActivity.id }
-          : a
-      ));
+      // Add activity to local state and reset current activity
+      const newSavedActivity = {
+        ...currentActivity,
+        status: 'saved' as const,
+        dbId: savedActivity.id
+      };
+      
+      setActivities(prev => [...prev, newSavedActivity]);
+      setCurrentActivity({
+        id: crypto.randomUUID(),
+        activityName: '',
+        actions: '',
+        evidences: [],
+        status: 'draft'
+      });
+      setShowCurrentActivity(false);
       
       toast({
         title: "Actividad Registrada",
-        description: `Actividad "${activity.activityName}" ha sido registrada exitosamente`,
+        description: `Actividad "${newSavedActivity.activityName}" ha sido registrada exitosamente`,
       });
     } catch (error: any) {
       console.error('Error saving activity:', error);
@@ -327,27 +268,15 @@ export function CreateBillingAccountDialog({
     }
 
     try {
-      setDraftSaving(true);
-
-      // Check if draft already exists
-      const startDateString = format(startDate, 'yyyy-MM-dd');
-      const { data: existingDraft } = await supabase
-        .from('billing_accounts')
-        .select('id')
-        .eq('contract_id', selectedContract)
-        .eq('billing_month', startDateString)
-        .eq('status', 'draft')
-        .maybeSingle();
-
-      if (existingDraft) {
+      if (currentDraftId) {
         toast({
           title: "Información",
-          description: "Ya existe un borrador para este período. Continúe editando.",
+          description: "El borrador ya ha sido guardado. Continúe editando.",
         });
         return;
       }
 
-      // Create billing account as draft
+      const startDateString = format(startDate, 'yyyy-MM-dd');
       const { data: draftBilling, error: draftError } = await supabase
         .from('billing_accounts')
         .insert({
@@ -358,7 +287,7 @@ export function CreateBillingAccountDialog({
           billing_end_date: format(endDate, 'yyyy-MM-dd'),
           created_by: userProfile.id,
           status: 'draft',
-          account_number: '' // Will be auto-generated by trigger
+          account_number: ''
         })
         .select()
         .single();
@@ -379,55 +308,41 @@ export function CreateBillingAccountDialog({
         description: "No se pudo guardar el borrador",
         variant: "destructive"
       });
-    } finally {
-      setDraftSaving(false);
     }
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    if (!selectedContract || !amount || !startDate || !endDate || 
+        activities.filter(a => a.status === 'saved').length === 0 || 
+        !uploads.social_security.file) {
+      toast({
+        title: "Error",
+        description: "Complete todos los campos requeridos y registre al menos una actividad",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
-      setLoading(true);
+      setIsSubmitting(true);
 
-      // Check if billing account for this period already exists
-      const startDateString = format(startDate!, 'yyyy-MM-dd');
-      const endDateString = format(endDate!, 'yyyy-MM-dd');
-      const { data: existingBilling } = await supabase
-        .from('billing_accounts')
-        .select('id')
-        .eq('contract_id', selectedContract)
-        .eq('billing_month', startDateString)
-        .neq('status', 'draft')
-        .maybeSingle();
-
-      if (existingBilling) {
-        toast({
-          title: "Error",
-          description: "Ya existe una cuenta de cobro para este contrato en el período seleccionado",
-          variant: "destructive"
-        });
-        return;
-      }
+      let billingAccountId = currentDraftId;
 
       // Update existing draft or create new billing account
-      let billingAccount;
       if (currentDraftId) {
-        const { data: updatedBilling, error: updateError } = await supabase
+        const { error: updateError } = await supabase
           .from('billing_accounts')
           .update({
             amount: parseFloat(amount),
-            billing_start_date: startDateString,
-            billing_end_date: format(endDate!, 'yyyy-MM-dd'),
+            billing_start_date: format(startDate, 'yyyy-MM-dd'),
+            billing_end_date: format(endDate, 'yyyy-MM-dd'),
             status: 'pending_review'
           })
-          .eq('id', currentDraftId)
-          .select()
-          .single();
+          .eq('id', currentDraftId);
         
         if (updateError) throw updateError;
-        billingAccount = updatedBilling;
       } else {
+        const startDateString = format(startDate, 'yyyy-MM-dd');
         const { data: newBilling, error: billingError } = await supabase
           .from('billing_accounts')
           .insert({
@@ -435,181 +350,76 @@ export function CreateBillingAccountDialog({
             amount: parseFloat(amount),
             billing_month: startDateString,
             billing_start_date: startDateString,
-            billing_end_date: format(endDate!, 'yyyy-MM-dd'),
+            billing_end_date: format(endDate, 'yyyy-MM-dd'),
             created_by: userProfile.id,
             status: 'pending_review',
-            account_number: '' // Will be auto-generated by trigger
+            account_number: ''
           })
           .select()
           .single();
         
         if (billingError) throw billingError;
-        billingAccount = newBilling;
+        billingAccountId = newBilling.id;
       }
 
-      // Upload files and save activity report
-      const uploadPromises = [
-        // Upload files
-        ...Object.entries(files).map(async ([type, fileUpload]) => {
-          if (!fileUpload.file) return;
+      // Upload social security document
+      if (uploads.social_security.file) {
+        const fileExt = uploads.social_security.file.name.split('.').pop();
+        const fileName = `${userProfile.user_id}/${billingAccountId}/social_security.${fileExt}`;
 
-          setFiles(prev => ({
-            ...prev,
-            [type]: { ...prev[type], uploading: true }
-          }));
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('billing-documents')
+          .upload(fileName, uploads.social_security.file);
 
-          try {
-            const fileData = await uploadFile(fileUpload, billingAccount.id);
-            
-            if (fileData) {
-              await supabase
-                .from('billing_documents')
-                .insert({
-                  billing_account_id: billingAccount.id,
-                  document_type: type,
-                  uploaded_by: userProfile.id,
-                  ...fileData
-                });
-            }
+        if (uploadError) throw uploadError;
 
-            setFiles(prev => ({
-              ...prev,
-              [type]: { ...prev[type], uploading: false, uploaded: true }
-            }));
-          } catch (error) {
-            setFiles(prev => ({
-              ...prev,
-              [type]: { ...prev[type], uploading: false }
-            }));
-            throw error;
-          }
-        }),
-        // Save activity report as document with period info
-        (async () => {
-          const reportContent = `Período: ${format(startDate!, 'dd/MM/yyyy')} - ${format(endDate!, 'dd/MM/yyyy')}\n\n`;
-          let activityContent = '';
-          
-          activities.forEach((activity, index) => {
-            activityContent += `${index + 1}. ACTIVIDAD: ${activity.activityName}\n`;
-            activityContent += `   ACCIONES: ${activity.actions}\n`;
-            if (activity.evidences.length > 0) {
-              activityContent += `   EVIDENCIAS: ${activity.evidences.map(f => f.name).join(', ')}\n`;
-            }
-            activityContent += '\n';
+        await supabase
+          .from('billing_documents')
+          .insert({
+            billing_account_id: billingAccountId,
+            document_type: 'social_security',
+            uploaded_by: userProfile.id,
+            file_name: uploads.social_security.file.name,
+            file_path: uploadData.path,
+            file_size: uploads.social_security.file.size,
+            mime_type: uploads.social_security.file.type
           });
-          
-          const reportBlob = new Blob([reportContent + activityContent], { type: 'text/plain' });
-          const fileName = `${userProfile.user_id}/${billingAccount.id}/activity_report.txt`;
-          
-          const { data, error } = await supabase.storage
-            .from('billing-documents')
-            .upload(fileName, reportBlob);
-
-          if (error) throw error;
-
-          await supabase
-            .from('billing_documents')
-            .insert({
-              billing_account_id: billingAccount.id,
-              document_type: 'activity_report',
-              uploaded_by: userProfile.id,
-              file_name: 'Informe de Actividades.txt',
-              file_path: data.path,
-              file_size: reportBlob.size,
-              mime_type: 'text/plain'
-            });
-        })(),
-        // Upload activity evidence files
-        ...activities.flatMap((activity, actIndex) => 
-          activity.evidences.map(async (file) => {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${userProfile.user_id}/${billingAccount.id}/evidence_${actIndex + 1}_${Date.now()}.${fileExt}`;
-            
-            const { data, error } = await supabase.storage
-              .from('billing-documents')
-              .upload(fileName, file);
-
-            if (error) throw error;
-
-            await supabase
-              .from('billing_documents')
-              .insert({
-                billing_account_id: billingAccount.id,
-                document_type: 'activity_evidence',
-                uploaded_by: userProfile.id,
-                file_name: file.name,
-                file_path: data.path,
-                file_size: file.size,
-                mime_type: file.type
-              });
-          })
-        )
-      ];
-
-      await Promise.all(uploadPromises);
+      }
 
       toast({
         title: "Éxito",
-        description: "Cuenta de cobro creada exitosamente y enviada para revisión",
+        description: "Cuenta de cobro enviada para revisión exitosamente",
       });
 
       onSuccess();
+      onOpenChange(false);
     } catch (error: any) {
-      console.error('Error creating billing account:', error);
+      console.error('Error submitting billing account:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear la cuenta de cobro",
+        description: "No se pudo enviar la cuenta de cobro",
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const addActivity = () => {
-    const newActivity: Activity = {
-      id: crypto.randomUUID(),
-      activityName: '',
-      actions: '',
-      evidences: [],
-      status: 'draft'
-    };
-    setActivities(prev => [...prev, newActivity]);
+    setShowCurrentActivity(true);
   };
 
   const removeActivity = (id: string) => {
     setActivities(prev => prev.filter(activity => activity.id !== id));
   };
 
-  const updateActivity = (id: string, field: keyof Activity, value: any) => {
-    setActivities(prev => prev.map(activity => 
-      activity.id === id ? { ...activity, [field]: value } : activity
-    ));
-  };
-
-  const addEvidenceFile = (activityId: string, files: FileList | null) => {
-    if (!files) return;
-    const fileArray = Array.from(files);
-    setActivities(prev => prev.map(activity => 
-      activity.id === activityId 
-        ? { ...activity, evidences: [...activity.evidences, ...fileArray] }
-        : activity
-    ));
-  };
-
-  const removeEvidenceFile = (activityId: string, fileIndex: number) => {
-    setActivities(prev => prev.map(activity => 
-      activity.id === activityId
-        ? { ...activity, evidences: activity.evidences.filter((_, index) => index !== fileIndex) }
-        : activity
-    ));
-  };
-
-  const getFileTypeLabel = (type: string) => {
-    switch (type) {
-      case 'billing_invoice': return 'Cuenta de Cobro (PDF)';
-      case 'social_security': return 'Planilla de Seguridad Social (PDF)';
-      default: return type;
+  const editActivity = (id: string) => {
+    const activity = activities.find(a => a.id === id);
+    if (activity) {
+      setCurrentActivity(activity);
+      setShowCurrentActivity(true);
+      // Remove from activities list temporarily
+      setActivities(prev => prev.filter(a => a.id !== id));
     }
   };
 
@@ -617,11 +427,11 @@ export function CreateBillingAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nueva Cuenta de Cobro</DialogTitle>
           <DialogDescription>
-            Complete todos los campos requeridos y suba los documentos necesarios
+            Complete los campos básicos, registre actividades y suba los documentos necesarios
           </DialogDescription>
         </DialogHeader>
 
@@ -631,13 +441,13 @@ export function CreateBillingAccountDialog({
             <Label htmlFor="contract">Contrato *</Label>
             <Select value={selectedContract} onValueChange={setSelectedContract}>
               <SelectTrigger>
-                <SelectValue placeholder="Seleccione un contrato" />
+                <SelectValue placeholder="Seleccione un contrato activo" />
               </SelectTrigger>
               <SelectContent>
                 {contractsLoading ? (
                   <SelectItem value="loading" disabled>Cargando contratos...</SelectItem>
                 ) : contracts.length === 0 ? (
-                  <SelectItem value="no-contracts" disabled>No hay contratos disponibles</SelectItem>
+                  <SelectItem value="no-contracts" disabled>No hay contratos activos disponibles</SelectItem>
                 ) : (
                   contracts.map((contract) => (
                     <SelectItem key={contract.id} value={contract.id}>
@@ -664,6 +474,12 @@ export function CreateBillingAccountDialog({
                       <p className="font-medium">{formatCurrency(selectedContractData.total_amount)}</p>
                     </div>
                   </div>
+                  {selectedContractData.description && (
+                    <div>
+                      <span className="text-muted-foreground">Descripción:</span>
+                      <p className="text-sm">{selectedContractData.description}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -697,7 +513,7 @@ export function CreateBillingAccountDialog({
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Fecha de Inicio *</Label>
+                <Label>Fecha de Inicio del Período *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -722,14 +538,14 @@ export function CreateBillingAccountDialog({
                         return date < contractStartDate;
                       }}
                       initialFocus
-                      className="pointer-events-auto"
+                      className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
               </div>
               
               <div className="space-y-2">
-                <Label>Fecha de Fin *</Label>
+                <Label>Fecha de Fin del Período *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -755,7 +571,7 @@ export function CreateBillingAccountDialog({
                         return date < minDate;
                       }}
                       initialFocus
-                      className="pointer-events-auto"
+                      className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
@@ -763,142 +579,194 @@ export function CreateBillingAccountDialog({
             </div>
           </div>
 
-          {/* Activities Table */}
+          {/* Activity Management Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label>Informe de Actividades *</Label>
+              <Label className="text-base font-medium">Actividades del Contrato</Label>
               <Button
                 type="button"
-                variant="outline"
                 onClick={addActivity}
-                className="text-sm"
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
               >
-                <Plus className="w-4 h-4 mr-1" />
+                <Plus className="h-4 w-4" />
                 Agregar Actividad
               </Button>
             </div>
-            
-            {activities.length === 0 ? (
-              <Card>
-                <CardContent className="flex items-center justify-center py-8">
-                  <p className="text-muted-foreground text-sm">
-                    No hay actividades agregadas. Haga clic en "Agregar Actividad" para comenzar.
-                  </p>
+
+            {/* Current Activity Form */}
+            {showCurrentActivity && (
+              <Card className="border-primary/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">Nueva Actividad</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="activityName">Actividades del Contrato *</Label>
+                    <Input
+                      id="activityName"
+                      value={currentActivity.activityName}
+                      onChange={(e) => setCurrentActivity(prev => ({
+                        ...prev,
+                        activityName: e.target.value
+                      }))}
+                      placeholder="Nombre de la actividad..."
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="actions">Acciones Desarrolladas *</Label>
+                    <Textarea
+                      id="actions"
+                      value={currentActivity.actions}
+                      onChange={(e) => setCurrentActivity(prev => ({
+                        ...prev,
+                        actions: e.target.value
+                      }))}
+                      placeholder="Describe las acciones desarrolladas..."
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Evidencias</Label>
+                    <div className="border-2 border-dashed border-gray-200 rounded-lg p-4">
+                      <input
+                        type="file"
+                        multiple
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          setCurrentActivity(prev => ({
+                            ...prev,
+                            evidences: [...prev.evidences, ...files]
+                          }));
+                        }}
+                        className="hidden"
+                        id="evidences"
+                      />
+                      <label
+                        htmlFor="evidences"
+                        className="flex flex-col items-center justify-center cursor-pointer"
+                      >
+                        <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                        <span className="text-sm text-gray-600">
+                          Arrastra archivos aquí o haz clic para seleccionar
+                        </span>
+                        <span className="text-xs text-gray-400 mt-1">
+                          PDF, Word, Imágenes
+                        </span>
+                      </label>
+                    </div>
+
+                    {/* Show uploaded evidence files */}
+                    {currentActivity.evidences.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {currentActivity.evidences.map((file, index) => (
+                          <div key={index} className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded">
+                            <FileText className="h-4 w-4" />
+                            <span className="flex-1">{file.name}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setCurrentActivity(prev => ({
+                                  ...prev,
+                                  evidences: prev.evidences.filter((_, i) => i !== index)
+                                }));
+                              }}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      onClick={saveActivityIndividually}
+                      disabled={!currentActivity.activityName.trim() || !currentActivity.actions.trim()}
+                      className="flex items-center gap-2"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Registrar Actividad
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowCurrentActivity(false);
+                        setCurrentActivity({
+                          id: crypto.randomUUID(),
+                          activityName: '',
+                          actions: '',
+                          evidences: [],
+                          status: 'draft'
+                        });
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
-            ) : (
-              <div className="space-y-4">
-                {activities.map((activity, index) => (
-                  <Card key={activity.id}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm">Actividad #{index + 1}</CardTitle>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeActivity(activity.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Actividades del Contrato *</Label>
-                          <Input
-                            placeholder="Ej: Desarrollo del Módulo de Roles"
-                            value={activity.activityName}
-                            onChange={(e) => updateActivity(activity.id, 'activityName', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Acciones Desarrolladas *</Label>
-                          <Textarea
-                            placeholder="Ej: Implementación de función guardar y editar, AJAX, validaciones..."
-                            value={activity.actions}
-                            onChange={(e) => updateActivity(activity.id, 'actions', e.target.value)}
-                            rows={3}
-                            className="resize-none"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <Label>Evidencias</Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="file"
-                            multiple
-                            accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                            onChange={(e) => addEvidenceFile(activity.id, e.target.files)}
-                            className="text-sm"
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            PDF, Word, Imágenes
-                          </p>
-                        </div>
-                        
-                        {activity.evidences.length > 0 && (
-                          <div className="space-y-2">
-                            <p className="text-sm font-medium">Archivos adjuntos:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {activity.evidences.map((file, fileIndex) => (
-                                <Badge
-                                  key={fileIndex}
-                                  variant="secondary"
-                                  className="text-xs flex items-center gap-1"
-                                >
-                                  <FileText className="h-3 w-3" />
-                                  {file.name}
-                                  <button
-                                    type="button"
-                                    onClick={() => removeEvidenceFile(activity.id, fileIndex)}
-                                    className="ml-1 text-muted-foreground hover:text-destructive"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </Badge>
-                              ))}
-                            </div>
+            )}
+
+            {/* Registered Activities List */}
+            {activities.filter(a => a.status === 'saved').length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Actividades Registradas</Label>
+                {activities.filter(a => a.status === 'saved').map((activity, index) => (
+                  <Card key={activity.id} className="border-green-200 bg-green-50">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <Badge variant="outline" className="text-green-700 border-green-300">
+                              Registrada
+                            </Badge>
                           </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex justify-end pt-3 border-t">
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => saveActivityIndividually(activity.id)}
-                          disabled={loading || !activity.activityName.trim() || !activity.actions.trim() || activity.status === 'saved'}
-                          className={cn(
-                            activity.status === 'saved' && "bg-success text-success-foreground"
+                          <h4 className="font-medium text-sm text-gray-900">
+                            {index + 1}. {activity.activityName}
+                          </h4>
+                          <p className="text-sm text-gray-600 mt-1">{activity.actions}</p>
+                          {activity.evidences.length > 0 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Evidencias: {activity.evidences.map(f => f.name).join(', ')}
+                            </p>
                           )}
-                        >
-                          {activity.status === 'saved' ? (
-                            <>
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Registrada ✅
-                            </>
-                          ) : (
-                            <>
-                              <Save className="w-4 h-4 mr-1" />
-                              Registrar Actividad
-                            </>
-                          )}
-                        </Button>
+                        </div>
+                        <div className="flex gap-1 ml-4">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => editActivity(activity.id)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <FileText className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeActivity(activity.id)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-            )}
-            
-            {startDate && endDate && (
-              <p className="text-sm text-muted-foreground font-medium">
-                Período: {format(startDate, 'dd/MM/yyyy')} - {format(endDate, 'dd/MM/yyyy')}
-              </p>
             )}
           </div>
 
@@ -909,91 +777,71 @@ export function CreateBillingAccountDialog({
             amount={amount}
             startDate={startDate}
             endDate={endDate}
-            activities={activities}
+            activities={activities.filter(a => a.status === 'saved')}
           />
 
-          {/* File Uploads */}
+          {/* Required Documents */}
           <div className="space-y-4">
-            <Label>Documentos Requeridos *</Label>
+            <Label className="text-base font-medium">Documentos Requeridos</Label>
             
-            {Object.entries(files)
-              .filter(([type]) => type === 'social_security') // Only show social security now
-              .map(([type, fileUpload]) => (
-              <Card key={type}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    {getFileTypeLabel(type)}
-                    {fileUpload.uploaded && (
-                      <Badge variant="default" className="ml-2">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Subido
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      type="file"
-                      accept=".pdf"
-                      onChange={(e) => handleFileChange(type as keyof typeof files, e.target.files?.[0] || null)}
-                      disabled={fileUpload.uploading || loading}
-                      className="flex-1"
-                    />
-                    {fileUpload.file && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleFileChange(type as keyof typeof files, null)}
-                        disabled={fileUpload.uploading || loading}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                  {fileUpload.file && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {fileUpload.file.name} ({(fileUpload.file.size / 1024 / 1024).toFixed(2)} MB)
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+            {/* Social Security Document */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Planilla de Seguridad Social *</Label>
+              <div className="border-2 border-dashed border-gray-200 rounded-lg p-4">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => handleFileUpload(e, 'social_security')}
+                  className="hidden"
+                  id="socialSecurity"
+                />
+                <label
+                  htmlFor="socialSecurity"
+                  className="flex flex-col items-center justify-center cursor-pointer"
+                >
+                  <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                  <span className="text-sm text-gray-600">
+                    {uploads.social_security.file 
+                      ? `Archivo: ${uploads.social_security.file.name}`
+                      : "Haz clic para seleccionar archivo PDF"
+                    }
+                  </span>
+                </label>
+              </div>
+              {uploads.social_security.uploading && (
+                <div className="text-sm text-blue-600">Subiendo archivo...</div>
+              )}
+              {uploads.social_security.uploaded && (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <CheckCircle className="h-4 w-4" />
+                  Archivo cargado correctamente
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-between pt-6 border-t">
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4">
             <Button
+              type="button"
+              onClick={saveAsDraft}
               variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading || draftSaving}
+              disabled={isSubmitting || !selectedContract || !amount || !startDate || !endDate}
+              className="flex items-center gap-2"
             >
-              Cancelar
+              <Save className="h-4 w-4" />
+              Guardar como Borrador
             </Button>
             
-            <div className="flex space-x-2">
-              <Button
-                variant="secondary"
-                onClick={saveAsDraft}
-                disabled={loading || draftSaving || !selectedContract || !amount || !startDate || !endDate}
-              >
-                <Save className="w-4 h-4 mr-1" />
-                {draftSaving ? "Guardando..." : "Guardar como Borrador"}
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={
-                  loading || 
-                  contractsLoading || 
-                  draftSaving ||
-                  activities.filter(a => a.status === 'saved').length === 0 ||
-                  !files.social_security.file
-                }
-              >
-                <Send className="w-4 h-4 mr-1" />
-                {loading ? "Enviando..." : "Enviar para Revisión"}
-              </Button>
-            </div>
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting || !canSubmitForReview}
+              className="flex items-center gap-2"
+            >
+              <Send className="h-4 w-4" />
+              {isSubmitting ? "Enviando..." : "Enviar para Revisión"}
+            </Button>
           </div>
         </div>
       </DialogContent>
