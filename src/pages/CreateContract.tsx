@@ -785,60 +785,75 @@ export default function CreateContract() {
                       </CardHeader>
                       <CollapsibleContent>
                         <CardContent className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {watchedType === "variable_amount" ? (
-                              <>
-                                <div className="space-y-2">
-                                  <Label htmlFor="hourly_rate" className="text-base font-semibold">Valor por Hora *</Label>
-                                  <Input
-                                    id="hourly_rate"
-                                    {...register("hourly_rate", { required: "El valor por hora es requerido" })}
-                                    placeholder="$0"
-                                    className="text-lg"
-                                    onChange={(e) => {
-                                      const formatted = formatAmountInput(e.target.value);
-                                      setValue("hourly_rate", formatted);
-                                    }}
-                                  />
-                                  {errors.hourly_rate && (
-                                    <p className="text-destructive text-sm">{errors.hourly_rate.message}</p>
-                                  )}
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="total_amount" className="text-base font-semibold">Valor Total del Contrato *</Label>
-                                  <Input
-                                    id="total_amount"
-                                    {...register("total_amount", { required: "El valor total es requerido" })}
-                                    placeholder="$0"
-                                    className="text-lg"
-                                    onChange={(e) => {
-                                      const formatted = formatAmountInput(e.target.value);
-                                      setValue("total_amount", formatted);
-                                    }}
-                                  />
-                                  {errors.total_amount && (
-                                    <p className="text-destructive text-sm">{errors.total_amount.message}</p>
-                                  )}
-                                </div>
-                              </>
-                            ) : (
-                              <div className="space-y-2">
-                                <Label htmlFor="total_amount" className="text-base font-semibold">Valor Total *</Label>
-                                <Input
-                                  id="total_amount"
-                                  {...register("total_amount", { required: "El valor total es requerido" })}
-                                  placeholder="$0"
-                                  className="text-lg"
-                                  onChange={(e) => {
-                                    const formatted = formatAmountInput(e.target.value);
-                                    setValue("total_amount", formatted);
-                                  }}
-                                />
-                                {errors.total_amount && (
-                                  <p className="text-destructive text-sm">{errors.total_amount.message}</p>
-                                )}
-                              </div>
-                            )}
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                             {watchedType === "variable_amount" ? (
+                               <>
+                                 <div className="space-y-2">
+                                   <Label htmlFor="hourly_rate" className="text-base font-semibold">Valor por Hora *</Label>
+                                   <div className="relative">
+                                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">
+                                       $
+                                     </span>
+                                     <Input
+                                       id="hourly_rate"
+                                       {...register("hourly_rate", { required: "El valor por hora es requerido" })}
+                                       placeholder="50,000"
+                                       className="text-lg pl-8"
+                                       onChange={(e) => {
+                                         const formatted = formatAmountInput(e.target.value);
+                                         setValue("hourly_rate", formatted);
+                                       }}
+                                     />
+                                   </div>
+                                   {errors.hourly_rate && (
+                                     <p className="text-destructive text-sm">{errors.hourly_rate.message}</p>
+                                   )}
+                                 </div>
+                                 <div className="space-y-2">
+                                   <Label htmlFor="total_amount" className="text-base font-semibold">Valor Total del Contrato *</Label>
+                                   <div className="relative">
+                                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">
+                                       $
+                                     </span>
+                                     <Input
+                                       id="total_amount"
+                                       {...register("total_amount", { required: "El valor total es requerido" })}
+                                       placeholder="1,000,000"
+                                       className="text-lg pl-8"
+                                       onChange={(e) => {
+                                         const formatted = formatAmountInput(e.target.value);
+                                         setValue("total_amount", formatted);
+                                       }}
+                                     />
+                                   </div>
+                                   {errors.total_amount && (
+                                     <p className="text-destructive text-sm">{errors.total_amount.message}</p>
+                                   )}
+                                 </div>
+                               </>
+                             ) : (
+                               <div className="space-y-2">
+                                 <Label htmlFor="total_amount" className="text-base font-semibold">Valor Total *</Label>
+                                 <div className="relative">
+                                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">
+                                     $
+                                   </span>
+                                   <Input
+                                     id="total_amount"
+                                     {...register("total_amount", { required: "El valor total es requerido" })}
+                                     placeholder="1,000,000"
+                                     className="text-lg pl-8"
+                                     onChange={(e) => {
+                                       const formatted = formatAmountInput(e.target.value);
+                                       setValue("total_amount", formatted);
+                                     }}
+                                   />
+                                 </div>
+                                 {errors.total_amount && (
+                                   <p className="text-destructive text-sm">{errors.total_amount.message}</p>
+                                 )}
+                               </div>
+                             )}
 
                             <div className="space-y-2">
                               <Label htmlFor="start_date" className="text-base font-semibold">Fecha de Inicio *</Label>
