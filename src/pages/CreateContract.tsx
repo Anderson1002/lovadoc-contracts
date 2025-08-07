@@ -94,29 +94,43 @@ export default function CreateContract() {
     loadSupervisors();
   }, []);
 
-  const loadSupervisors = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id, 
-          name, 
-          email,
-          roles!profiles_role_id_fkey(name, display_name)
-        `)
-        .eq('roles.name', 'supervisor');
+    const loadSupervisors = async () => {
+      try {
+        console.log('Loading supervisors...');
+        
+        // Primero obtenemos el ID del rol de supervisor
+        const { data: roleData, error: roleError } = await supabase
+          .from('roles')
+          .select('id')
+          .eq('name', 'supervisor')
+          .single();
 
-      if (error) {
+        if (roleError) {
+          console.error('Error loading supervisor role:', roleError);
+          return;
+        }
+
+        console.log('Supervisor role ID:', roleData.id);
+
+        // Luego obtenemos los perfiles con ese rol
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, name, email')
+          .eq('role_id', roleData.id);
+
+        if (error) {
+          console.error('Error loading supervisors:', error);
+          console.error('Error details:', error.message, error.details, error.hint);
+          return;
+        }
+        
+        console.log('Supervisors loaded:', data);
+        console.log('Number of supervisors found:', data?.length || 0);
+        setSupervisors(data || []);
+      } catch (error) {
         console.error('Error loading supervisors:', error);
-        return;
       }
-      
-      console.log('Supervisors loaded:', data);
-      setSupervisors(data || []);
-    } catch (error) {
-      console.error('Error loading supervisors:', error);
-    }
-  };
+    };
 
   const {
     register,
