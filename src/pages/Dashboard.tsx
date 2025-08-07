@@ -17,6 +17,7 @@ import {
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils";
 
 interface DashboardStats {
   totalContracts: number;
@@ -172,12 +173,7 @@ export default function Dashboard() {
         />
         <StatsCard
           title="Valor Total"
-          value={new Intl.NumberFormat('es-CO', {
-            style: 'currency',
-            currency: 'COP',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-          }).format(stats.totalAmount)}
+          value={formatCurrency(stats.totalAmount)}
           description="Suma de todos los contratos"
           icon={DollarSign}
           trend={{ value: 15, isPositive: true }}
@@ -185,13 +181,8 @@ export default function Dashboard() {
         <StatsCard
           title="Valor Promedio"
           value={stats.totalContracts > 0 ? 
-            new Intl.NumberFormat('es-CO', {
-              style: 'currency',
-              currency: 'COP',
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0
-            }).format(stats.totalAmount / stats.totalContracts) 
-            : "$0"
+            formatCurrency(stats.totalAmount / stats.totalContracts) 
+            : "$ 0"
           }
           description="Promedio por contrato"
           icon={TrendingUp}
@@ -236,12 +227,7 @@ export default function Dashboard() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium">
-                        {new Intl.NumberFormat('es-CO', {
-                          style: 'currency',
-                          currency: 'COP',
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0
-                        }).format(contract.total_amount)}
+                        {formatCurrency(contract.total_amount)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(contract.created_at).toLocaleDateString('es-ES')}
