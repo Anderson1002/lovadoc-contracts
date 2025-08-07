@@ -374,11 +374,22 @@ export function CreateBillingAccountDialog({
 
     try {
       setIsSubmitting(true);
+      console.log('Starting billing account submission...');
+      console.log('Form data:', {
+        selectedContract,
+        amount,
+        startDate,
+        endDate,
+        activitiesCount: activities.filter(a => a.status === 'saved').length,
+        socialSecurityFile: uploads.social_security.file?.name,
+        currentDraftId
+      });
 
       let billingAccountId = currentDraftId;
 
       // Update existing draft or create new billing account
       if (currentDraftId) {
+        console.log('Updating existing billing account:', currentDraftId);
         const { error: updateError } = await supabase
           .from('billing_accounts')
           .update({
@@ -389,8 +400,13 @@ export function CreateBillingAccountDialog({
           })
           .eq('id', currentDraftId);
         
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Error updating billing account:', updateError);
+          throw updateError;
+        }
+        console.log('Successfully updated billing account status to pending_review');
       } else {
+        console.log('Creating new billing account...');
         const startDateString = format(startDate, 'yyyy-MM-dd');
         const { data: newBilling, error: billingError } = await supabase
           .from('billing_accounts')
@@ -407,12 +423,17 @@ export function CreateBillingAccountDialog({
           .select()
           .single();
         
-        if (billingError) throw billingError;
+        if (billingError) {
+          console.error('Error creating billing account:', billingError);
+          throw billingError;
+        }
+        console.log('Successfully created new billing account:', newBilling.id);
         billingAccountId = newBilling.id;
       }
 
       // Upload social security document
       if (uploads.social_security.file) {
+        console.log('Uploading social security document...');
         const fileExt = uploads.social_security.file.name.split('.').pop();
         const fileName = `${userProfile.user_id}/${billingAccountId}/social_security.${fileExt}`;
 
@@ -420,9 +441,13 @@ export function CreateBillingAccountDialog({
           .from('billing-documents')
           .upload(fileName, uploads.social_security.file);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Error uploading file:', uploadError);
+          throw uploadError;
+        }
+        console.log('Successfully uploaded file, saving record...');
 
-        await supabase
+        const { error: docError } = await supabase
           .from('billing_documents')
           .insert({
             billing_account_id: billingAccountId,
@@ -433,8 +458,15 @@ export function CreateBillingAccountDialog({
             file_size: uploads.social_security.file.size,
             mime_type: uploads.social_security.file.type
           });
+          
+        if (docError) {
+          console.error('Error saving document record:', docError);
+          throw docError;
+        }
+        console.log('Successfully saved document record');
       }
 
+      console.log('Billing account submission completed successfully');
       toast({
         title: "Éxito",
         description: "Cuenta de cobro enviada para revisión exitosamente",
@@ -444,9 +476,15 @@ export function CreateBillingAccountDialog({
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error submitting billing account:', error);
+      console.error('Error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       toast({
         title: "Error",
-        description: "No se pudo enviar la cuenta de cobro",
+        description: `No se pudo enviar la cuenta de cobro: ${error.message || 'Error desconocido'}`,
         variant: "destructive"
       });
     } finally {
