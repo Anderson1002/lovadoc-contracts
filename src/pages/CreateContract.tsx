@@ -557,6 +557,46 @@ export default function CreateContract() {
                 </div>
               </div>
 
+              {/* Plazo de Ejecución - Calculado automáticamente */}
+              {(selectedStartDate && selectedEndDate) && (
+                <div className="space-y-2">
+                  <Label>Plazo de Ejecución</Label>
+                  <div className="p-3 bg-muted rounded-md">
+                    <p className="text-sm font-medium">
+                      {(() => {
+                        const diffTime = Math.abs(selectedEndDate.getTime() - selectedStartDate.getTime());
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        const diffMonths = Math.round(diffDays / 30.44); // Promedio de días por mes
+                        const diffYears = Math.round(diffDays / 365.25); // Considerando años bisiestos
+
+                        if (diffDays <= 90) {
+                          return `${diffDays} días`;
+                        } else if (diffDays <= 730) {
+                          return `${diffMonths} ${diffMonths === 1 ? 'mes' : 'meses'} (${diffDays} días)`;
+                        } else {
+                          return `${diffYears} ${diffYears === 1 ? 'año' : 'años'} (${diffDays} días)`;
+                        }
+                      })()}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Desde el {format(selectedStartDate, "d 'de' MMMM 'de' yyyy", { locale: es })} hasta el {format(selectedEndDate, "d 'de' MMMM 'de' yyyy", { locale: es })}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Campos Adicionales */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Configuración Adicional</CardTitle>
+              <CardDescription>
+                Área responsable y supervisor asignado
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+
               {/* Nuevos campos obligatorios */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
