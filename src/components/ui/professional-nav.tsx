@@ -47,10 +47,11 @@ interface MenuItem {
 interface ProfessionalNavProps {
   userRole: string;
   userEmail?: string;
+  userName?: string;
   onLogout: () => void;
 }
 
-export function ProfessionalNav({ userRole, userEmail, onLogout }: ProfessionalNavProps) {
+export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: ProfessionalNavProps) {
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -175,8 +176,8 @@ export function ProfessionalNav({ userRole, userEmail, onLogout }: ProfessionalN
                 <Building2 className="h-6 w-6 text-primary" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-foreground">HospitalPro</span>
-                <span className="text-xs text-muted-foreground">Sistema de Contratos</span>
+                <span className="text-xl font-bold text-foreground">ContratosMédicos Pro</span>
+                <span className="text-xs text-muted-foreground">Gestor de Contratos y Cuentas Médicas</span>
               </div>
             </div>
           </div>
@@ -267,7 +268,7 @@ export function ProfessionalNav({ userRole, userEmail, onLogout }: ProfessionalN
 
             <div className="flex items-center gap-3">
               <div className="hidden md:flex flex-col items-end">
-                <span className="text-sm font-medium text-foreground">{userEmail}</span>
+                <span className="text-sm font-medium text-foreground">{userName || userEmail}</span>
                 <span className="text-xs text-muted-foreground capitalize">{userRole.replace('_', ' ')}</span>
               </div>
               
@@ -289,7 +290,7 @@ export function ProfessionalNav({ userRole, userEmail, onLogout }: ProfessionalN
                   className="w-56 bg-card border border-border shadow-xl rounded-lg p-2 z-50"
                 >
                   <div className="px-3 py-2 border-b border-border mb-2">
-                    <p className="font-medium text-sm text-foreground">{userEmail}</p>
+                    <p className="font-medium text-sm text-foreground">{userName || userEmail}</p>
                     <p className="text-xs text-muted-foreground capitalize">{userRole.replace('_', ' ')}</p>
                   </div>
                   

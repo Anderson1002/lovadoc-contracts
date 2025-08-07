@@ -160,7 +160,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard HospitalPro</h1>
+            <h1 className="text-3xl font-bold text-foreground">Dashboard ContratosMédicos Pro</h1>
             <p className="text-muted-foreground">
               Resumen general del sistema de gestión de contratos
             </p>

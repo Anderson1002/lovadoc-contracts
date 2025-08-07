@@ -11,6 +11,7 @@ export function Layout({ children }: LayoutProps) {
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState("employee");
+  const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -58,6 +59,7 @@ export function Layout({ children }: LayoutProps) {
 
       if (profile && profile.roles) {
         setUserRole((profile.roles as any).name);
+        setUserName(profile.name || user?.email || "Usuario");
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -90,6 +92,7 @@ export function Layout({ children }: LayoutProps) {
       <ProfessionalNav 
         userRole={userRole} 
         userEmail={user?.email}
+        userName={userName}
         onLogout={handleLogout}
       />
       <main className="flex-1">
