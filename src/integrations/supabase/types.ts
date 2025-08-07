@@ -63,7 +63,9 @@ export type Database = {
         Row: {
           account_number: string
           amount: number
+          billing_end_date: string | null
           billing_month: string
+          billing_start_date: string | null
           contract_id: string
           created_at: string
           created_by: string
@@ -77,7 +79,9 @@ export type Database = {
         Insert: {
           account_number: string
           amount: number
+          billing_end_date?: string | null
           billing_month: string
+          billing_start_date?: string | null
           contract_id: string
           created_at?: string
           created_by: string
@@ -91,7 +95,9 @@ export type Database = {
         Update: {
           account_number?: string
           amount?: number
+          billing_end_date?: string | null
           billing_month?: string
+          billing_start_date?: string | null
           contract_id?: string
           created_at?: string
           created_by?: string
@@ -108,6 +114,80 @@ export type Database = {
             columns: ["contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_activities: {
+        Row: {
+          actions_developed: string
+          activity_name: string
+          activity_order: number
+          billing_account_id: string
+          created_at: string
+          id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          actions_developed: string
+          activity_name: string
+          activity_order?: number
+          billing_account_id: string
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          actions_developed?: string
+          activity_name?: string
+          activity_order?: number
+          billing_account_id?: string
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      billing_activity_evidence: {
+        Row: {
+          billing_activity_id: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          billing_activity_id: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          billing_activity_id?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_activity_evidence_billing_activity_id_fkey"
+            columns: ["billing_activity_id"]
+            isOneToOne: false
+            referencedRelation: "billing_activities"
             referencedColumns: ["id"]
           },
         ]
