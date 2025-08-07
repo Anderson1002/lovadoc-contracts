@@ -5,22 +5,34 @@ import { Badge } from "@/components/ui/badge";
 export function ContractStatusInfo() {
   const statuses = [
     {
+      status: 'draft',
+      label: 'Registrado',
+      description: 'Contrato creado por el funcionario, pendiente de revisión',
+      color: 'bg-state-registered/20 text-state-registered border-state-registered/30'
+    },
+    {
+      status: 'returned',
+      label: 'Devuelto',
+      description: 'El supervisor devolvió el contrato por inconsistencias',
+      color: 'bg-state-returned/20 text-state-returned border-state-returned/30'
+    },
+    {
       status: 'active',
-      label: 'Activo',
-      description: 'Contrato firmado y en ejecución',
-      color: 'bg-success/20 text-success border-success/30'
+      label: 'En Ejecución',
+      description: 'Contrato aprobado por el supervisor y está dentro del rango de fechas',
+      color: 'bg-state-executing/20 text-state-executing border-state-executing/30'
     },
     {
       status: 'completed',
       label: 'Completado',
-      description: 'Contrato finalizado exitosamente',
-      color: 'bg-primary/20 text-primary border-primary/30'
+      description: 'Contrato finalizado exitosamente al llegar su fecha fin',
+      color: 'bg-state-completed/20 text-state-completed border-state-completed/30'
     },
     {
       status: 'cancelled',
       label: 'Cancelado',
-      description: 'Contrato cancelado antes de finalizar',
-      color: 'bg-destructive/10 text-destructive border-destructive/20'
+      description: 'Contrato cancelado manualmente',
+      color: 'bg-state-cancelled/20 text-state-cancelled border-state-cancelled/30'
     }
   ];
 
@@ -54,7 +66,7 @@ export function ContractStatusInfo() {
         </div>
         <div className="mt-4 p-4 bg-muted/50 rounded-lg">
           <p className="text-sm text-muted-foreground">
-            <strong>Nota:</strong> Los contratos nuevos inician como "Activo" ya que se crean cuando están firmados. 
+            <strong>Nota:</strong> Los contratos nuevos inician como "Registrado" ya que se crean cuando están pendientes de revisión. 
             Los cambios de estado son gestionados por usuarios administrativos según el progreso del contrato.
           </p>
         </div>
