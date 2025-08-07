@@ -30,6 +30,13 @@ interface FileUpload {
   uploading: boolean;
 }
 
+interface Activity {
+  id: string;
+  activityName: string;
+  actions: string;
+  evidences: File[];
+}
+
 export function CreateBillingAccountDialog({
   open,
   onOpenChange,
@@ -42,7 +49,7 @@ export function CreateBillingAccountDialog({
   const [amount, setAmount] = useState<string>("");
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
-  const [activityReport, setActivityReport] = useState<string>("");
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
   const [contractsLoading, setContractsLoading] = useState(true);
   
@@ -64,7 +71,7 @@ export function CreateBillingAccountDialog({
       let query = supabase
         .from('contracts')
         .select('*')
-        .in('status', ['active', 'draft']);
+        .in('status', ['active']);
 
       // If user is not admin/supervisor, only show their own contracts
       if (!['super_admin', 'admin', 'supervisor'].includes(userProfile?.roles?.name)) {
@@ -92,7 +99,7 @@ export function CreateBillingAccountDialog({
     setAmount("");
     setStartDate(undefined);
     setEndDate(undefined);
-    setActivityReport("");
+    setActivities([]);
     setFiles({
       billing_invoice: { type: 'billing_invoice', file: null, uploaded: false, uploading: false },
       social_security: { type: 'social_security', file: null, uploaded: false, uploading: false }
@@ -134,13 +141,25 @@ export function CreateBillingAccountDialog({
       return false;
     }
 
-    if (!activityReport.trim()) {
+    if (activities.length === 0) {
       toast({
         title: "Error",
-        description: "Debe completar el informe de actividades",
+        description: "Debe agregar al menos una actividad",
         variant: "destructive"
       });
       return false;
+    }
+
+    // Validate each activity
+    for (const activity of activities) {
+      if (!activity.activityName.trim() || !activity.actions.trim()) {
+        toast({
+          title: "Error",
+          description: "Todas las actividades deben tener nombre y acciones completadas",
+          variant: "destructive"
+        });
+        return false;
+      }
     }
 
     // Validate required files
@@ -259,8 +278,19 @@ export function CreateBillingAccountDialog({
         }),
         // Save activity report as document with period info
         (async () => {
-          const periodInfo = `Período: ${format(startDate!, 'dd/MM/yyyy')} - ${format(endDate!, 'dd/MM/yyyy')}\n\n${activityReport}`;
-          const reportBlob = new Blob([periodInfo], { type: 'text/plain' });
+          const reportContent = `Período: ${format(startDate!, 'dd/MM/yyyy')} - ${format(endDate!, 'dd/MM/yyyy')}\n\n`;
+          let activityContent = '';
+          
+          activities.forEach((activity, index) => {
+            activityContent += `${index + 1}. ACTIVIDAD: ${activity.activityName}\n`;
+            activityContent += `   ACCIONES: ${activity.actions}\n`;
+            if (activity.evidences.length > 0) {
+              activityContent += `   EVIDENCIAS: ${activity.evidences.map(f => f.name).join(', ')}\n`;
+            }
+            activityContent += '\n';
+          });
+          
+          const reportBlob = new Blob([reportContent + activityContent], { type: 'text/plain' });
           const fileName = `${userProfile.user_id}/${billingAccount.id}/activity_report.txt`;
           
           const { data, error } = await supabase.storage
@@ -280,7 +310,32 @@ export function CreateBillingAccountDialog({
               file_size: reportBlob.size,
               mime_type: 'text/plain'
             });
-        })()
+        })(),
+        // Upload activity evidence files
+        ...activities.flatMap((activity, actIndex) => 
+          activity.evidences.map(async (file) => {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${userProfile.user_id}/${billingAccount.id}/evidence_${actIndex + 1}_${Date.now()}.${fileExt}`;
+            
+            const { data, error } = await supabase.storage
+              .from('billing-documents')
+              .upload(fileName, file);
+
+            if (error) throw error;
+
+            await supabase
+              .from('billing_documents')
+              .insert({
+                billing_account_id: billingAccount.id,
+                document_type: 'activity_evidence',
+                uploaded_by: userProfile.id,
+                file_name: file.name,
+                file_path: data.path,
+                file_size: file.size,
+                mime_type: file.type
+              });
+          })
+        )
       ];
 
       await Promise.all(uploadPromises);
@@ -301,6 +356,44 @@ export function CreateBillingAccountDialog({
     } finally {
       setLoading(false);
     }
+  };
+
+  const addActivity = () => {
+    const newActivity: Activity = {
+      id: crypto.randomUUID(),
+      activityName: '',
+      actions: '',
+      evidences: []
+    };
+    setActivities(prev => [...prev, newActivity]);
+  };
+
+  const removeActivity = (id: string) => {
+    setActivities(prev => prev.filter(activity => activity.id !== id));
+  };
+
+  const updateActivity = (id: string, field: keyof Activity, value: any) => {
+    setActivities(prev => prev.map(activity => 
+      activity.id === id ? { ...activity, [field]: value } : activity
+    ));
+  };
+
+  const addEvidenceFile = (activityId: string, files: FileList | null) => {
+    if (!files) return;
+    const fileArray = Array.from(files);
+    setActivities(prev => prev.map(activity => 
+      activity.id === activityId 
+        ? { ...activity, evidences: [...activity.evidences, ...fileArray] }
+        : activity
+    ));
+  };
+
+  const removeEvidenceFile = (activityId: string, fileIndex: number) => {
+    setActivities(prev => prev.map(activity => 
+      activity.id === activityId
+        ? { ...activity, evidences: activity.evidences.filter((_, index) => index !== fileIndex) }
+        : activity
+    ));
   };
 
   const getFileTypeLabel = (type: string) => {
@@ -461,25 +554,118 @@ export function CreateBillingAccountDialog({
             </div>
           </div>
 
-          {/* Activity Report */}
-          <div className="space-y-2">
-            <Label htmlFor="activity-report">Informe de Actividades *</Label>
-            <Textarea
-              id="activity-report"
-              placeholder="Describa las actividades realizadas durante el período..."
-              value={activityReport}
-              onChange={(e) => setActivityReport(e.target.value)}
-              rows={6}
-              className="resize-none"
-            />
-            <p className="text-xs text-muted-foreground">
-              Describa detalladamente las actividades, entregables y logros del período seleccionado.
-              {startDate && endDate && (
-                <span className="block mt-1 font-medium">
-                  Período: {format(startDate, 'dd/MM/yyyy')} - {format(endDate, 'dd/MM/yyyy')}
-                </span>
-              )}
-            </p>
+          {/* Activities Table */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Informe de Actividades *</Label>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addActivity}
+                className="text-sm"
+              >
+                Agregar Actividad
+              </Button>
+            </div>
+            
+            {activities.length === 0 ? (
+              <Card>
+                <CardContent className="flex items-center justify-center py-8">
+                  <p className="text-muted-foreground text-sm">
+                    No hay actividades agregadas. Haga clic en "Agregar Actividad" para comenzar.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {activities.map((activity, index) => (
+                  <Card key={activity.id}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm">Actividad #{index + 1}</CardTitle>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeActivity(activity.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Actividades del Contrato *</Label>
+                          <Input
+                            placeholder="Ej: Desarrollo del Módulo de Roles"
+                            value={activity.activityName}
+                            onChange={(e) => updateActivity(activity.id, 'activityName', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Acciones Desarrolladas *</Label>
+                          <Textarea
+                            placeholder="Ej: Implementación de función guardar y editar, AJAX, validaciones..."
+                            value={activity.actions}
+                            onChange={(e) => updateActivity(activity.id, 'actions', e.target.value)}
+                            rows={3}
+                            className="resize-none"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Label>Evidencias</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="file"
+                            multiple
+                            accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                            onChange={(e) => addEvidenceFile(activity.id, e.target.files)}
+                            className="text-sm"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            PDF, Word, Imágenes
+                          </p>
+                        </div>
+                        
+                        {activity.evidences.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium">Archivos adjuntos:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {activity.evidences.map((file, fileIndex) => (
+                                <Badge
+                                  key={fileIndex}
+                                  variant="secondary"
+                                  className="text-xs flex items-center gap-1"
+                                >
+                                  <FileText className="h-3 w-3" />
+                                  {file.name}
+                                  <button
+                                    type="button"
+                                    onClick={() => removeEvidenceFile(activity.id, fileIndex)}
+                                    className="ml-1 text-muted-foreground hover:text-destructive"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+            
+            {startDate && endDate && (
+              <p className="text-sm text-muted-foreground font-medium">
+                Período: {format(startDate, 'dd/MM/yyyy')} - {format(endDate, 'dd/MM/yyyy')}
+              </p>
+            )}
           </div>
 
           {/* File Uploads */}
