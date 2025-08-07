@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, FileText, DollarSign, TrendingUp, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ContractTable } from "@/components/contracts/ContractTable";
 import { ContractStatusInfo } from "@/components/contracts/ContractStatusInfo";
+import { StatsCard } from "@/components/dashboard/StatsCard";
+import { ContractStatusChart } from "@/components/dashboard/ContractStatusChart";
 import { Layout } from "@/components/Layout";
 
 export default function Contracts() {
@@ -14,8 +16,42 @@ export default function Contracts() {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState("employee");
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total: 0,
+    totalValue: 0,
+    averageValue: 0,
+    active: 0,
+    completed: 0,
+    cancelled: 0,
+    registered: 0,
+    returned: 0
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Calculate statistics from contracts
+  const calculateStats = (contractsData: any[]) => {
+    const total = contractsData.length;
+    const totalValue = contractsData.reduce((sum, contract) => sum + (contract.total_amount || 0), 0);
+    const averageValue = total > 0 ? totalValue / total : 0;
+    
+    const statusCounts = contractsData.reduce((acc, contract) => {
+      const status = contract.status || 'draft';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+
+    setStats({
+      total,
+      totalValue,
+      averageValue,
+      active: statusCounts.active || 0,
+      completed: statusCounts.completed || 0,
+      cancelled: statusCounts.cancelled || 0,
+      registered: statusCounts.draft || 0,
+      returned: statusCounts.returned || 0
+    });
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -74,6 +110,7 @@ export default function Contracts() {
       if (error) throw error;
 
       setContracts(contractsData || []);
+      calculateStats(contractsData || []);
     } catch (error) {
       console.error('Error loading contracts:', error);
       toast({
@@ -126,14 +163,72 @@ export default function Contracts() {
           )}
         </div>
 
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatsCard
+            title="Total Contratos"
+            value={stats.total}
+            description="Contratos encontrados"
+            icon={FileText}
+          />
+          <StatsCard
+            title="Valor Total"
+            value={`$ ${stats.totalValue.toLocaleString('es-CO')}`}
+            description="Suma de todos los contratos"
+            icon={DollarSign}
+          />
+          <StatsCard
+            title="Valor Promedio"
+            value={`$ ${stats.averageValue.toLocaleString('es-CO', { maximumFractionDigits: 0 })}`}
+            description="Promedio por contrato"
+            icon={TrendingUp}
+          />
+          <StatsCard
+            title="Contratos Activos"
+            value={stats.active}
+            description={`${stats.completed} completados, ${stats.cancelled} cancelados`}
+            icon={CheckCircle}
+          />
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ContractStatusChart
+            data={[
+              { name: 'Registrado', value: stats.registered, color: 'hsl(var(--state-registered))' },
+              { name: 'Devuelto', value: stats.returned, color: 'hsl(var(--state-returned))' },
+              { name: 'En Ejecución', value: stats.active, color: 'hsl(var(--state-executing))' },
+              { name: 'Completado', value: stats.completed, color: 'hsl(var(--state-completed))' },
+              { name: 'Cancelado', value: stats.cancelled, color: 'hsl(var(--state-cancelled))' }
+            ].filter(item => item.value > 0)}
+          />
+          <ContractStatusChart
+            data={[
+              { name: 'Monto Variable', value: contracts.filter(c => c.contract_type === 'monto_variable').length, color: 'hsl(var(--chart-1))' },
+              { name: 'Contrato Empresa', value: contracts.filter(c => c.contract_type === 'contrato_empresa').length, color: 'hsl(var(--chart-2))' },
+              { name: 'Monto Fijo', value: contracts.filter(c => c.contract_type === 'monto_fijo').length, color: 'hsl(var(--chart-3))' }
+            ].filter(item => item.value > 0)}
+          />
+        </div>
+
         {/* Contracts Table */}
-        <ContractTable
-          contracts={contracts}
-          userRole={userRole}
-          onView={handleView}
-          onEdit={handleEdit}
-          onRefresh={() => loadContracts(user?.id || '')}
-        />
+        <div className="bg-card rounded-lg border">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">Resultados de Consulta</h2>
+                <p className="text-sm text-muted-foreground">{stats.total} contratos encontrados</p>
+              </div>
+            </div>
+            <ContractTable
+              contracts={contracts}
+              userRole={userRole}
+              onView={handleView}
+              onEdit={handleEdit}
+              onRefresh={() => loadContracts(user?.id || '')}
+            />
+          </div>
+        </div>
 
         {/* Contract Status Information */}
         <ContractStatusInfo />
