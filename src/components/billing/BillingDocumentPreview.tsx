@@ -6,6 +6,11 @@ interface Contract {
   id: string;
   contract_number: string;
   client_name: string;
+  client_email?: string;
+  client_phone?: string;
+  client_address?: string;
+  client_account_number?: string;
+  client_bank_name?: string;
   description?: string;
   total_amount: number;
 }
@@ -88,9 +93,9 @@ export function BillingDocumentPreview({
             <div>
               <p><strong>Ciudad y fecha:</strong> Facatativá, {format(new Date(), 'dd \'de\' MMMM \'de\' yyyy')}</p>
               <p><strong>Cliente:</strong> {selectedContract.client_name}</p>
-              <p><strong>NIT:</strong> [NIT del Cliente]</p>
-              <p><strong>Dirección:</strong> [Dirección del Cliente]</p>
-              <p><strong>Teléfono:</strong> [Teléfono del Cliente]</p>
+              <p><strong>NIT:</strong> {selectedContract.client_email || '[NIT del Cliente]'}</p>
+              <p><strong>Dirección:</strong> {selectedContract.client_address || '[Dirección del Cliente]'}</p>
+              <p><strong>Teléfono:</strong> {selectedContract.client_phone || '[Teléfono del Cliente]'}</p>
             </div>
           </div>
 
@@ -114,8 +119,8 @@ export function BillingDocumentPreview({
             </div>
 
             <p className="mt-4">
-              <strong>No. CUENTA BANCARIA Nº:</strong> [Número de Cuenta]<br/>
-              <strong>BANCO:</strong> [Nombre del Banco]
+              <strong>No. CUENTA BANCARIA Nº:</strong> {selectedContract.client_account_number || '[Número de Cuenta]'}<br/>
+              <strong>BANCO:</strong> {selectedContract.client_bank_name || '[Nombre del Banco]'}
             </p>
           </div>
 

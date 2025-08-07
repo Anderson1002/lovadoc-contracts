@@ -184,10 +184,11 @@ export function CreateBillingAccountDialog({
       }
 
       // Save activity to database
+      const billingAccountId = currentDraftId || 'temp';
       const { data: savedActivity, error: activityError } = await supabase
         .from('billing_activities')
         .insert({
-          billing_account_id: currentDraftId,
+          billing_account_id: billingAccountId,
           activity_name: currentActivity.activityName,
           actions_developed: currentActivity.actions,
           activity_order: activities.length + 1,

@@ -38,6 +38,7 @@ import { Layout } from "@/components/Layout";
 const contractFormSchema = z.object({
   contractType: z.enum(["fixed_amount", "variable_amount", "contractor"]),
   clientName: z.string().min(1, "El nombre del cliente es requerido"),
+  clientDocumentNumber: z.string().min(1, "El número de documento es requerido"),
   clientEmail: z.string().email("Email inválido").optional().or(z.literal("")),
   clientPhone: z.string().optional(),
   clientAddress: z.string().optional(),
@@ -167,6 +168,7 @@ export default function CreateContract() {
         contract_number: '', // Se generará automáticamente por trigger
         contract_type: data.contractType,
         client_name: data.clientName,
+        client_document_number: data.clientDocumentNumber,
         client_email: data.clientEmail || null,
         client_phone: data.clientPhone || null,
         client_address: data.clientAddress || null,
@@ -314,6 +316,20 @@ export default function CreateContract() {
                   {errors.clientName && (
                     <p className="text-sm text-destructive">
                       {errors.clientName.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="clientDocumentNumber">Número de Documento *</Label>
+                  <Input
+                    id="clientDocumentNumber"
+                    placeholder="Número de cédula o NIT"
+                    {...register("clientDocumentNumber")}
+                  />
+                  {errors.clientDocumentNumber && (
+                    <p className="text-sm text-destructive">
+                      {errors.clientDocumentNumber.message}
                     </p>
                   )}
                 </div>
