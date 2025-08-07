@@ -390,9 +390,20 @@ export default function CreateContract() {
   };
 
   const formatAmountInput = (value: string) => {
-    // Allow numbers, decimals, and commas
-    const numberValue = value.replace(/[^\d.,]/g, '');
-    return numberValue;
+    // Remove all non-digits
+    const cleanValue = value.replace(/\D/g, '');
+    
+    // Add thousand separators (dots)
+    if (cleanValue) {
+      return cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+    
+    return cleanValue;
+  };
+
+  const handleAmountChange = (fieldName: 'total_amount' | 'hourly_rate', value: string) => {
+    const formattedValue = formatAmountInput(value);
+    setValue(fieldName, formattedValue);
   };
 
   const handleLogout = async () => {
@@ -799,10 +810,7 @@ export default function CreateContract() {
                                        {...register("hourly_rate", { required: "El valor por hora es requerido" })}
                                        placeholder="50,000"
                                        className="text-lg pl-8"
-                                       onChange={(e) => {
-                                         const formatted = formatAmountInput(e.target.value);
-                                         setValue("hourly_rate", formatted);
-                                       }}
+                                        onChange={(e) => handleAmountChange("hourly_rate", e.target.value)}
                                      />
                                    </div>
                                    {errors.hourly_rate && (
@@ -820,10 +828,7 @@ export default function CreateContract() {
                                        {...register("total_amount", { required: "El valor total es requerido" })}
                                        placeholder="1,000,000"
                                        className="text-lg pl-8"
-                                       onChange={(e) => {
-                                         const formatted = formatAmountInput(e.target.value);
-                                         setValue("total_amount", formatted);
-                                       }}
+                                        onChange={(e) => handleAmountChange("total_amount", e.target.value)}
                                      />
                                    </div>
                                    {errors.total_amount && (
@@ -843,10 +848,7 @@ export default function CreateContract() {
                                      {...register("total_amount", { required: "El valor total es requerido" })}
                                      placeholder="1,000,000"
                                      className="text-lg pl-8"
-                                     onChange={(e) => {
-                                       const formatted = formatAmountInput(e.target.value);
-                                       setValue("total_amount", formatted);
-                                     }}
+                                      onChange={(e) => handleAmountChange("total_amount", e.target.value)}
                                    />
                                  </div>
                                  {errors.total_amount && (
