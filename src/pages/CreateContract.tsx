@@ -102,11 +102,15 @@ export default function CreateContract() {
           id, 
           name, 
           email,
-          roles!inner(name, display_name)
+          roles!profiles_role_id_fkey(name, display_name)
         `)
         .eq('roles.name', 'supervisor');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading supervisors:', error);
+        return;
+      }
+      
       console.log('Supervisors loaded:', data);
       setSupervisors(data || []);
     } catch (error) {
