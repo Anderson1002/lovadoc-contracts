@@ -787,24 +787,40 @@ export default function CreateContract() {
                         <CardContent className="space-y-6">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {watchedType === "variable_amount" ? (
-                              <div className="space-y-2">
-                                <Label htmlFor="hourly_rate" className="text-base font-semibold">Valor por Hora *</Label>
-                                <Input
-                                  id="hourly_rate"
-                                  {...register("hourly_rate", { required: "El valor por hora es requerido" })}
-                                  placeholder="$0"
-                                  className="text-lg"
-                                  onChange={(e) => {
-                                    const formatted = formatAmountInput(e.target.value);
-                                    setValue("hourly_rate", formatted);
-                                    // Also set total_amount to the hourly rate for now
-                                    setValue("total_amount", formatted);
-                                  }}
-                                />
-                                {errors.hourly_rate && (
-                                  <p className="text-destructive text-sm">{errors.hourly_rate.message}</p>
-                                )}
-                              </div>
+                              <>
+                                <div className="space-y-2">
+                                  <Label htmlFor="hourly_rate" className="text-base font-semibold">Valor por Hora *</Label>
+                                  <Input
+                                    id="hourly_rate"
+                                    {...register("hourly_rate", { required: "El valor por hora es requerido" })}
+                                    placeholder="$0"
+                                    className="text-lg"
+                                    onChange={(e) => {
+                                      const formatted = formatAmountInput(e.target.value);
+                                      setValue("hourly_rate", formatted);
+                                    }}
+                                  />
+                                  {errors.hourly_rate && (
+                                    <p className="text-destructive text-sm">{errors.hourly_rate.message}</p>
+                                  )}
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="total_amount" className="text-base font-semibold">Valor Total del Contrato *</Label>
+                                  <Input
+                                    id="total_amount"
+                                    {...register("total_amount", { required: "El valor total es requerido" })}
+                                    placeholder="$0"
+                                    className="text-lg"
+                                    onChange={(e) => {
+                                      const formatted = formatAmountInput(e.target.value);
+                                      setValue("total_amount", formatted);
+                                    }}
+                                  />
+                                  {errors.total_amount && (
+                                    <p className="text-destructive text-sm">{errors.total_amount.message}</p>
+                                  )}
+                                </div>
+                              </>
                             ) : (
                               <div className="space-y-2">
                                 <Label htmlFor="total_amount" className="text-base font-semibold">Valor Total *</Label>
@@ -936,14 +952,13 @@ export default function CreateContract() {
 
                           <div className="space-y-2">
                             <Label htmlFor="signed_contract" className="text-base font-semibold flex items-center gap-2">
-                              Subir Contrato Firmado
-                              <span className="text-sm text-muted-foreground">(Opcional)</span>
+                              Subir Contrato Firmado *
                               <Tooltip>
                                 <TooltipTrigger>
                                   <Info className="w-4 h-4 text-muted-foreground" />
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>Adjunta el contrato firmado en formato PDF si ya está disponible</p>
+                                  <p>Adjunta el contrato firmado en formato PDF</p>
                                 </TooltipContent>
                               </Tooltip>
                             </Label>
@@ -952,12 +967,15 @@ export default function CreateContract() {
                                 id="signed_contract"
                                 type="file"
                                 accept=".pdf"
-                                {...register("signed_contract")}
+                                {...register("signed_contract", { required: "El contrato firmado es requerido" })}
                                 className="text-lg"
                               />
                               <FileCheck className="w-5 h-5 text-muted-foreground" />
                             </div>
                             <p className="text-sm text-muted-foreground">Adjuntar contrato firmado en PDF</p>
+                            {errors.signed_contract && (
+                              <p className="text-destructive text-sm">{errors.signed_contract.message}</p>
+                            )}
                           </div>
 
                           {watchedAmount && (
