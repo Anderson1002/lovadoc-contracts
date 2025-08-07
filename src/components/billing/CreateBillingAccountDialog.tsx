@@ -414,6 +414,11 @@ export function CreateBillingAccountDialog({
                       mode="single"
                       selected={startDate}
                       onSelect={setStartDate}
+                      disabled={(date) => {
+                        if (!selectedContractData) return false;
+                        const contractStartDate = new Date(selectedContractData.start_date);
+                        return date < contractStartDate;
+                      }}
                       initialFocus
                       className="pointer-events-auto"
                     />
@@ -441,7 +446,12 @@ export function CreateBillingAccountDialog({
                       mode="single"
                       selected={endDate}
                       onSelect={setEndDate}
-                      disabled={(date) => startDate ? date < startDate : false}
+                      disabled={(date) => {
+                        if (!selectedContractData) return false;
+                        const contractStartDate = new Date(selectedContractData.start_date);
+                        const minDate = startDate ? startDate : contractStartDate;
+                        return date < minDate;
+                      }}
                       initialFocus
                       className="pointer-events-auto"
                     />
