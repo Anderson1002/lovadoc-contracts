@@ -392,10 +392,23 @@ export default function CreateContract() {
                     <Label htmlFor="hourlyRate">Tarifa por Hora</Label>
                     <Input
                       id="hourlyRate"
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
+                      type="text"
+                      placeholder="$0.00"
                       {...register("hourlyRate")}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^\d.]/g, '');
+                        const parts = value.split('.');
+                        const formatted = parts[0] ? `$${parseInt(parts[0]).toLocaleString('es-CO')}` : '$0';
+                        const finalFormatted = parts[1] !== undefined ? `${formatted}.${parts[1].slice(0, 2)}` : formatted + '.00';
+                        e.target.value = finalFormatted;
+                        setValue("hourlyRate", value);
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value.replace(/[^\d.]/g, '');
+                        const number = parseFloat(value) || 0;
+                        const formatted = `$${number.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        e.target.value = formatted;
+                      }}
                     />
                   </div>
                 )}
