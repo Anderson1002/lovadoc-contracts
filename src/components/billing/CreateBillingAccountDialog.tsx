@@ -15,6 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { BillingDocumentPreview } from "./BillingDocumentPreview";
 
 interface CreateBillingAccountDialogProps {
   open: boolean;
@@ -169,8 +170,8 @@ export function CreateBillingAccountDialog({
       }
     }
 
-    // Validate required files
-    const requiredFiles = ['billing_invoice', 'social_security'];
+    // Validate required files (only social security is required now)
+    const requiredFiles = ['social_security'];
     for (const fileType of requiredFiles) {
       if (!files[fileType].file) {
         toast({
@@ -219,13 +220,36 @@ export function CreateBillingAccountDialog({
     }
 
     try {
+      // Create draft billing account if it doesn't exist
       if (!currentDraftId) {
-        toast({
-          title: "Error",
-          description: "Primero debe guardar como borrador para registrar actividades",
-          variant: "destructive"
-        });
-        return;
+        if (!selectedContract || !amount || !startDate || !endDate) {
+          toast({
+            title: "Error",
+            description: "Complete los campos básicos: contrato, valor y período de facturación para registrar actividades",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const startDateString = format(startDate, 'yyyy-MM-dd');
+        const { data: draftBilling, error: draftError } = await supabase
+          .from('billing_accounts')
+          .insert({
+            contract_id: selectedContract,
+            amount: parseFloat(amount),
+            billing_month: startDateString,
+            billing_start_date: startDateString,
+            billing_end_date: format(endDate, 'yyyy-MM-dd'),
+            created_by: userProfile.id,
+            status: 'draft',
+            account_number: ''
+          })
+          .select()
+          .single();
+
+        if (draftError) throw draftError;
+        setCurrentDraftId(draftBilling.id);
+        setBillingStatus('draft');
       }
 
       // Save activity to database
@@ -878,11 +902,23 @@ export function CreateBillingAccountDialog({
             )}
           </div>
 
+          {/* Billing Document Preview */}
+          <BillingDocumentPreview
+            userProfile={userProfile}
+            selectedContract={selectedContractData}
+            amount={amount}
+            startDate={startDate}
+            endDate={endDate}
+            activities={activities}
+          />
+
           {/* File Uploads */}
           <div className="space-y-4">
             <Label>Documentos Requeridos *</Label>
             
-            {Object.entries(files).map(([type, fileUpload]) => (
+            {Object.entries(files)
+              .filter(([type]) => type === 'social_security') // Only show social security now
+              .map(([type, fileUpload]) => (
               <Card key={type}>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center justify-between">
@@ -951,7 +987,6 @@ export function CreateBillingAccountDialog({
                   contractsLoading || 
                   draftSaving ||
                   activities.filter(a => a.status === 'saved').length === 0 ||
-                  !files.billing_invoice.file ||
                   !files.social_security.file
                 }
               >
