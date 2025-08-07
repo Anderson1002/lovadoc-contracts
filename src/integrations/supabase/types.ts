@@ -59,6 +59,138 @@ export type Database = {
           },
         ]
       }
+      billing_accounts: {
+        Row: {
+          account_number: string
+          amount: number
+          billing_month: string
+          contract_id: string
+          created_at: string
+          created_by: string
+          id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_number: string
+          amount: number
+          billing_month: string
+          contract_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string
+          amount?: number
+          billing_month?: string
+          contract_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_accounts_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_documents: {
+        Row: {
+          billing_account_id: string
+          created_at: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          billing_account_id: string
+          created_at?: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          billing_account_id?: string
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_documents_billing_account_id_fkey"
+            columns: ["billing_account_id"]
+            isOneToOne: false
+            referencedRelation: "billing_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_reviews: {
+        Row: {
+          action: string
+          billing_account_id: string
+          comments: string | null
+          created_at: string
+          id: string
+          reviewer_id: string
+        }
+        Insert: {
+          action: string
+          billing_account_id: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          reviewer_id: string
+        }
+        Update: {
+          action?: string
+          billing_account_id?: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          reviewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_reviews_billing_account_id_fkey"
+            columns: ["billing_account_id"]
+            isOneToOne: false
+            referencedRelation: "billing_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_payments: {
         Row: {
           amount: number
@@ -374,6 +506,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_billing_account_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["user_role_type"]
