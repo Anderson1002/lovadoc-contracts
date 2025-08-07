@@ -23,6 +23,7 @@ interface DashboardStats {
   totalContracts: number;
   activeContracts: number;
   pendingReview: number;
+  cancelledContracts: number;
   totalAmount: number;
   completedPayments: number;
 }
@@ -32,6 +33,7 @@ export default function Dashboard() {
     totalContracts: 0,
     activeContracts: 0,
     pendingReview: 0,
+    cancelledContracts: 0,
     totalAmount: 0,
     completedPayments: 0
   });
@@ -83,17 +85,17 @@ export default function Dashboard() {
 
       // Calculate stats
       const totalContracts = contracts?.length || 0;
-      // Solo contar contratos que realmente están en estado "active" + "draft" (que se muestran como activos)
       const activeContracts = contracts?.filter(c => c.status === 'active' || c.status === 'draft').length || 0;
-      // Eliminar "pendientes revisión" ya que no existe en la plataforma
       const completedContracts = contracts?.filter(c => c.status === 'completed').length || 0;
+      const cancelledContracts = contracts?.filter(c => c.status === 'cancelled').length || 0;
       const totalAmount = contracts?.reduce((sum, c) => sum + Number(c.total_amount), 0) || 0;
       const completedPayments = payments?.length || 0;
 
       setStats({
         totalContracts,
         activeContracts,
-        pendingReview: completedContracts, // Cambiar a mostrar completados en lugar de pendientes
+        pendingReview: completedContracts,
+        cancelledContracts,
         totalAmount,
         completedPayments
       });
@@ -190,7 +192,7 @@ export default function Dashboard() {
         <StatsCard
           title="Contratos Activos"
           value={stats.activeContracts}
-          description={`${stats.pendingReview} completados, 0 cancelados`}
+          description={`${stats.pendingReview} completados, ${stats.cancelledContracts} cancelados`}
           icon={CheckCircle}
           trend={{ value: 8, isPositive: true }}
         />
