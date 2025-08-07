@@ -191,26 +191,6 @@ export default function Contracts() {
           />
         </div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ContractStatusChart
-            data={[
-              { name: 'Registrado', value: stats.registered, color: 'hsl(var(--state-registered))' },
-              { name: 'Devuelto', value: stats.returned, color: 'hsl(var(--state-returned))' },
-              { name: 'En Ejecución', value: stats.active, color: 'hsl(var(--state-executing))' },
-              { name: 'Completado', value: stats.completed, color: 'hsl(var(--state-completed))' },
-              { name: 'Cancelado', value: stats.cancelled, color: 'hsl(var(--state-cancelled))' }
-            ].filter(item => item.value > 0)}
-          />
-          <ContractStatusChart
-            data={[
-              { name: 'Monto Variable', value: contracts.filter(c => c.contract_type === 'monto_variable').length, color: 'hsl(var(--chart-1))' },
-              { name: 'Contrato Empresa', value: contracts.filter(c => c.contract_type === 'contrato_empresa').length, color: 'hsl(var(--chart-2))' },
-              { name: 'Monto Fijo', value: contracts.filter(c => c.contract_type === 'monto_fijo').length, color: 'hsl(var(--chart-3))' }
-            ].filter(item => item.value > 0)}
-          />
-        </div>
-
         {/* Contracts Table */}
         <div className="bg-card rounded-lg border">
           <div className="p-6">
