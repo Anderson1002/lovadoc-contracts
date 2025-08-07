@@ -259,55 +259,117 @@ export type Database = {
           },
         ]
       }
+      contract_state_history: {
+        Row: {
+          changed_by: string
+          comentarios: string | null
+          contract_id: string
+          created_at: string
+          estado_anterior: Database["public"]["Enums"]["contract_state"] | null
+          estado_nuevo: Database["public"]["Enums"]["contract_state"]
+          id: string
+        }
+        Insert: {
+          changed_by: string
+          comentarios?: string | null
+          contract_id: string
+          created_at?: string
+          estado_anterior?: Database["public"]["Enums"]["contract_state"] | null
+          estado_nuevo: Database["public"]["Enums"]["contract_state"]
+          id?: string
+        }
+        Update: {
+          changed_by?: string
+          comentarios?: string | null
+          contract_id?: string
+          created_at?: string
+          estado_anterior?: Database["public"]["Enums"]["contract_state"] | null
+          estado_nuevo?: Database["public"]["Enums"]["contract_state"]
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_state_history_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
+          area_responsable: string | null
+          client_account_number: string | null
           client_address: string | null
+          client_bank_name: string | null
           client_email: string | null
           client_name: string
           client_phone: string | null
+          comentarios_devolucion: string | null
+          consecutivo_numero: number | null
           contract_number: string
           contract_type: Database["public"]["Enums"]["contract_type"]
           created_at: string
           created_by: string
           description: string | null
           end_date: string | null
+          estado: Database["public"]["Enums"]["contract_state"] | null
+          hourly_rate: number | null
           id: string
           start_date: string
           status: Database["public"]["Enums"]["contract_status"]
+          supervisor_asignado: string | null
           total_amount: number
           updated_at: string
         }
         Insert: {
+          area_responsable?: string | null
+          client_account_number?: string | null
           client_address?: string | null
+          client_bank_name?: string | null
           client_email?: string | null
           client_name: string
           client_phone?: string | null
+          comentarios_devolucion?: string | null
+          consecutivo_numero?: number | null
           contract_number: string
           contract_type: Database["public"]["Enums"]["contract_type"]
           created_at?: string
           created_by: string
           description?: string | null
           end_date?: string | null
+          estado?: Database["public"]["Enums"]["contract_state"] | null
+          hourly_rate?: number | null
           id?: string
           start_date: string
           status?: Database["public"]["Enums"]["contract_status"]
+          supervisor_asignado?: string | null
           total_amount: number
           updated_at?: string
         }
         Update: {
+          area_responsable?: string | null
+          client_account_number?: string | null
           client_address?: string | null
+          client_bank_name?: string | null
           client_email?: string | null
           client_name?: string
           client_phone?: string | null
+          comentarios_devolucion?: string | null
+          consecutivo_numero?: number | null
           contract_number?: string
           contract_type?: Database["public"]["Enums"]["contract_type"]
           created_at?: string
           created_by?: string
           description?: string | null
           end_date?: string | null
+          estado?: Database["public"]["Enums"]["contract_state"] | null
+          hourly_rate?: number | null
           id?: string
           start_date?: string
           status?: Database["public"]["Enums"]["contract_status"]
+          supervisor_asignado?: string | null
           total_amount?: number
           updated_at?: string
         }
@@ -510,6 +572,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      generate_billing_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_contract_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["user_role_type"]
@@ -520,7 +590,13 @@ export type Database = {
       }
     }
     Enums: {
-      contract_status: "draft" | "active" | "completed" | "cancelled"
+      contract_state: "registrado" | "devuelto" | "en_ejecucion" | "completado"
+      contract_status:
+        | "draft"
+        | "active"
+        | "completed"
+        | "cancelled"
+        | "returned"
       contract_type: "fixed_amount" | "variable_amount" | "contractor"
       user_role_type: "super_admin" | "supervisor" | "admin" | "employee"
     }
@@ -650,7 +726,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      contract_status: ["draft", "active", "completed", "cancelled"],
+      contract_state: ["registrado", "devuelto", "en_ejecucion", "completado"],
+      contract_status: [
+        "draft",
+        "active",
+        "completed",
+        "cancelled",
+        "returned",
+      ],
       contract_type: ["fixed_amount", "variable_amount", "contractor"],
       user_role_type: ["super_admin", "supervisor", "admin", "employee"],
     },

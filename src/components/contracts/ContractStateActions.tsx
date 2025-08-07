@@ -53,13 +53,12 @@ export function ContractStateActions({
     try {
       setIsLoading(true);
 
-      // Actualizar el contrato usando el campo status existente
+      // Actualizar el contrato con el nuevo estado
       const { error: contractError } = await supabase
         .from('contracts')
         .update({ 
-          status: newState === 'en_ejecucion' ? 'active' : 
-                 newState === 'completado' ? 'completed' : 
-                 newState === 'cancelado' ? 'cancelled' : 'draft'
+          status: newState as 'draft' | 'active' | 'completed' | 'cancelled' | 'returned',
+          comentarios_devolucion: comments || null
         })
         .eq('id', contract.id);
 
@@ -105,11 +104,11 @@ export function ContractStateActions({
 
   const getStateLabel = (state: string) => {
     switch (state) {
-      case 'registrado': return 'registrado';
-      case 'devuelto': return 'devuelto';
-      case 'en_ejecucion': return 'puesto en ejecución';
-      case 'completado': return 'completado';
-      case 'cancelado': return 'cancelado';
+      case 'draft': return 'registrado';
+      case 'returned': return 'devuelto';
+      case 'active': return 'puesto en ejecución';
+      case 'completed': return 'completado';
+      case 'cancelled': return 'cancelado';
       default: return state;
     }
   };
@@ -118,13 +117,19 @@ export function ContractStateActions({
     switch (currentState) {
       case 'draft':
         return [
-          { action: 'en_ejecucion', label: 'Aprobar', icon: CheckCircle, variant: 'default' },
-          { action: 'cancelado', label: 'Cancelar', icon: XCircle, variant: 'destructive' }
+          { action: 'active', label: 'Aprobar', icon: CheckCircle, variant: 'default' },
+          { action: 'returned', label: 'Devolver', icon: XCircle, variant: 'destructive' },
+          { action: 'cancelled', label: 'Cancelar', icon: XCircle, variant: 'destructive' }
+        ];
+      case 'returned':
+        return [
+          { action: 'active', label: 'Aprobar', icon: CheckCircle, variant: 'default' },
+          { action: 'cancelled', label: 'Cancelar', icon: XCircle, variant: 'destructive' }
         ];
       case 'active':
         return [
-          { action: 'completado', label: 'Completar', icon: CheckCircle, variant: 'default' },
-          { action: 'cancelado', label: 'Cancelar', icon: XCircle, variant: 'destructive' }
+          { action: 'completed', label: 'Completar', icon: CheckCircle, variant: 'default' },
+          { action: 'cancelled', label: 'Cancelar', icon: XCircle, variant: 'destructive' }
         ];
       default:
         return [];
@@ -146,7 +151,7 @@ export function ContractStateActions({
         <DropdownMenuContent align="end" className="bg-background border shadow-lg">
           {getAvailableActions().map((action) => {
             const Icon = action.icon;
-            if (action.action === 'cancelado' && currentState === 'draft') {
+            if (action.action === 'returned') {
               return (
                 <DropdownMenuItem 
                   key={action.action}
@@ -175,9 +180,9 @@ export function ContractStateActions({
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Cancelar Contrato</DialogTitle>
+            <DialogTitle>Devolver Contrato</DialogTitle>
             <DialogDescription>
-              Ingresa los comentarios sobre por qué se cancela este contrato.
+              Ingresa los comentarios sobre por qué se devuelve este contrato para correcciones.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -202,10 +207,10 @@ export function ContractStateActions({
             </Button>
             <Button 
               variant="destructive" 
-              onClick={() => handleStateChange('cancelado', rejectionComments)}
+              onClick={() => handleStateChange('returned', rejectionComments)}
               disabled={isLoading || !rejectionComments.trim()}
             >
-              {isLoading ? "Cancelando..." : "Cancelar Contrato"}
+              {isLoading ? "Devolviendo..." : "Devolver Contrato"}
             </Button>
           </DialogFooter>
         </DialogContent>

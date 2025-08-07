@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -19,303 +20,127 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn, formatCurrency } from "@/lib/utils";
+import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import {
-  CalendarIcon,
-  FileText,
-  DollarSign,
-  Building2,
-  ArrowLeft,
-  Save,
-  Clock,
-  User,
-  LogOut,
-  Upload,
-  Info,
-  FileCheck,
-  ChevronDown,
-  ChevronUp
-} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/ui/app-sidebar";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useNavigate } from "react-router-dom";
+import { Layout } from "@/components/Layout";
 
-interface ContractFormData {
-  contract_number: string;
-  client_name: string;
-  client_email: string;
-  client_phone: string;
-  client_address: string;
-  client_account_number: string;
-  client_bank_name: string;
-  client_document_number: string;
-  bank_certification: FileList | null;
-  contract_type: string;
-  contract_template: string;
-  total_amount: string;
-  hourly_rate: string;
-  start_date: Date | undefined;
-  end_date: Date | undefined;
-  contract_object: string;
-  signed_contract: FileList | null;
-  area_responsable: string;
-  supervisor_asignado: string;
-}
+const contractFormSchema = z.object({
+  contractType: z.enum(["fixed_amount", "variable_amount", "contractor"]),
+  clientName: z.string().min(1, "El nombre del cliente es requerido"),
+  clientEmail: z.string().email("Email inválido").optional().or(z.literal("")),
+  clientPhone: z.string().optional(),
+  clientAddress: z.string().optional(),
+  clientAccountNumber: z.string().optional(),
+  clientBankName: z.string().optional(),
+  description: z.string().min(1, "La descripción es requerida"),
+  totalAmount: z.string().min(1, "El valor total es requerido"),
+  hourlyRate: z.string().optional(),
+  startDate: z.date({
+    required_error: "La fecha de inicio es requerida",
+  }),
+  endDate: z.date().optional(),
+  area_responsable: z.string().min(1, "El área responsable es requerida"),
+  supervisor_asignado: z.string().min(1, "El supervisor asignado es requerido"),
+});
 
-const contractTypes = [
-  {
-    value: "fixed_amount",
-    label: "Monto Fijo",
-    description: "Valor total definido al inicio del contrato",
-    icon: DollarSign,
-    templates: [
-      { value: "template_fixed_medical", label: "Plantilla Servicios Médicos - Monto Fijo" },
-      { value: "template_fixed_admin", label: "Plantilla Servicios Administrativos - Monto Fijo" }
-    ]
-  },
-  {
-    value: "variable_amount", 
-    label: "Monto Variable",
-    description: "Valor basado en horas trabajadas o unidades",
-    icon: Clock,
-    templates: [
-      { value: "template_variable_hourly", label: "Plantilla Por Horas" },
-      { value: "template_variable_units", label: "Plantilla Por Unidades" }
-    ]
-  },
-  {
-    value: "contractor",
-    label: "Contrato Empresa",
-    description: "Contrato con empresas prestadoras de servicios",
-    icon: Building2,
-    templates: [
-      { value: "template_company_services", label: "Plantilla Empresa Servicios" },
-      { value: "template_company_equipment", label: "Plantilla Empresa Equipos" }
-    ]
-  }
+type ContractFormData = z.infer<typeof contractFormSchema>;
+
+const areaOptions = [
+  { value: "cirugia_salas_partos", label: "Cirugía y Salas de Partos" },
+  { value: "servicios_conexos_salud", label: "Servicios Conexos a la Salud" },
+  { value: "talento_humano", label: "Talento Humano" },
+  { value: "administracion", label: "Administración" },
+  { value: "sistemas_informaticos", label: "Sistemas Informáticos" },
+  { value: "mantenimiento", label: "Mantenimiento" },
+  { value: "seguridad", label: "Seguridad" },
+  { value: "servicios_generales", label: "Servicios Generales" },
 ];
 
 export default function CreateContract() {
   const [isLoading, setIsLoading] = useState(false);
-  const [session, setSession] = useState(null);
-  const [user, setUser] = useState(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [userRole, setUserRole] = useState("employee");
-  const [contractors, setContractors] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [basicInfoOpen, setBasicInfoOpen] = useState(true);
-  const [clientInfoOpen, setClientInfoOpen] = useState(true);
-  const [contractDetailsOpen, setContractDetailsOpen] = useState(true);
-  const [contractDuration, setContractDuration] = useState<string>("");
-  const navigate = useNavigate();
+  const [supervisors, setSupervisors] = useState<any[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Load supervisors for the dropdown
+  useEffect(() => {
+    loadSupervisors();
+  }, []);
+
+  const loadSupervisors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, roles!profiles_role_id_fkey(name)')
+        .eq('roles.name', 'supervisor');
+
+      if (error) throw error;
+      setSupervisors(data || []);
+    } catch (error) {
+      console.error('Error loading supervisors:', error);
+    }
+  };
 
   const {
     register,
     handleSubmit,
+    formState: { errors },
     setValue,
     watch,
-    formState: { errors },
-    reset
+    control,
   } = useForm<ContractFormData>({
-    defaultValues: {
-      area_responsable: "",
-      supervisor_asignado: ""
-    }
+    resolver: zodResolver(contractFormSchema),
   });
 
-  const watchedType = watch("contract_type");
-  const watchedTemplate = watch("contract_template");
-  const watchedStartDate = watch("start_date");
-  const watchedEndDate = watch("end_date");
-  const watchedAmount = watch("total_amount");
-
-  // Calculate contract duration when dates change
-  useEffect(() => {
-    if (watchedStartDate && watchedEndDate) {
-      const start = new Date(watchedStartDate);
-      const end = new Date(watchedEndDate);
-      
-      if (end > start) {
-        const diffTime = Math.abs(end.getTime() - start.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const months = Math.floor(diffDays / 30);
-        const remainingDays = diffDays % 30;
-        const weeks = Math.floor(remainingDays / 7);
-        const days = remainingDays % 7;
-        
-        let duration = "";
-        if (months > 0) duration += `${months} mes${months > 1 ? 'es' : ''}`;
-        if (weeks > 0) duration += `${duration ? ' y ' : ''}${weeks} semana${weeks > 1 ? 's' : ''}`;
-        if (days > 0) duration += `${duration ? ' y ' : ''}${days} día${days > 1 ? 's' : ''}`;
-        
-        setContractDuration(duration || "Mismo día");
-      } else {
-        setContractDuration("");
-      }
-    } else {
-      setContractDuration("");
-    }
-  }, [watchedStartDate, watchedEndDate]);
-
-  useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (!session) {
-          navigate("/auth");
-        } else {
-          setTimeout(() => {
-            loadInitialData(session.user.id);
-          }, 0);
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (!session) {
-        navigate("/auth");
-      } else {
-        loadInitialData(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  const loadInitialData = async (userId: string) => {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*, roles!profiles_role_id_fkey(name)')
-        .eq('user_id', userId)
-        .single();
-
-      if (profile && profile.roles) {
-        setUserRole((profile.roles as any).name);
-        setUserProfile(profile);
-      }
-
-      // Generate contract number
-      const contractNumber = await generateContractNumber();
-      setValue("contract_number", contractNumber);
-
-    } catch (error) {
-      console.error('Error loading initial data:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los datos iniciales",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const generateContractNumber = async () => {
-    const year = new Date().getFullYear();
-    const month = String(new Date().getMonth() + 1).padStart(2, '0');
-    
-    // Get count of contracts this month
-    const { count } = await supabase
-      .from('contracts')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', `${year}-${month}-01`)
-      .lt('created_at', `${year}-${month === '12' ? year + 1 : year}-${month === '12' ? '01' : String(Number(month) + 1).padStart(2, '0')}-01`);
-
-    const contractNumber = `CON-${year}${month}-${String((count || 0) + 1).padStart(3, '0')}`;
-    return contractNumber;
-  };
+  const selectedContractType = watch("contractType");
+  const selectedStartDate = watch("startDate");
+  const selectedEndDate = watch("endDate");
 
   const onSubmit = async (data: ContractFormData) => {
-    if (!userProfile) return;
-
-    // Validate required fields
-    if (!data.client_document_number) {
-      toast({
-        title: "Error",
-        description: "El número de documento es requerido",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!data.bank_certification || data.bank_certification.length === 0) {
-      toast({
-        title: "Error", 
-        description: "La certificación bancaria es requerida",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!data.contract_object || data.contract_object.trim() === "") {
-      toast({
-        title: "Error",
-        description: "El objeto del contrato es requerido",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!data.area_responsable || data.area_responsable.trim() === "") {
-      toast({
-        title: "Error",
-        description: "El área responsable es requerida",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!data.supervisor_asignado || data.supervisor_asignado.trim() === "") {
-      toast({
-        title: "Error",
-        description: "El supervisor responsable es requerido",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsLoading(true);
     try {
-      // First create the contract
+      setIsLoading(true);
+
+      // Get user profile
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuario no autenticado");
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile) throw new Error("Perfil de usuario no encontrado");
+
       const contractData = {
-        contract_number: data.contract_number,
-        client_name: data.client_name,
-        client_email: data.client_email || null,
-        client_phone: data.client_phone || null,
-        client_address: data.client_address || null,
-        client_account_number: data.client_account_number || null,
-        client_bank_name: data.client_bank_name || null,
-        contract_type: data.contract_type as any,
-        total_amount: parseFloat(data.total_amount.replace(/[^\d.-]/g, '').replace(',', '.')) || 0,
-        hourly_rate: data.hourly_rate ? parseFloat(data.hourly_rate.replace(/[^\d.-]/g, '').replace(',', '.')) : null,
-        start_date: data.start_date?.toISOString().split('T')[0],
-        end_date: data.end_date?.toISOString().split('T')[0] || null,
-        description: data.contract_object || null,
+        contract_number: '', // Se generará automáticamente por trigger
+        contract_type: data.contractType,
+        client_name: data.clientName,
+        client_email: data.clientEmail || null,
+        client_phone: data.clientPhone || null,
+        client_address: data.clientAddress || null,
+        client_account_number: data.clientAccountNumber || null,
+        client_bank_name: data.clientBankName || null,
+        description: data.description,
+        total_amount: parseFloat(data.totalAmount),
+        hourly_rate: data.hourlyRate ? parseFloat(data.hourlyRate) : null,
+        start_date: data.startDate.toISOString().split('T')[0],
+        end_date: data.endDate ? data.endDate.toISOString().split('T')[0] : null,
         area_responsable: data.area_responsable,
         supervisor_asignado: data.supervisor_asignado,
-        created_by: userProfile.id,
-        status: 'draft' as any,
-        estado: 'registrado' as any
+        status: 'draft' as const, // Estado inicial: Registrado
+        created_by: profile.id
       };
 
       const { data: contract, error } = await supabase
@@ -326,804 +151,392 @@ export default function CreateContract() {
 
       if (error) throw error;
 
-      // Upload bank certification
-      console.log('Checking bank certification files:', data.bank_certification);
-      if (data.bank_certification && data.bank_certification[0]) {
-        console.log('Uploading bank certification...');
-        const bankCertFile = data.bank_certification[0];
-        const bankCertPath = `${user?.id}/${contract.id}/bank-certification-${Date.now()}.${bankCertFile.name.split('.').pop()}`;
-        
-        console.log('Bank cert upload path:', bankCertPath);
-        const { error: uploadError } = await supabase.storage
-          .from('contract-documents')
-          .upload(bankCertPath, bankCertFile);
-
-        if (uploadError) {
-          console.error('Error uploading bank certification:', uploadError);
-        } else {
-          console.log('Bank certification uploaded successfully, saving document record...');
-          // Save document record
-          const { data: docData, error: docError } = await supabase
-            .from('documents')
-            .insert({
-              contract_id: contract.id,
-              file_name: `Certificación Bancaria - ${bankCertFile.name}`,
-              file_path: bankCertPath,
-              file_size: bankCertFile.size,
-              mime_type: bankCertFile.type,
-              uploaded_by: userProfile.id
-            });
-
-          if (docError) {
-            console.error('Error saving bank certification document:', docError);
-          } else {
-            console.log('Bank certification document saved successfully:', docData);
-          }
+      // Log activity
+      await supabase.from('activities').insert({
+        user_id: user.id,
+        entity_type: 'contract',
+        entity_id: contract.id,
+        action: 'contract_created',
+        details: {
+          contract_number: contract.contract_number,
+          client_name: data.clientName,
+          total_amount: parseFloat(data.totalAmount)
         }
-      } else {
-        console.log('No bank certification file provided');
-      }
-
-      // Upload signed contract if provided
-      console.log('Checking signed contract files:', data.signed_contract);
-      if (data.signed_contract && data.signed_contract[0]) {
-        console.log('Uploading signed contract...');
-        const signedContractFile = data.signed_contract[0];
-        const signedContractPath = `${user?.id}/${contract.id}/signed-contract-${Date.now()}.${signedContractFile.name.split('.').pop()}`;
-        
-        console.log('Signed contract upload path:', signedContractPath);
-        const { error: uploadError } = await supabase.storage
-          .from('contract-documents')
-          .upload(signedContractPath, signedContractFile);
-
-        if (uploadError) {
-          console.error('Error uploading signed contract:', uploadError);
-        } else {
-          console.log('Signed contract uploaded successfully, saving document record...');
-          // Save document record
-          const { data: docData, error: docError } = await supabase
-            .from('documents')
-            .insert({
-              contract_id: contract.id,
-              file_name: `Contrato Firmado - ${signedContractFile.name}`,
-              file_path: signedContractPath,
-              file_size: signedContractFile.size,
-              mime_type: signedContractFile.type,
-              uploaded_by: userProfile.id
-            });
-
-          if (docError) {
-            console.error('Error saving signed contract document:', docError);
-          } else {
-            console.log('Signed contract document saved successfully:', docData);
-          }
-        }
-      } else {
-        console.log('No signed contract file provided');
-      }
-
-      toast({
-        title: "¡Contrato creado exitosamente!",
-        description: `El contrato ${contract.contract_number} ha sido creado con sus documentos`,
       });
 
-      navigate(`/contracts`);
+      toast({
+        title: "Contrato creado exitosamente",
+        description: `El contrato ${contract.contract_number} ha sido registrado.`,
+      });
 
+      navigate(`/contracts/${contract.id}`);
     } catch (error: any) {
       console.error('Error creating contract:', error);
       toast({
         title: "Error al crear contrato",
         description: error.message || "Ocurrió un error inesperado",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const formatAmountInput = (value: string) => {
-    // Remove all non-digits
-    const cleanValue = value.replace(/\D/g, '');
-    
-    // Add thousand separators (dots)
-    if (cleanValue) {
-      return cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    }
-    
-    return cleanValue;
-  };
-
-  const handleAmountChange = (fieldName: 'total_amount' | 'hourly_rate', value: string) => {
-    const formattedValue = formatAmountInput(value);
-    setValue(fieldName, formattedValue);
-  };
-
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate("/auth");
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return null; // Will redirect to auth
-  }
-
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar userRole={userRole} />
-        <main className="flex-1">
-          <header className="h-12 flex items-center border-b bg-card px-4">
-            <SidebarTrigger />
-            <div className="ml-auto flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                Bienvenido, {user?.email}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="flex items-center gap-2 text-destructive hover:text-destructive"
-              >
-                <LogOut className="w-4 h-4" />
-                Salir
-              </Button>
-            </div>
-          </header>
-          <div className="flex-1 overflow-auto">
-            <div className="container mx-auto px-4 py-8 max-w-4xl">
-              {/* Header */}
-              <div className="flex items-center gap-4 mb-8">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => navigate("/contracts")}
-                  className="flex items-center gap-2 hover:bg-muted"
+    <Layout>
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground">Crear Nuevo Contrato</h1>
+          <p className="text-muted-foreground">
+            Complete la información del contrato para registrarlo en el sistema
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          {/* Tipo de Contrato */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Tipo de Contrato</CardTitle>
+              <CardDescription>
+                Seleccione el tipo de contrato que desea crear
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div
+                  className={cn(
+                    "p-4 border rounded-lg cursor-pointer transition-colors",
+                    selectedContractType === "fixed_amount"
+                      ? "border-primary bg-primary/5"
+                      : "border-muted hover:border-primary/50"
+                  )}
+                  onClick={() => setValue("contractType", "fixed_amount")}
                 >
-                  <ArrowLeft className="w-4 h-4" />
-                  Volver
-                </Button>
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl">
-                      <FileText className="w-8 h-8 text-primary" />
-                    </div>
-                    <div>
-                      <h1 className="text-3xl font-bold text-foreground">
-                        Crear Nuevo Contrato
-                      </h1>
-                      <p className="text-muted-foreground text-lg">
-                        Complete la información para crear un nuevo contrato hospitalario
-                      </p>
-                    </div>
+                  <h3 className="font-semibold">Monto Fijo</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Contrato con valor total predefinido
+                  </p>
+                </div>
+                <div
+                  className={cn(
+                    "p-4 border rounded-lg cursor-pointer transition-colors",
+                    selectedContractType === "variable_amount"
+                      ? "border-primary bg-primary/5"
+                      : "border-muted hover:border-primary/50"
+                  )}
+                  onClick={() => setValue("contractType", "variable_amount")}
+                >
+                  <h3 className="font-semibold">Monto Variable</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Contrato basado en tarifa por hora
+                  </p>
+                </div>
+                <div
+                  className={cn(
+                    "p-4 border rounded-lg cursor-pointer transition-colors",
+                    selectedContractType === "contractor"
+                      ? "border-primary bg-primary/5"
+                      : "border-muted hover:border-primary/50"
+                  )}
+                  onClick={() => setValue("contractType", "contractor")}
+                >
+                  <h3 className="font-semibold">Contrato Empresa</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Contrato institucional con empresa
+                  </p>
+                </div>
+              </div>
+              {errors.contractType && (
+                <p className="text-sm text-destructive mt-2">
+                  {errors.contractType.message}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Información del Cliente */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Información del Cliente</CardTitle>
+              <CardDescription>
+                Datos principales del cliente o proveedor
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="clientName">Nombre del Cliente *</Label>
+                  <Input
+                    id="clientName"
+                    placeholder="Nombre completo o razón social"
+                    {...register("clientName")}
+                  />
+                  {errors.clientName && (
+                    <p className="text-sm text-destructive">
+                      {errors.clientName.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="clientEmail">Email del Cliente</Label>
+                  <Input
+                    id="clientEmail"
+                    type="email"
+                    placeholder="cliente@email.com"
+                    {...register("clientEmail")}
+                  />
+                  {errors.clientEmail && (
+                    <p className="text-sm text-destructive">
+                      {errors.clientEmail.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="clientPhone">Teléfono del Cliente</Label>
+                  <Input
+                    id="clientPhone"
+                    placeholder="Número de teléfono"
+                    {...register("clientPhone")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="clientAddress">Dirección</Label>
+                  <Input
+                    id="clientAddress"
+                    placeholder="Dirección del cliente"
+                    {...register("clientAddress")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="clientAccountNumber">Número de Cuenta</Label>
+                  <Input
+                    id="clientAccountNumber"
+                    placeholder="Número de cuenta bancaria"
+                    {...register("clientAccountNumber")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="clientBankName">Banco</Label>
+                  <Input
+                    id="clientBankName"
+                    placeholder="Nombre del banco"
+                    {...register("clientBankName")}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Detalles del Contrato */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Detalles del Contrato</CardTitle>
+              <CardDescription>
+                Información específica del contrato y servicios
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="description">Descripción del Contrato *</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Describa el objeto del contrato, servicios a prestar, etc."
+                  rows={4}
+                  {...register("description")}
+                />
+                {errors.description && (
+                  <p className="text-sm text-destructive">
+                    {errors.description.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="totalAmount">
+                    {selectedContractType === "variable_amount" 
+                      ? "Valor Estimado Total *" 
+                      : "Valor Total del Contrato *"}
+                  </Label>
+                  <Input
+                    id="totalAmount"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    {...register("totalAmount")}
+                  />
+                  {errors.totalAmount && (
+                    <p className="text-sm text-destructive">
+                      {errors.totalAmount.message}
+                    </p>
+                  )}
+                </div>
+
+                {selectedContractType === "variable_amount" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="hourlyRate">Tarifa por Hora</Label>
+                    <Input
+                      id="hourlyRate"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      {...register("hourlyRate")}
+                    />
                   </div>
-                  
-                  {/* Breadcrumb */}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>Inicio</span>
-                    <span>/</span>
-                    <span>Gestión de Contratos</span>
-                    <span>/</span>
-                    <span className="font-medium text-foreground">Nuevo Contrato</span>
-                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>Fecha de Inicio *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !selectedStartDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {selectedStartDate ? (
+                          format(selectedStartDate, "PPP", { locale: es })
+                        ) : (
+                          <span>Seleccionar fecha de inicio</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={selectedStartDate}
+                        onSelect={(date) => setValue("startDate", date!)}
+                        disabled={(date) =>
+                          date < new Date() || date < new Date("1900-01-01")
+                        }
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {errors.startDate && (
+                    <p className="text-sm text-destructive">
+                      {errors.startDate.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Fecha de Finalización</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !selectedEndDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {selectedEndDate ? (
+                          format(selectedEndDate, "PPP", { locale: es })
+                        ) : (
+                          <span>Seleccionar fecha de finalización</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={selectedEndDate}
+                        onSelect={(date) => setValue("endDate", date)}
+                        disabled={(date) =>
+                          selectedStartDate ? date < selectedStartDate : false
+                        }
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 
-              <TooltipProvider>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                  {/* Basic Information */}
-                  <Card className="border-2 shadow-md">
-                    <Collapsible open={basicInfoOpen} onOpenChange={setBasicInfoOpen}>
-                      <CardHeader>
-                        <CollapsibleTrigger className="flex items-center justify-between w-full text-left">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                              <FileText className="w-6 h-6 text-primary" />
-                            </div>
-                            <div>
-                              <CardTitle className="text-xl font-bold">Información Básica</CardTitle>
-                              <CardDescription className="text-base">
-                                Datos generales del contrato
-                              </CardDescription>
-                            </div>
-                          </div>
-                          {basicInfoOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                        </CollapsibleTrigger>
-                      </CardHeader>
-                      <CollapsibleContent>
-                        <CardContent className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                              <Label htmlFor="contract_number" className="text-base font-semibold">Número de Contrato *</Label>
-                              <Input
-                                id="contract_number"
-                                {...register("contract_number", { required: "El número de contrato es requerido" })}
-                                placeholder="CON-2024-001"
-                                className="text-lg"
-                              />
-                              {errors.contract_number && (
-                                <p className="text-destructive text-sm">{errors.contract_number.message}</p>
-                              )}
-                            </div>
+              {/* Nuevos campos obligatorios */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="area_responsable">
+                    Área o Proceso Institucional Responsable del Contrato *
+                  </Label>
+                  <Select
+                    value={watch("area_responsable")}
+                    onValueChange={(value) => setValue("area_responsable", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar área responsable" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg">
+                      {areaOptions.map((area) => (
+                        <SelectItem key={area.value} value={area.value}>
+                          {area.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.area_responsable && (
+                    <p className="text-sm text-destructive">
+                      {errors.area_responsable.message}
+                    </p>
+                  )}
+                </div>
 
-                            <div className="space-y-2">
-                              <Label htmlFor="contract_type" className="text-base font-semibold">Tipo de Contrato *</Label>
-                              <Select onValueChange={(value) => {
-                                setValue("contract_type", value);
-                                setValue("contract_template", ""); // Reset template when type changes
-                              }}>
-                                <SelectTrigger className="text-lg">
-                                  <SelectValue placeholder="Selecciona el tipo de contrato" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-background border shadow-lg z-50">
-                                  {contractTypes.map((type) => {
-                                    const Icon = type.icon;
-                                    return (
-                                      <SelectItem key={type.value} value={type.value}>
-                                        <div className="flex items-center gap-2">
-                                          <Icon className="w-4 h-4" />
-                                          <div>
-                                            <div className="font-medium">{type.label}</div>
-                                            <div className="text-xs text-muted-foreground">
-                                              {type.description}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </SelectItem>
-                                    );
-                                  })}
-                                </SelectContent>
-                              </Select>
-                              {errors.contract_type && (
-                                <p className="text-destructive text-sm">El tipo de contrato es requerido</p>
-                              )}
-                            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="supervisor_asignado">
+                    Supervisor Responsable *
+                  </Label>
+                  <Select
+                    value={watch("supervisor_asignado")}
+                    onValueChange={(value) => setValue("supervisor_asignado", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar supervisor" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg">
+                      {supervisors.map((supervisor) => (
+                        <SelectItem key={supervisor.id} value={supervisor.name}>
+                          {supervisor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.supervisor_asignado && (
+                    <p className="text-sm text-destructive">
+                      {errors.supervisor_asignado.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                            {/* Template Selection - Only show for non-variable amount contracts */}
-                            {watchedType && watchedType !== "variable_amount" && (
-                              <div className="space-y-2">
-                                <Label htmlFor="contract_template" className="text-base font-semibold">
-                                  Plantilla de Contrato
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Info className="w-4 h-4 text-muted-foreground ml-1" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Selecciona una plantilla predefinida para este tipo de contrato</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </Label>
-                                <Select 
-                                  value={watchedTemplate} 
-                                  onValueChange={(value) => setValue("contract_template", value)}
-                                >
-                                  <SelectTrigger className="text-lg">
-                                    <SelectValue placeholder="Selecciona una plantilla" />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-background border shadow-lg z-50">
-                                    {contractTypes
-                                      .find(t => t.value === watchedType)
-                                      ?.templates.map((template) => (
-                                        <SelectItem key={template.value} value={template.value}>
-                                          {template.label}
-                                        </SelectItem>
-                                      ))
-                                    }
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* New required fields */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                              <Label htmlFor="area_responsable" className="text-base font-semibold">Área Responsable *</Label>
-                              <Select onValueChange={(value) => setValue("area_responsable", value)} {...register("area_responsable", { required: "El área responsable es requerida" })}>
-                                <SelectTrigger className="text-lg">
-                                  <SelectValue placeholder="Selecciona el área responsable" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-background border shadow-lg z-50">
-                                  <SelectItem value="enfermeria">Enfermería</SelectItem>
-                                  <SelectItem value="medicina_general">Medicina General</SelectItem>
-                                  <SelectItem value="medicina_especializada">Medicina Especializada</SelectItem>
-                                  <SelectItem value="cirugia">Cirugía</SelectItem>
-                                  <SelectItem value="urgencias">Urgencias</SelectItem>
-                                  <SelectItem value="hospitalizacion">Hospitalización</SelectItem>
-                                  <SelectItem value="cuidados_intensivos">Cuidados Intensivos</SelectItem>
-                                  <SelectItem value="laboratorio">Laboratorio Clínico</SelectItem>
-                                  <SelectItem value="radiologia">Radiología e Imágenes</SelectItem>
-                                  <SelectItem value="farmacia">Farmacia</SelectItem>
-                                  <SelectItem value="fisioterapia">Fisioterapia</SelectItem>
-                                  <SelectItem value="nutricion">Nutrición</SelectItem>
-                                  <SelectItem value="psicologia">Psicología</SelectItem>
-                                  <SelectItem value="trabajo_social">Trabajo Social</SelectItem>
-                                  <SelectItem value="servicios_generales">Servicios Generales</SelectItem>
-                                  <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
-                                  <SelectItem value="seguridad">Seguridad</SelectItem>
-                                  <SelectItem value="administracion">Administración</SelectItem>
-                                  <SelectItem value="recursos_humanos">Recursos Humanos</SelectItem>
-                                  <SelectItem value="sistemas">Sistemas</SelectItem>
-                                  <SelectItem value="juridica">Jurídica</SelectItem>
-                                  <SelectItem value="contabilidad">Contabilidad</SelectItem>
-                                  <SelectItem value="auditoria">Auditoría</SelectItem>
-                                  <SelectItem value="calidad">Calidad</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              {errors.area_responsable && (
-                                <p className="text-destructive text-sm">El área responsable es requerida</p>
-                              )}
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="supervisor_asignado" className="text-base font-semibold">Supervisor Responsable *</Label>
-                              <Input
-                                id="supervisor_asignado"
-                                {...register("supervisor_asignado", { required: "El supervisor responsable es requerido" })}
-                                placeholder="Nombre completo del supervisor"
-                                className="text-lg"
-                              />
-                              {errors.supervisor_asignado && (
-                                <p className="text-destructive text-sm">{errors.supervisor_asignado.message}</p>
-                              )}
-                            </div>
-                          </div>
-
-                          {watchedType && (
-                            <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-                              <Badge variant="outline" className="mb-2">
-                                {contractTypes.find(t => t.value === watchedType)?.label}
-                              </Badge>
-                              <p className="text-sm text-muted-foreground">
-                                {contractTypes.find(t => t.value === watchedType)?.description}
-                              </p>
-                            </div>
-                          )}
-                        </CardContent>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </Card>
-
-                  {/* Client Information */}
-                  <Card className="border-2 shadow-md">
-                    <Collapsible open={clientInfoOpen} onOpenChange={setClientInfoOpen}>
-                      <CardHeader>
-                        <CollapsibleTrigger className="flex items-center justify-between w-full text-left">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-500/10 rounded-lg">
-                              <User className="w-6 h-6 text-blue-600" />
-                            </div>
-                            <div>
-                              <CardTitle className="text-xl font-bold">Información del Cliente</CardTitle>
-                              <CardDescription className="text-base">
-                                Datos del contratista o empresa
-                              </CardDescription>
-                            </div>
-                          </div>
-                          {clientInfoOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                        </CollapsibleTrigger>
-                      </CardHeader>
-                      <CollapsibleContent>
-                        <CardContent className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                              <Label htmlFor="client_name" className="text-base font-semibold">Nombre del Cliente *</Label>
-                              <Input
-                                id="client_name"
-                                {...register("client_name", { required: "El nombre del cliente es requerido" })}
-                                placeholder="Nombre completo o razón social"
-                                className="text-lg"
-                              />
-                              {errors.client_name && (
-                                <p className="text-destructive text-sm">{errors.client_name.message}</p>
-                              )}
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="client_document_number" className="text-base font-semibold">Número de Documento *</Label>
-                              <Input
-                                id="client_document_number"
-                                {...register("client_document_number", { 
-                                  required: "El número de documento es requerido",
-                                  pattern: {
-                                    value: /^[0-9]+$/,
-                                    message: "Solo se permiten números"
-                                  }
-                                })}
-                                placeholder="123456789"
-                                className="text-lg"
-                                onInput={(e) => {
-                                  const target = e.target as HTMLInputElement;
-                                  target.value = target.value.replace(/[^0-9]/g, '');
-                                }}
-                              />
-                              {errors.client_document_number && (
-                                <p className="text-destructive text-sm">{errors.client_document_number.message}</p>
-                              )}
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="client_email" className="text-base font-semibold">Email</Label>
-                              <Input
-                                id="client_email"
-                                type="email"
-                                {...register("client_email")}
-                                placeholder="cliente@ejemplo.com"
-                                className="text-lg"
-                              />
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="client_phone" className="text-base font-semibold">Teléfono</Label>
-                              <Input
-                                id="client_phone"
-                                {...register("client_phone")}
-                                placeholder="+57 300 123 4567"
-                                className="text-lg"
-                              />
-                            </div>
-
-                            <div className="space-y-2 md:col-span-2">
-                              <Label htmlFor="client_address" className="text-base font-semibold">Dirección</Label>
-                              <Input
-                                id="client_address"
-                                {...register("client_address")}
-                                placeholder="Dirección completa del cliente"
-                                className="text-lg"
-                              />
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="client_account_number" className="text-base font-semibold">Número de Cuenta</Label>
-                              <Input
-                                id="client_account_number"
-                                {...register("client_account_number")}
-                                placeholder="1234567890"
-                                className="text-lg"
-                                onInput={(e) => {
-                                  const target = e.target as HTMLInputElement;
-                                  target.value = target.value.replace(/[^0-9]/g, '');
-                                }}
-                              />
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="client_bank_name" className="text-base font-semibold">Banco</Label>
-                              <Select onValueChange={(value) => setValue("client_bank_name", value)}>
-                                <SelectTrigger className="text-lg">
-                                  <SelectValue placeholder="Selecciona el banco" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-background border shadow-lg z-50">
-                                  <SelectItem value="bancolombia">Bancolombia</SelectItem>
-                                  <SelectItem value="banco_de_bogota">Banco de Bogotá</SelectItem>
-                                  <SelectItem value="bbva">BBVA</SelectItem>
-                                  <SelectItem value="davivienda">Davivienda</SelectItem>
-                                  <SelectItem value="banco_popular">Banco Popular</SelectItem>
-                                  <SelectItem value="colpatria">Scotiabank Colpatria</SelectItem>
-                                  <SelectItem value="av_villas">AV Villas</SelectItem>
-                                  <SelectItem value="banco_caja_social">Banco Caja Social</SelectItem>
-                                  <SelectItem value="banco_falabella">Banco Falabella</SelectItem>
-                                  <SelectItem value="banco_pichincha">Banco Pichincha</SelectItem>
-                                  <SelectItem value="citibank">Citibank</SelectItem>
-                                  <SelectItem value="banco_gnb_sudameris">Banco GNB Sudameris</SelectItem>
-                                  <SelectItem value="banco_santander">Banco Santander</SelectItem>
-                                  <SelectItem value="banco_itau">Banco Itaú</SelectItem>
-                                  <SelectItem value="bancamia">Bancamía</SelectItem>
-                                  <SelectItem value="cooperativa_financiera">Cooperativa Financiera</SelectItem>
-                                  <SelectItem value="nequi">Nequi</SelectItem>
-                                  <SelectItem value="daviplata">DaviPlata</SelectItem>
-                                  <SelectItem value="otros">Otros</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="space-y-2 md:col-span-2">
-                              <Label htmlFor="bank_certification" className="text-base font-semibold flex items-center gap-2">
-                                Certificación Bancaria *
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Info className="w-4 h-4 text-muted-foreground" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Documento que certifica la información bancaria del cliente</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </Label>
-                              <div className="flex items-center gap-4">
-                                <Input
-                                  id="bank_certification"
-                                  type="file"
-                                  accept=".pdf,.jpg,.jpeg,.png"
-                                  {...register("bank_certification", { required: "La certificación bancaria es requerida" })}
-                                  className="text-lg"
-                                />
-                                <Upload className="w-5 h-5 text-muted-foreground" />
-                              </div>
-                              <p className="text-sm text-muted-foreground">Formatos: PDF, JPG, PNG</p>
-                              {errors.bank_certification && (
-                                <p className="text-destructive text-sm">{errors.bank_certification.message}</p>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </Card>
-
-                  {/* Contract Details */}
-                  <Card className="border-2 shadow-md">
-                    <Collapsible open={contractDetailsOpen} onOpenChange={setContractDetailsOpen}>
-                      <CardHeader>
-                        <CollapsibleTrigger className="flex items-center justify-between w-full text-left">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-500/10 rounded-lg">
-                              <DollarSign className="w-6 h-6 text-green-600" />
-                            </div>
-                            <div>
-                              <CardTitle className="text-xl font-bold">Detalles del Contrato</CardTitle>
-                              <CardDescription className="text-base">
-                                Montos, fechas y especificaciones del trabajo
-                              </CardDescription>
-                            </div>
-                          </div>
-                          {contractDetailsOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                        </CollapsibleTrigger>
-                      </CardHeader>
-                      <CollapsibleContent>
-                        <CardContent className="space-y-6">
-                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                             {watchedType === "variable_amount" ? (
-                               <>
-                                 <div className="space-y-2">
-                                   <Label htmlFor="hourly_rate" className="text-base font-semibold">Valor por Hora *</Label>
-                                   <div className="relative">
-                                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">
-                                       $
-                                     </span>
-                                     <Input
-                                       id="hourly_rate"
-                                       {...register("hourly_rate", { required: "El valor por hora es requerido" })}
-                                       placeholder="50,000"
-                                       className="text-lg pl-8"
-                                        onChange={(e) => handleAmountChange("hourly_rate", e.target.value)}
-                                     />
-                                   </div>
-                                   {errors.hourly_rate && (
-                                     <p className="text-destructive text-sm">{errors.hourly_rate.message}</p>
-                                   )}
-                                 </div>
-                                 <div className="space-y-2">
-                                   <Label htmlFor="total_amount" className="text-base font-semibold">Valor Total del Contrato *</Label>
-                                   <div className="relative">
-                                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">
-                                       $
-                                     </span>
-                                     <Input
-                                       id="total_amount"
-                                       {...register("total_amount", { required: "El valor total es requerido" })}
-                                       placeholder="1,000,000"
-                                       className="text-lg pl-8"
-                                        onChange={(e) => handleAmountChange("total_amount", e.target.value)}
-                                     />
-                                   </div>
-                                   {errors.total_amount && (
-                                     <p className="text-destructive text-sm">{errors.total_amount.message}</p>
-                                   )}
-                                 </div>
-                               </>
-                             ) : (
-                               <div className="space-y-2">
-                                 <Label htmlFor="total_amount" className="text-base font-semibold">Valor Total *</Label>
-                                 <div className="relative">
-                                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">
-                                     $
-                                   </span>
-                                   <Input
-                                     id="total_amount"
-                                     {...register("total_amount", { required: "El valor total es requerido" })}
-                                     placeholder="1,000,000"
-                                     className="text-lg pl-8"
-                                      onChange={(e) => handleAmountChange("total_amount", e.target.value)}
-                                   />
-                                 </div>
-                                 {errors.total_amount && (
-                                   <p className="text-destructive text-sm">{errors.total_amount.message}</p>
-                                 )}
-                               </div>
-                             )}
-
-                            <div className="space-y-2">
-                              <Label htmlFor="start_date" className="text-base font-semibold">Fecha de Inicio *</Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    className={cn(
-                                      "w-full justify-start text-left font-normal text-lg",
-                                      !watchedStartDate && "text-muted-foreground"
-                                    )}
-                                  >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {watchedStartDate ? (
-                                      format(watchedStartDate, "PPP", { locale: es })
-                                    ) : (
-                                      <span>Selecciona fecha</span>
-                                    )}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                  <Calendar
-                                    mode="single"
-                                    selected={watchedStartDate}
-                                    onSelect={(date) => setValue("start_date", date)}
-                                    initialFocus
-                                    className="pointer-events-auto"
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="end_date" className="text-base font-semibold">Fecha de Fin</Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    className={cn(
-                                      "w-full justify-start text-left font-normal text-lg",
-                                      !watchedEndDate && "text-muted-foreground"
-                                    )}
-                                  >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {watchedEndDate ? (
-                                      format(watchedEndDate, "PPP", { locale: es })
-                                    ) : (
-                                      <span>Selecciona fecha</span>
-                                    )}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                  <Calendar
-                                    mode="single"
-                                    selected={watchedEndDate}
-                                    onSelect={(date) => setValue("end_date", date)}
-                                    initialFocus
-                                    className="pointer-events-auto"
-                                    disabled={(date) => 
-                                      watchedStartDate ? date < watchedStartDate : false
-                                    }
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                            </div>
-                          </div>
-
-                          {/* Contract Duration Display */}
-                          {contractDuration && (
-                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                              <div className="flex items-center gap-2">
-                                <Clock className="w-5 h-5 text-blue-600" />
-                                <span className="font-semibold text-blue-900">Duración del Contrato:</span>
-                                <span className="text-blue-800 font-medium">{contractDuration}</span>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="space-y-2">
-                            <Label htmlFor="contract_object" className="text-base font-semibold flex items-center gap-2">
-                              {watchedType === "variable_amount" ? "Detalles del Contrato (Incluir valor por hora) *" : "Objeto del Contrato *"}
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <Info className="w-4 h-4 text-muted-foreground" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>
-                                    {watchedType === "variable_amount" 
-                                      ? "Descripción del trabajo y valor por hora. Este valor se usará para calcular las cuentas de cobro por horas trabajadas."
-                                      : "Descripción detallada del objeto y alcance del contrato"
-                                    }
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </Label>
-                            <Textarea
-                              id="contract_object"
-                              {...register("contract_object", { required: "Los detalles del contrato son requeridos" })}
-                              placeholder={
-                                watchedType === "variable_amount" 
-                                  ? "Descripción del trabajo a realizar por horas. Incluir detalles sobre el valor por hora y las actividades a desarrollar..."
-                                  : "Descripción detallada del objeto del contrato y alcance del trabajo a realizar..."
-                              }
-                              rows={6}
-                              className="text-lg resize-none"
-                            />
-                            {errors.contract_object && (
-                              <p className="text-destructive text-sm">{errors.contract_object.message}</p>
-                            )}
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor="signed_contract" className="text-base font-semibold flex items-center gap-2">
-                              Subir Contrato Firmado *
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <Info className="w-4 h-4 text-muted-foreground" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Adjunta el contrato firmado en formato PDF</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </Label>
-                            <div className="flex items-center gap-4">
-                              <Input
-                                id="signed_contract"
-                                type="file"
-                                accept=".pdf"
-                                {...register("signed_contract", { required: "El contrato firmado es requerido" })}
-                                className="text-lg"
-                              />
-                              <FileCheck className="w-5 h-5 text-muted-foreground" />
-                            </div>
-                            <p className="text-sm text-muted-foreground">Adjuntar contrato firmado en PDF</p>
-                            {errors.signed_contract && (
-                              <p className="text-destructive text-sm">{errors.signed_contract.message}</p>
-                            )}
-                          </div>
-
-                          {watchedAmount && (
-                            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                              <div className="flex items-center gap-2 text-green-700 font-medium">
-                                <DollarSign className="w-5 h-5" />
-                                Valor Total del Contrato
-                              </div>
-                              <p className="text-2xl font-bold text-green-800 mt-1">
-                                {watchedAmount}
-                              </p>
-                            </div>
-                          )}
-                        </CardContent>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </Card>
-
-                  {/* Actions */}
-                  <div className="flex justify-end gap-4 pt-8 border-t">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="lg"
-                      onClick={() => navigate("/contracts")}
-                      className="px-8"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={isLoading}
-                      size="lg"
-                      className="flex items-center gap-2 px-8 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg"
-                    >
-                      <FileText className="w-5 h-5" />
-                      {isLoading ? "Creando Contrato..." : "Crear Contrato"}
-                    </Button>
-                  </div>
-                </form>
-              </TooltipProvider>
-            </div>
+          {/* Botones de Acción */}
+          <div className="flex justify-end space-x-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/contracts")}
+              disabled={isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Creando..." : "Crear Contrato"}
+            </Button>
           </div>
-        </main>
+        </form>
       </div>
-    </SidebarProvider>
+    </Layout>
   );
 }

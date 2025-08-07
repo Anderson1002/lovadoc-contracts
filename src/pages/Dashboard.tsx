@@ -117,6 +117,7 @@ export default function Dashboard() {
 
       const chartDataFormatted = [
         { name: 'Registrado', value: statusCounts.draft || 0, color: 'hsl(var(--state-registered))' },
+        { name: 'Devuelto', value: statusCounts.returned || 0, color: 'hsl(var(--state-returned))' },
         { name: 'En Ejecución', value: statusCounts.active || 0, color: 'hsl(var(--state-executing))' },
         { name: 'Completado', value: statusCounts.completed || 0, color: 'hsl(var(--state-completed))' },
         { name: 'Cancelado', value: statusCounts.cancelled || 0, color: 'hsl(var(--state-cancelled))' }
