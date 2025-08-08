@@ -720,7 +720,12 @@ export type Database = {
       }
     }
     Enums: {
-      contract_state: "registrado" | "devuelto" | "en_ejecucion" | "completado"
+      contract_state:
+        | "registrado"
+        | "devuelto"
+        | "en_ejecucion"
+        | "completado"
+        | "cancelado"
       contract_status:
         | "draft"
         | "active"
@@ -856,7 +861,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      contract_state: ["registrado", "devuelto", "en_ejecucion", "completado"],
+      contract_state: [
+        "registrado",
+        "devuelto",
+        "en_ejecucion",
+        "completado",
+        "cancelado",
+      ],
       contract_status: [
         "draft",
         "active",
