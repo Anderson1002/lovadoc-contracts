@@ -96,9 +96,56 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
     setComments('');
   };
 
-  const handlePreview = (billing: any) => {
-    setPreviewBilling(billing);
-    setShowPreview(true);
+  const handlePreview = async (billing: any) => {
+    try {
+      // Load full billing data with activities
+      const { data: fullBilling, error } = await supabase
+        .from('billing_accounts')
+        .select(`
+          *,
+          contracts(
+            contract_number,
+            client_name,
+            client_nit,
+            total_amount,
+            start_date,
+            end_date,
+            object
+          ),
+          billing_activities(
+            id,
+            description,
+            date,
+            hours
+          )
+        `)
+        .eq('id', billing.id)
+        .single();
+
+      if (error) throw error;
+
+      // Load creator profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', fullBilling.created_by)
+        .single();
+
+      if (profileError) throw profileError;
+
+      setPreviewBilling({
+        ...fullBilling,
+        created_by_profile: profile
+      });
+      setShowPreview(true);
+    } catch (error) {
+      console.error('Error loading billing preview:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cargar la vista previa",
+        variant: "destructive"
+      });
+    }
   };
 
   const submitReview = async () => {
@@ -387,34 +434,14 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
             <DialogTitle>Vista Previa - Cuenta de Cobro</DialogTitle>
           </DialogHeader>
           {previewBilling && (
-            <div className="space-y-4">
-              <div className="text-center border-b pb-4">
-                <h2 className="text-xl font-bold">CUENTA DE COBRO</h2>
-                <p className="text-sm text-muted-foreground">Número: {previewBilling.account_number}</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-semibold mb-2">Información del Contrato</h3>
-                  <p><strong>Número:</strong> {previewBilling.contracts?.contract_number}</p>
-                  <p><strong>Cliente:</strong> {previewBilling.contracts?.client_name}</p>
-                  <p><strong>Valor Total:</strong> {formatCurrency(previewBilling.contracts?.total_amount || 0)}</p>
-                </div>
-                
-                <div>
-                  <h3 className="font-semibold mb-2">Información de Facturación</h3>
-                  <p><strong>Período:</strong> {new Date(previewBilling.billing_start_date).toLocaleDateString()} - {new Date(previewBilling.billing_end_date).toLocaleDateString()}</p>
-                  <p><strong>Valor Facturado:</strong> {formatCurrency(previewBilling.amount)}</p>
-                  <p><strong>Estado:</strong> <Badge variant="outline">{previewBilling.status}</Badge></p>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="font-semibold mb-2">Contratista</h3>
-                <p><strong>Nombre:</strong> {previewBilling.created_by_profile?.name}</p>
-                <p><strong>Email:</strong> {previewBilling.created_by_profile?.email}</p>
-              </div>
-            </div>
+            <BillingDocumentPreview
+              userProfile={previewBilling.created_by_profile}
+              selectedContract={previewBilling.contracts}
+              startDate={previewBilling.billing_start_date}
+              endDate={previewBilling.billing_end_date}
+              activities={previewBilling.billing_activities || []}
+              amount={previewBilling.amount}
+            />
           )}
         </DialogContent>
       </Dialog>
