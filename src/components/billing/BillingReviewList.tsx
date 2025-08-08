@@ -38,15 +38,28 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
         .from('billing_accounts')
         .select(`
           *,
-          contracts(contract_number, client_name, total_amount),
-          profiles!billing_accounts_created_by_fkey(name, email)
+          contracts(contract_number, client_name, total_amount)
         `)
         .eq('status', 'pendiente_revision')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setBillingAccounts(data || []);
-      onCountChange?.(data?.length || 0);
+
+      // Load creators' profiles to show contractor name/email
+      const creatorIds = Array.from(new Set((data || []).map((d: any) => d.created_by).filter(Boolean)));
+      let withProfiles = data || [];
+      if (creatorIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, name, email')
+          .in('id', creatorIds);
+        if (profilesError) throw profilesError;
+        const map = Object.fromEntries((profilesData || []).map((p: any) => [p.id, p]));
+        withProfiles = (data || []).map((d: any) => ({ ...d, created_by_profile: map[d.created_by] }));
+      }
+
+      setBillingAccounts(withProfiles);
+      onCountChange?.(withProfiles.length || 0);
     } catch (error: any) {
       console.error('Error loading pending billing accounts:', error);
       toast({
@@ -227,8 +240,8 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{billing.profiles?.name}</p>
-                        <p className="text-sm text-muted-foreground">{billing.profiles?.email}</p>
+                        <p className="font-medium">{billing.created_by_profile?.name}</p>
+                        <p className="text-sm text-muted-foreground">{billing.created_by_profile?.email}</p>
                       </div>
                     </TableCell>
                     <TableCell>

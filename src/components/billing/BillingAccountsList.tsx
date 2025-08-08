@@ -67,8 +67,23 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
         throw error;
       }
       
-      setBillingAccounts(data || []);
-      console.log('Successfully loaded billing accounts:', data?.length || 0);
+      // Attach creator profile for admin/supervisor in "all" view
+      let withProfiles = data || [];
+      if (filterType === 'all' && ['super_admin', 'admin', 'supervisor'].includes(userRole) && (data?.length || 0) > 0) {
+        const creatorIds = Array.from(new Set((data || []).map((d: any) => d.created_by).filter(Boolean)));
+        if (creatorIds.length > 0) {
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, name, email')
+            .in('id', creatorIds);
+          if (profilesError) throw profilesError;
+          const map = Object.fromEntries((profilesData || []).map((p: any) => [p.id, p]));
+          withProfiles = (data || []).map((d: any) => ({ ...d, created_by_profile: map[d.created_by] }));
+        }
+      }
+      
+      setBillingAccounts(withProfiles);
+      console.log('Successfully loaded billing accounts:', withProfiles.length || 0);
     } catch (error: any) {
       console.error('=== ERROR LOADING BILLING ACCOUNTS ===');
       console.error('Error object:', error);
@@ -89,11 +104,11 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
 
   const getBillingStatusLabel = (status: string) => {
     switch (status) {
-      case 'draft': return 'Borrador';
-      case 'pending_review': return 'Pendiente Revisión';
-      case 'approved': return 'Aprobado';
-      case 'rejected': return 'Rechazado';
-      case 'paid': return 'Pagado';
+      case 'borrador': return 'Borrador';
+      case 'pendiente_revision': return 'Pendiente Revisión';
+      case 'aprobada': return 'Aprobada';
+      case 'rechazada': return 'Rechazada';
+      case 'pagada': return 'Pagada';
       default: return status;
     }
   };

@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Receipt, Eye } from "lucide-react";
 import { CreateBillingAccountDialog } from "@/components/billing/CreateBillingAccountDialog";
@@ -50,6 +51,7 @@ export default function BillingAccounts() {
 
   const canCreateBilling = ['super_admin', 'admin', 'employee'].includes(userRole);
   const canReviewBilling = ['super_admin', 'admin', 'supervisor'].includes(userRole);
+  const [pendingCount, setPendingCount] = useState(0);
 
   if (loading) {
     return (
