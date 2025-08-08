@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar, DollarSign, FileText } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { EditBillingAccountDialog } from "./EditBillingAccountDialog";
 import { BillingAccountActions } from "./BillingAccountActions";
 
 interface BillingAccountsListProps {
@@ -19,8 +18,6 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
   const { toast } = useToast();
   const [billingAccounts, setBillingAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingAccount, setEditingAccount] = useState<any>(null);
-  const [showEditDialog, setShowEditDialog] = useState(false);
 
   useEffect(() => {
     loadBillingAccounts();
@@ -235,10 +232,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
                        billingAccount={billing}
                        userRole={userRole}
                        userProfile={userProfile}
-                       onEdit={() => {
-                         setEditingAccount(billing);
-                         setShowEditDialog(true);
-                       }}
+                       onEdit={() => {}}
                        onRefresh={loadBillingAccounts}
                      />
                    </TableCell>
@@ -248,13 +242,6 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
           </Table>
         </div>
       </CardContent>
-
-      <EditBillingAccountDialog
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
-        billingAccount={editingAccount}
-        onSuccess={loadBillingAccounts}
-      />
     </Card>
   );
 }

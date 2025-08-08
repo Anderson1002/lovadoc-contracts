@@ -132,13 +132,7 @@ export function BillingAccountActions({
           size="sm"
           className="h-8 w-8 p-0"
           title="Ver detalles"
-          onClick={() => {
-            // TODO: Implement view details functionality
-            toast({
-              title: "Información",
-              description: "Funcionalidad de vista detallada próximamente"
-            });
-          }}
+          onClick={() => window.location.href = `/billing/${billingAccount.id}/edit`}
         >
           <Eye className="h-4 w-4" />
         </Button>
@@ -149,7 +143,7 @@ export function BillingAccountActions({
             size="sm"
             className="h-8 w-8 p-0"
             title="Editar"
-            onClick={onEdit}
+            onClick={() => window.location.href = `/billing/${billingAccount.id}/edit`}
             disabled={loading}
           >
             <Edit className="h-4 w-4" />
