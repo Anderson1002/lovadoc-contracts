@@ -180,9 +180,6 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
 
     try {
       setSubmitting(true);
-      console.log('Starting review process for billing:', selectedBilling.id);
-      console.log('Review action:', reviewAction);
-      console.log('User profile:', userProfile);
 
       // Update billing account status (solo estado y comentario_supervisor)
       const updates: any = {
@@ -190,17 +187,12 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
         comentario_supervisor: comments.trim() || null
       };
 
-      console.log('Updating billing account with:', updates);
       const { error: updateError } = await supabase
         .from('billing_accounts')
         .update(updates)
         .eq('id', selectedBilling.id);
 
-      if (updateError) {
-        console.error('Update error:', updateError);
-        throw updateError;
-      }
-      console.log('Billing account updated successfully');
+      if (updateError) throw updateError;
 
       // Create review record
       const decisionValue = reviewAction === 'approve' ? 'aprobada' : 'rechazada';
@@ -213,16 +205,11 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
         comentario: comments.trim() || null
       };
 
-      console.log('Creating review record with:', reviewData);
       const { error: reviewError } = await supabase
         .from('billing_reviews')
         .insert(reviewData);
 
-      if (reviewError) {
-        console.error('Review insert error:', reviewError);
-        throw reviewError;
-      }
-      console.log('Review record created successfully');
+      if (reviewError) throw reviewError;
 
       toast({
         title: "Éxito",
