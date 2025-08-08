@@ -31,8 +31,28 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
       console.log('Filter type:', filterType);
       console.log('User role:', userRole);
       
-      if (!userProfile?.id) {
-        console.log('No userProfile id found, skipping load');
+      // Get current user first
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('Current auth user:', user?.id);
+      
+      if (!user?.id) {
+        console.log('No auth user found, skipping load');
+        setBillingAccounts([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get user's profile to find their profile.id
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      console.log('Current user profile:', currentProfile);
+      
+      if (!currentProfile) {
+        console.log('No profile found for user, skipping load');
         setBillingAccounts([]);
         setLoading(false);
         return;
@@ -48,12 +68,12 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
 
       // Apply filters based on type and user role
       if (filterType === 'own') {
-        console.log('Filtering by created_by:', userProfile.id);
-        query = query.eq('created_by', userProfile.id);
+        console.log('Filtering by created_by:', currentProfile.id);
+        query = query.eq('created_by', currentProfile.id);
       } else if (filterType === 'all' && !['super_admin', 'admin', 'supervisor'].includes(userRole)) {
         // If user is not admin/supervisor, only show their own accounts even in "all" view
-        console.log('Non-admin filtering by created_by:', userProfile.id);
-        query = query.eq('created_by', userProfile.id);
+        console.log('Non-admin filtering by created_by:', currentProfile.id);
+        query = query.eq('created_by', currentProfile.id);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
