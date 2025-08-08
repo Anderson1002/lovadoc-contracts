@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Loader2 } from "lucide-react";
+import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Loader2, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
@@ -299,6 +299,59 @@ export function EditBillingAccountDialog({
         title: "Error",
         description: `No se pudo registrar la actividad: ${error.message || 'Error desconocido'}`,
         variant: "destructive"
+      });
+    }
+  };
+
+  const deleteActivity = async (activityId: string) => {
+    try {
+      // Obtener evidencias para eliminar archivos y registros
+      const { data: evidences, error: evidencesError } = await supabase
+        .from('billing_activity_evidence')
+        .select('id, file_path')
+        .eq('billing_activity_id', activityId);
+
+      if (evidencesError) throw evidencesError;
+
+      // Intentar borrar archivos del storage (ignorar errores)
+      try {
+        if (evidences && evidences.length > 0) {
+          const paths = evidences.map((e) => e.file_path);
+          await supabase.storage.from('billing-documents').remove(paths);
+        }
+      } catch (e) {
+        console.warn('No se pudieron eliminar algunos archivos del storage:', e);
+      }
+
+      // Borrar registros de evidencias
+      if (evidences && evidences.length > 0) {
+        await supabase
+          .from('billing_activity_evidence')
+          .delete()
+          .in('id', evidences.map((e) => e.id));
+      }
+
+      // Borrar la actividad
+      const { error: deleteError } = await supabase
+        .from('billing_activities')
+        .delete()
+        .eq('id', activityId);
+
+      if (deleteError) throw deleteError;
+
+      // Actualizar estado local
+      setActivities((prev) => prev.filter((a) => a.dbId !== activityId && a.id !== activityId));
+
+      toast({
+        title: 'Actividad eliminada',
+        description: 'Se eliminó correctamente la actividad.',
+      });
+    } catch (error: any) {
+      console.error('Error deleting activity:', error);
+      toast({
+        title: 'Error',
+        description: `No se pudo eliminar la actividad: ${error.message || 'Error desconocido'}`,
+        variant: 'destructive',
       });
     }
   };
@@ -734,6 +787,16 @@ export function EditBillingAccountDialog({
                               </div>
                             )}
                           </div>
+                          {canEdit && (
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => deleteActivity(activity.dbId || activity.id)}
+                              aria-label="Eliminar actividad"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
