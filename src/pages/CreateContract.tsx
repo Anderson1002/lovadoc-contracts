@@ -54,6 +54,7 @@ const contractFormSchema = z.object({
   area_responsable: z.string().min(1, "El área responsable es requerida"),
   supervisor_asignado: z.string().min(1, "El supervisor asignado es requerido"),
   bankCertification: z.any().optional(),
+  signedContract: z.any().optional(),
 });
 
 type ContractFormData = z.infer<typeof contractFormSchema>;
@@ -666,6 +667,21 @@ export default function CreateContract() {
                     </p>
                   )}
                 </div>
+              </div>
+              
+              {/* Campo para contrato firmado - aplicable a todos los tipos */}
+              <div className="space-y-2 mt-6">
+                <Label htmlFor="signedContract">Contrato Firmado</Label>
+                <Input
+                  id="signedContract"
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                  {...register("signedContract")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Suba el contrato firmado. Formatos permitidos: PDF, Word (máx. 10MB)
+                </p>
               </div>
             </CardContent>
           </Card>

@@ -105,69 +105,136 @@ export default function Notifications() {
   };
 
   const loadNotifications = async () => {
-    // Simulamos notificaciones ya que no tenemos una tabla real aún
-    const mockNotifications: Notification[] = [
-      {
-        id: '1',
-        title: 'Nuevo contrato creado',
-        message: 'Se ha creado el contrato CON-2024-001 para el cliente Juan Pérez',
-        type: 'success',
-        read: false,
-        created_at: new Date().toISOString(),
-        entity_type: 'contract',
-        entity_id: '1',
-        action_user: {
-          name: 'María García',
-          avatar: ''
-        }
-      },
-      {
-        id: '2',
-        title: 'Contrato próximo a vencer',
-        message: 'El contrato CON-2023-045 vence en 5 días',
-        type: 'warning',
-        read: false,
-        created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        entity_type: 'contract',
-        entity_id: '2'
-      },
-      {
-        id: '3',
-        title: 'Pago recibido',
-        message: 'Se ha registrado un pago de $2,500,000 para el contrato CON-2024-003',
-        type: 'success',
-        read: true,
-        created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        entity_type: 'payment',
-        entity_id: '3',
-        action_user: {
-          name: 'Carlos López',
-          avatar: ''
-        }
-      },
-      {
-        id: '4',
-        title: 'Nuevo usuario registrado',
-        message: 'Ana Rodríguez se ha registrado en el sistema como empleado',
-        type: 'info',
-        read: true,
-        created_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-        entity_type: 'user',
-        entity_id: '4'
-      },
-      {
-        id: '5',
-        title: 'Error en validación',
-        message: 'Error al procesar el documento de certificación bancaria',
-        type: 'error',
-        read: false,
-        created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-        entity_type: 'document',
-        entity_id: '5'
-      }
-    ];
+    try {
+      // Cargar notificaciones reales del sistema
+      const realNotifications: Notification[] = [];
 
-    setNotifications(mockNotifications);
+      // 1. Contratos próximos a vencer (en los próximos 30 días)
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      
+      const { data: expiringContracts, error: contractsError } = await supabase
+        .from('contracts')
+        .select('id, contract_number, client_name, end_date, created_at')
+        .eq('status', 'active')
+        .lte('end_date', thirtyDaysFromNow.toISOString().split('T')[0])
+        .order('end_date', { ascending: true });
+
+      if (contractsError) {
+        console.error('Error loading expiring contracts:', contractsError);
+      } else {
+        expiringContracts?.forEach(contract => {
+          const daysUntilExpiry = Math.ceil((new Date(contract.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          realNotifications.push({
+            id: `contract-expiry-${contract.id}`,
+            title: 'Contrato próximo a vencer',
+            message: `El contrato ${contract.contract_number} (${contract.client_name}) vence en ${daysUntilExpiry} días`,
+            type: daysUntilExpiry <= 7 ? 'error' : 'warning',
+            read: false,
+            created_at: contract.created_at,
+            entity_type: 'contract',
+            entity_id: contract.id
+          });
+        });
+      }
+
+      // 2. Cuentas de cobro pendientes de revisión
+      const { data: pendingBilling, error: billingError } = await supabase
+        .from('billing_accounts')
+        .select('id, account_number, amount, created_at, created_by, profiles!billing_accounts_created_by_fkey(name)')
+        .eq('status', 'pendiente_revision')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (billingError) {
+        console.error('Error loading pending billing:', billingError);
+      } else {
+        pendingBilling?.forEach(billing => {
+          realNotifications.push({
+            id: `billing-pending-${billing.id}`,
+            title: 'Nueva cuenta de cobro para revisar',
+            message: `Cuenta ${billing.account_number} por $${parseFloat(billing.amount.toString()).toLocaleString('es-CO')} pendiente de revisión`,
+            type: 'info',
+            read: false,
+            created_at: billing.created_at,
+            entity_type: 'billing',
+            entity_id: billing.id,
+            action_user: {
+              name: (billing.profiles as any)?.name || 'Usuario desconocido'
+            }
+          });
+        });
+      }
+
+      // 3. Contratos recién creados (últimos 7 días)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const { data: newContracts, error: newContractsError } = await supabase
+        .from('contracts')
+        .select('id, contract_number, client_name, created_at, total_amount, created_by, profiles!contracts_created_by_fkey(name)')
+        .gte('created_at', sevenDaysAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (newContractsError) {
+        console.error('Error loading new contracts:', newContractsError);
+      } else {
+        newContracts?.forEach(contract => {
+          realNotifications.push({
+            id: `contract-new-${contract.id}`,
+            title: 'Nuevo contrato creado',
+            message: `Se ha creado el contrato ${contract.contract_number} para ${contract.client_name} por $${parseFloat(contract.total_amount.toString()).toLocaleString('es-CO')}`,
+            type: 'success',
+            read: false,
+            created_at: contract.created_at,
+            entity_type: 'contract',
+            entity_id: contract.id,
+            action_user: {
+              name: (contract.profiles as any)?.name || 'Usuario desconocido'
+            }
+          });
+        });
+      }
+
+      // 4. Cuentas de cobro aprobadas recientemente
+      const { data: approvedBilling, error: approvedError } = await supabase
+        .from('billing_accounts')
+        .select('id, account_number, amount, updated_at, created_by, profiles!billing_accounts_created_by_fkey(name)')
+        .eq('status', 'aprobada')
+        .gte('updated_at', sevenDaysAgo.toISOString())
+        .order('updated_at', { ascending: false })
+        .limit(5);
+
+      if (approvedError) {
+        console.error('Error loading approved billing:', approvedError);
+      } else {
+        approvedBilling?.forEach(billing => {
+          realNotifications.push({
+            id: `billing-approved-${billing.id}`,
+            title: 'Cuenta de cobro aprobada',
+            message: `La cuenta ${billing.account_number} por $${parseFloat(billing.amount.toString()).toLocaleString('es-CO')} ha sido aprobada`,
+            type: 'success',
+            read: Math.random() > 0.5, // Simular algunas como leídas
+            created_at: billing.updated_at,
+            entity_type: 'billing',
+            entity_id: billing.id,
+            action_user: {
+              name: (billing.profiles as any)?.name || 'Usuario desconocido'
+            }
+          });
+        });
+      }
+
+      // Ordenar notificaciones por fecha
+      realNotifications.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setNotifications(realNotifications);
+    } catch (error) {
+      console.error('Error loading real notifications:', error);
+      // Fallback a notificaciones simuladas si hay error
+      setNotifications([]);
+    }
   };
 
   const handleLogout = async () => {

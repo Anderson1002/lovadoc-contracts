@@ -184,7 +184,7 @@ export default function Contracts() {
             icon={TrendingUp}
           />
           <StatsCard
-            title="Contratos Activos"
+            title="Contratos en Ejecución"
             value={stats.active}
             description={`${stats.completed} completados, ${stats.cancelled} cancelados`}
             icon={CheckCircle}

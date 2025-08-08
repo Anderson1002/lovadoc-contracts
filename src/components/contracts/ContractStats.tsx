@@ -98,7 +98,7 @@ export function ContractStats({ contracts, isLoading = false }: ContractStatsPro
       bgColor: "bg-purple-100"
     },
     {
-      title: "Contratos Activos",
+      title: "Contratos en Ejecución",
       value: activeContracts.toString(),
       description: `${completedContracts} completados, ${cancelledContracts} cancelados`,
       icon: CheckCircle,
