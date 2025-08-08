@@ -59,6 +59,33 @@ export type Database = {
           },
         ]
       }
+      billing_account_states: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       billing_accounts: {
         Row: {
           account_number: string
@@ -75,6 +102,7 @@ export type Database = {
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          state_code: string | null
           status: string
           updated_at: string
         }
@@ -93,6 +121,7 @@ export type Database = {
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          state_code?: string | null
           status?: string
           updated_at?: string
         }
@@ -111,6 +140,7 @@ export type Database = {
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          state_code?: string | null
           status?: string
           updated_at?: string
         }
@@ -121,6 +151,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "contracts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_billing_accounts_state"
+            columns: ["state_code"]
+            isOneToOne: false
+            referencedRelation: "billing_account_states"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -389,6 +426,33 @@ export type Database = {
           },
         ]
       }
+      contract_states: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          name: Database["public"]["Enums"]["contract_state"]
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id?: string
+          name: Database["public"]["Enums"]["contract_state"]
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          name?: Database["public"]["Enums"]["contract_state"]
+        }
+        Relationships: []
+      }
       contracts: {
         Row: {
           area_responsable: string | null
@@ -411,6 +475,7 @@ export type Database = {
           hourly_rate: number | null
           id: string
           start_date: string
+          state_code: string | null
           status: Database["public"]["Enums"]["contract_status"]
           supervisor_asignado: string | null
           total_amount: number
@@ -437,6 +502,7 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           start_date: string
+          state_code?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           supervisor_asignado?: string | null
           total_amount: number
@@ -463,6 +529,7 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           start_date?: string
+          state_code?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           supervisor_asignado?: string | null
           total_amount?: number
@@ -482,6 +549,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_contracts_state"
+            columns: ["state_code"]
+            isOneToOne: false
+            referencedRelation: "contract_states"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -709,6 +783,24 @@ export type Database = {
       generate_contract_number: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_billing_account_state: {
+        Args: { state_code: string }
+        Returns: {
+          code: string
+          name: string
+          display_name: string
+          description: string
+        }[]
+      }
+      get_contract_state: {
+        Args: { state_code: string }
+        Returns: {
+          code: string
+          name: string
+          display_name: string
+          description: string
+        }[]
       }
       get_user_role: {
         Args: { user_uuid: string }
