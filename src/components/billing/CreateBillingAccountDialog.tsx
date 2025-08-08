@@ -200,28 +200,37 @@ export function CreateBillingAccountDialog({
 
         const startDateString = format(startDate, 'yyyy-MM-dd');
         
-        // First check if a billing account already exists for this contract and month
+        // Check if a billing account already exists for this contract and month
+        console.log('Checking for existing billing account:', {
+          contract_id: selectedContract,
+          billing_month: startDateString,
+          created_by: userProfile.id
+        });
+        
         const { data: existingBilling, error: searchError } = await supabase
           .from('billing_accounts')
           .select('*')
           .eq('contract_id', selectedContract)
           .eq('billing_month', startDateString)
           .eq('created_by', userProfile.id)
-          .single();
+          .maybeSingle();
 
-        if (searchError && searchError.code !== 'PGRST116') {
-          // PGRST116 is "no rows returned", which is expected if no billing account exists
+        console.log('Existing billing search result:', { existingBilling, searchError });
+
+        if (searchError) {
           console.error('Error searching for existing billing account:', searchError);
           throw searchError;
         }
 
         if (existingBilling) {
           // Use existing billing account
+          console.log('Found existing billing account, reusing:', existingBilling.id);
           billingAccountId = existingBilling.id;
           setCurrentDraftId(existingBilling.id);
           setBillingStatus(existingBilling.status as 'draft' | 'pending_review' | 'approved' | 'rejected' | 'paid');
         } else {
           // Create new billing account
+          console.log('No existing billing account found, creating new one...');
           const { data: draftBilling, error: draftError } = await supabase
             .from('billing_accounts')
             .insert({
@@ -242,6 +251,7 @@ export function CreateBillingAccountDialog({
             throw draftError;
           }
           
+          console.log('Successfully created new billing account:', draftBilling.id);
           billingAccountId = draftBilling.id;
           setCurrentDraftId(draftBilling.id);
           setBillingStatus('draft');
@@ -351,6 +361,33 @@ export function CreateBillingAccountDialog({
       }
 
       const startDateString = format(startDate, 'yyyy-MM-dd');
+      
+      // Check if a draft already exists for this contract and month
+      const { data: existingBilling, error: searchError } = await supabase
+        .from('billing_accounts')
+        .select('*')
+        .eq('contract_id', selectedContract)
+        .eq('billing_month', startDateString)
+        .eq('created_by', userProfile.id)
+        .maybeSingle();
+
+      if (searchError) {
+        console.error('Error searching for existing billing account:', searchError);
+        throw searchError;
+      }
+
+      if (existingBilling) {
+        // Use existing billing account
+        setCurrentDraftId(existingBilling.id);
+        setBillingStatus(existingBilling.status as 'draft' | 'pending_review' | 'approved' | 'rejected' | 'paid');
+        toast({
+          title: "Borrador Encontrado",
+          description: "Se encontró un borrador existente. Puede continuar editando.",
+        });
+        return;
+      }
+
+      // Create new draft
       const { data: draftBilling, error: draftError } = await supabase
         .from('billing_accounts')
         .insert({
@@ -379,7 +416,7 @@ export function CreateBillingAccountDialog({
       console.error('Error saving draft:', error);
       toast({
         title: "Error",
-        description: "No se pudo guardar el borrador",
+        description: `No se pudo guardar el borrador: ${error.message || 'Error desconocido'}`,
         variant: "destructive"
       });
     }

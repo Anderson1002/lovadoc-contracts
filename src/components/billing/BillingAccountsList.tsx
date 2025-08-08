@@ -27,65 +27,56 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
     try {
       setLoading(true);
       
-      console.log('Loading billing accounts with userProfile:', userProfile);
+      console.log('=== DEBUGGING BILLING ACCOUNTS LOAD ===');
       console.log('Filter type:', filterType);
       console.log('User role:', userRole);
+      console.log('UserProfile:', userProfile);
       
-      // Get current user first
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('Current auth user:', user?.id);
-      
-      if (!user?.id) {
-        console.log('No auth user found, skipping load');
-        setBillingAccounts([]);
-        setLoading(false);
-        return;
-      }
-
-      // Get user's profile to find their profile.id
-      const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-      
-      console.log('Current user profile:', currentProfile);
-      
-      if (!currentProfile) {
-        console.log('No profile found for user, skipping load');
-        setBillingAccounts([]);
-        setLoading(false);
-        return;
-      }
-      
+      // Simple query first - no complex joins
       let query = supabase
         .from('billing_accounts')
         .select(`
           *,
-          contracts(contract_number, client_name, total_amount),
-          profiles!billing_accounts_created_by_fkey(name, email)
+          contracts(contract_number, client_name, total_amount)
         `);
 
-      // Apply filters based on type and user role
+      // Apply filters based on type and user role only if needed
       if (filterType === 'own') {
-        console.log('Filtering by created_by:', currentProfile.id);
-        query = query.eq('created_by', currentProfile.id);
+        // For "own" view, we rely on RLS policies to filter automatically
+        console.log('Loading own accounts - RLS will filter automatically');
       } else if (filterType === 'all' && !['super_admin', 'admin', 'supervisor'].includes(userRole)) {
-        // If user is not admin/supervisor, only show their own accounts even in "all" view
-        console.log('Non-admin filtering by created_by:', currentProfile.id);
-        query = query.eq('created_by', currentProfile.id);
+        // Non-admin users should only see their own accounts even in "all" view
+        console.log('Non-admin user in "all" view - RLS will filter automatically');
+      } else {
+        console.log('Admin/Supervisor user - will see all accounts per RLS');
       }
 
+      console.log('Executing query...');
       const { data, error } = await query.order('created_at', { ascending: false });
 
-      console.log('Query result:', { data, error });
-      if (error) throw error;
+      console.log('=== QUERY RESULTS ===');
+      console.log('Error:', error);
+      console.log('Data count:', data?.length || 0);
+      console.log('Data:', data);
+      
+      if (error) {
+        console.error('Supabase error details:', error);
+        throw error;
+      }
+      
       setBillingAccounts(data || []);
+      console.log('Successfully loaded billing accounts:', data?.length || 0);
     } catch (error: any) {
-      console.error('Error loading billing accounts:', error);
+      console.error('=== ERROR LOADING BILLING ACCOUNTS ===');
+      console.error('Error object:', error);
+      console.error('Error message:', error.message);
+      console.error('Error details:', error.details);
+      console.error('Error hint:', error.hint);
+      console.error('Error code:', error.code);
+      
       toast({
         title: "Error",
-        description: "No se pudieron cargar las cuentas de cobro",
+        description: `No se pudieron cargar las cuentas de cobro: ${error.message || 'Error desconocido'}`,
         variant: "destructive"
       });
     } finally {
