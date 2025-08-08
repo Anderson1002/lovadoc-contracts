@@ -74,6 +74,20 @@ export function CreateBillingAccountDialog({
                             activities.filter(a => a.status === 'saved').length > 0 && 
                             uploads.social_security.uploaded;
 
+  // Debug logging for canSubmitForReview
+  useEffect(() => {
+    console.log('canSubmitForReview check:', {
+      selectedContract: !!selectedContract,
+      amount: !!amount,
+      startDate: !!startDate,
+      endDate: !!endDate,
+      activitiesCount: activities.filter(a => a.status === 'saved').length,
+      socialSecurityUploaded: uploads.social_security.uploaded,
+      socialSecurityFile: !!uploads.social_security.file,
+      canSubmitForReview
+    });
+  }, [selectedContract, amount, startDate, endDate, activities, uploads.social_security]);
+
   useEffect(() => {
     if (open) {
       loadContracts();
@@ -132,12 +146,23 @@ export function CreateBillingAccountDialog({
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log('No file selected');
+      return;
+    }
+
+    console.log('File selected:', {
+      name: file.name,
+      size: file.size,
+      type: file.type
+    });
 
     setUploads(prev => ({
       ...prev,
       [type]: { ...prev[type], file, uploaded: true }
     }));
+
+    console.log('File upload state updated:', type, 'uploaded: true');
   };
 
   const saveActivityIndividually = async () => {
