@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -21,7 +20,6 @@ export function BillingAccountActions({
   onEdit,
   onRefresh
 }: BillingAccountActionsProps) {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -134,7 +132,13 @@ export function BillingAccountActions({
           size="sm"
           className="h-8 w-8 p-0"
           title="Ver detalles"
-          onClick={() => navigate(`/billing/${billingAccount.id}/edit`)}
+          onClick={() => {
+            // TODO: Implement view details functionality
+            toast({
+              title: "Información",
+              description: "Funcionalidad de vista detallada próximamente"
+            });
+          }}
         >
           <Eye className="h-4 w-4" />
         </Button>
@@ -145,7 +149,7 @@ export function BillingAccountActions({
             size="sm"
             className="h-8 w-8 p-0"
             title="Editar"
-            onClick={() => navigate(`/billing/${billingAccount.id}/edit`)}
+            onClick={onEdit}
             disabled={loading}
           >
             <Edit className="h-4 w-4" />
