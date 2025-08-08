@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Layout } from "@/components/Layout";
+
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ContractStatusChart } from "@/components/dashboard/ContractStatusChart";
 import { 
@@ -139,190 +139,186 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <Layout>
-        <div className="container mx-auto px-4 py-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-muted rounded w-64"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-32 bg-muted rounded-lg"></div>
-              ))}
-            </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-muted rounded w-64"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-32 bg-muted rounded-lg"></div>
+            ))}
           </div>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   return (
-    <Layout>
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard ContratosMédicos Pro</h1>
-            <p className="text-muted-foreground">
-              Resumen general del sistema de gestión de contratos
-            </p>
-          </div>
-          {["super_admin", "admin", "employee"].includes(userRole) && (
-            <Button asChild className="flex items-center gap-2">
-              <Link to="/contracts/new">
-                <FileText className="h-4 w-4" />
-                Nuevo Contrato
-              </Link>
-            </Button>
-          )}
+    <div className="container mx-auto px-4 py-8 space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard ContratosMédicos Pro</h1>
+          <p className="text-muted-foreground">
+            Resumen general del sistema de gestión de contratos
+          </p>
         </div>
-
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-          <StatsCard
-            title="Total Contratos"
-            value={stats.totalContracts}
-            icon={FileText}
-            description="Total de contratos registrados"
-          />
-          <StatsCard
-            title="En Ejecución"
-            value={stats.activeContracts}
-            icon={TrendingUp}
-            description="Contratos activos"
-          />
-          <StatsCard
-            title="Registrados"
-            value={stats.pendingReview}
-            icon={Clock}
-            description="Pendientes de revisión"
-          />
-          <StatsCard
-            title="Completados"
-            value={contracts?.filter(c => c.status === 'completed').length || 0}
-            icon={CheckCircle}
-            description="Contratos finalizados"
-          />
-          <StatsCard
-            title="Valor Total"
-            value={formatCurrency(stats.totalAmount)}
-            icon={DollarSign}
-            description="Valor total de contratos"
-          />
-        </div>
-
-        {/* Charts and Recent Activity */}
-        <div className="grid gap-6 md:grid-cols-7">
-          <div className="md:col-span-3">
-            <ContractStatusChart data={chartData} />
-          </div>
-          
-          <div className="md:col-span-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
-                    Actividad Reciente
-                  </CardTitle>
-                  <CardDescription>
-                    Últimos contratos registrados en el sistema
-                  </CardDescription>
-                </div>
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/contracts">
-                    Ver todos
-                  </Link>
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {recentContracts.length > 0 ? (
-                  recentContracts.map((contract: any) => (
-                    <div key={contract.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{contract.contract_number}</p>
-                          <ContractStatusBadge status={contract.status} />
-                        </div>
-                        <p className="text-sm text-muted-foreground">{contract.client_name}</p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="font-mono">{formatCurrency(contract.total_amount)}</span>
-                          {contract.area_responsable && (
-                            <span>• {contract.area_responsable.replace(/_/g, ' ')}</span>
-                          )}
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link to={`/contracts/${contract.id}`}>
-                          Ver detalles
-                        </Link>
-                      </Button>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                    <p>No hay contratos registrados aún</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Quick Actions for admins */}
-        {["super_admin", "admin"].includes(userRole) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Acciones Rápidas
-              </CardTitle>
-              <CardDescription>
-                Gestiona contratos y usuarios del sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Button variant="outline" asChild className="justify-start h-auto p-4">
-                  <Link to="/contracts/new" className="flex flex-col items-start gap-2">
-                    <FileText className="h-5 w-5" />
-                    <div className="text-left">
-                      <div className="font-medium">Crear Contrato</div>
-                      <div className="text-sm text-muted-foreground">Nuevo contrato médico</div>
-                    </div>
-                  </Link>
-                </Button>
-                <Button variant="outline" asChild className="justify-start h-auto p-4">
-                  <Link to="/contracts?status=draft" className="flex flex-col items-start gap-2">
-                    <Clock className="h-5 w-5" />
-                    <div className="text-left">
-                      <div className="font-medium">Revisar Pendientes</div>
-                      <div className="text-sm text-muted-foreground">{stats.pendingReview} contratos</div>
-                    </div>
-                  </Link>
-                </Button>
-                <Button variant="outline" asChild className="justify-start h-auto p-4">
-                  <Link to="/billing-accounts" className="flex flex-col items-start gap-2">
-                    <DollarSign className="h-5 w-5" />
-                    <div className="text-left">
-                      <div className="font-medium">Cuentas de Cobro</div>
-                      <div className="text-sm text-muted-foreground">Gestionar facturación</div>
-                    </div>
-                  </Link>
-                </Button>
-                <Button variant="outline" asChild className="justify-start h-auto p-4">
-                  <Link to="/users" className="flex flex-col items-start gap-2">
-                    <Users className="h-5 w-5" />
-                    <div className="text-left">
-                      <div className="font-medium">Administrar Usuarios</div>
-                      <div className="text-sm text-muted-foreground">Roles y permisos</div>
-                    </div>
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        {["super_admin", "admin", "employee"].includes(userRole) && (
+          <Button asChild className="flex items-center gap-2">
+            <Link to="/contracts/new">
+              <FileText className="h-4 w-4" />
+              Nuevo Contrato
+            </Link>
+          </Button>
         )}
       </div>
-    </Layout>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <StatsCard
+          title="Total Contratos"
+          value={stats.totalContracts}
+          icon={FileText}
+          description="Total de contratos registrados"
+        />
+        <StatsCard
+          title="En Ejecución"
+          value={stats.activeContracts}
+          icon={TrendingUp}
+          description="Contratos activos"
+        />
+        <StatsCard
+          title="Registrados"
+          value={stats.pendingReview}
+          icon={Clock}
+          description="Pendientes de revisión"
+        />
+        <StatsCard
+          title="Completados"
+          value={contracts?.filter(c => c.status === 'completed').length || 0}
+          icon={CheckCircle}
+          description="Contratos finalizados"
+        />
+        <StatsCard
+          title="Valor Total"
+          value={formatCurrency(stats.totalAmount)}
+          icon={DollarSign}
+          description="Valor total de contratos"
+        />
+      </div>
+
+      {/* Charts and Recent Activity */}
+      <div className="grid gap-6 md:grid-cols-7">
+        <div className="md:col-span-3">
+          <ContractStatusChart data={chartData} />
+        </div>
+        
+        <div className="md:col-span-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Actividad Reciente
+                </CardTitle>
+                <CardDescription>
+                  Últimos contratos registrados en el sistema
+                </CardDescription>
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/contracts">
+                  Ver todos
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {recentContracts.length > 0 ? (
+                recentContracts.map((contract: any) => (
+                  <div key={contract.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{contract.contract_number}</p>
+                        <ContractStatusBadge status={contract.status} />
+                      </div>
+                      <p className="text-sm text-muted-foreground">{contract.client_name}</p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="font-mono">{formatCurrency(contract.total_amount)}</span>
+                        {contract.area_responsable && (
+                          <span>• {contract.area_responsable.replace(/_/g, ' ')}</span>
+                        )}
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to={`/contracts/${contract.id}`}>
+                        Ver detalles
+                      </Link>
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                  <p>No hay contratos registrados aún</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Quick Actions for admins */}
+      {["super_admin", "admin"].includes(userRole) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Acciones Rápidas
+            </CardTitle>
+            <CardDescription>
+              Gestiona contratos y usuarios del sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/contracts/new" className="flex flex-col items-start gap-2">
+                  <FileText className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Crear Contrato</div>
+                    <div className="text-sm text-muted-foreground">Nuevo contrato médico</div>
+                  </div>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/contracts?status=draft" className="flex flex-col items-start gap-2">
+                  <Clock className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Revisar Pendientes</div>
+                    <div className="text-sm text-muted-foreground">{stats.pendingReview} contratos</div>
+                  </div>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/billing-accounts" className="flex flex-col items-start gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Cuentas de Cobro</div>
+                    <div className="text-sm text-muted-foreground">Gestionar facturación</div>
+                  </div>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/users" className="flex flex-col items-start gap-2">
+                  <Users className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Administrar Usuarios</div>
+                    <div className="text-sm text-muted-foreground">Roles y permisos</div>
+                  </div>
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
