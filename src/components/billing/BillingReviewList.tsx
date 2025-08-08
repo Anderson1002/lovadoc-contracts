@@ -180,6 +180,9 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
 
     try {
       setSubmitting(true);
+      console.log('Starting review process for billing:', selectedBilling.id);
+      console.log('Review action:', reviewAction);
+      console.log('User profile:', userProfile);
 
       // Update billing account status (solo estado y comentario_supervisor)
       const updates: any = {
@@ -187,27 +190,39 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
         comentario_supervisor: comments.trim() || null
       };
 
+      console.log('Updating billing account with:', updates);
       const { error: updateError } = await supabase
         .from('billing_accounts')
         .update(updates)
         .eq('id', selectedBilling.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Update error:', updateError);
+        throw updateError;
+      }
+      console.log('Billing account updated successfully');
 
       // Create review record
       const decisionValue = reviewAction === 'approve' ? 'aprobada' : 'rechazada';
+      const reviewData = {
+        billing_account_id: selectedBilling.id,
+        reviewer_id: userProfile.id,
+        action: reviewAction,
+        comments: comments.trim() || null,
+        decision: decisionValue,
+        comentario: comments.trim() || null
+      };
+
+      console.log('Creating review record with:', reviewData);
       const { error: reviewError } = await supabase
         .from('billing_reviews')
-        .insert({
-          billing_account_id: selectedBilling.id,
-          reviewer_id: userProfile.id,
-          action: reviewAction,
-          comments: comments.trim() || null,
-          decision: decisionValue,
-          comentario: comments.trim() || null
-        });
+        .insert(reviewData);
 
-      if (reviewError) throw reviewError;
+      if (reviewError) {
+        console.error('Review insert error:', reviewError);
+        throw reviewError;
+      }
+      console.log('Review record created successfully');
 
       toast({
         title: "Éxito",
