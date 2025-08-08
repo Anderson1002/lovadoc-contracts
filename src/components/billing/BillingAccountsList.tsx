@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar, DollarSign, FileText } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { EditBillingAccountDialog } from "./EditBillingAccountDialog";
+import { EditBillingAccountDialog } from "../../pages/EditBillingAccount";
 import { BillingAccountActions } from "./BillingAccountActions";
 
 interface BillingAccountsListProps {
@@ -253,6 +253,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
         billingAccount={editingAccount}
+        userProfile={userProfile}
         onSuccess={loadBillingAccounts}
       />
     </Card>
