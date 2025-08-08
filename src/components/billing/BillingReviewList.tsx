@@ -98,7 +98,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
 
   const handlePreview = async (billing: any) => {
     try {
-      // Load full billing data with activities
+      // Load full billing data
       const { data: fullBilling, error } = await supabase
         .from('billing_accounts')
         .select(`
@@ -106,23 +106,32 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
           contracts(
             contract_number,
             client_name,
-            client_nit,
+            client_document_number,
+            client_email,
+            client_phone,
+            client_address,
+            client_account_number,
+            client_bank_name,
             total_amount,
             start_date,
             end_date,
-            object
-          ),
-          billing_activities(
-            id,
-            description,
-            date,
-            hours
+            description
           )
         `)
         .eq('id', billing.id)
         .single();
 
       if (error) throw error;
+
+      // Load activities separately
+      const { data: activities, error: activitiesError } = await supabase
+        .from('billing_activities')
+        .select('id, activity_name, actions_developed')
+        .eq('billing_account_id', billing.id);
+
+      if (activitiesError) {
+        console.error('Error loading activities:', activitiesError);
+      }
 
       // Load creator profile
       const { data: profile, error: profileError } = await supabase
@@ -133,16 +142,24 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
 
       if (profileError) throw profileError;
 
+      // Transform activities to match the expected interface
+      const transformedActivities = (activities || []).map((activity: any) => ({
+        activityName: activity.activity_name,
+        actions: activity.actions_developed,
+        evidences: [] // No evidences for now
+      }));
+
       setPreviewBilling({
         ...fullBilling,
-        created_by_profile: profile
+        created_by_profile: profile,
+        transformedActivities
       });
       setShowPreview(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading billing preview:', error);
       toast({
         title: "Error",
-        description: "No se pudo cargar la vista previa",
+        description: `Error al cargar la vista previa: ${error.message}`,
         variant: "destructive"
       });
     }
@@ -437,10 +454,10 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
             <BillingDocumentPreview
               userProfile={previewBilling.created_by_profile}
               selectedContract={previewBilling.contracts}
-              startDate={previewBilling.billing_start_date}
-              endDate={previewBilling.billing_end_date}
-              activities={previewBilling.billing_activities || []}
-              amount={previewBilling.amount}
+              startDate={new Date(previewBilling.billing_start_date)}
+              endDate={new Date(previewBilling.billing_end_date)}
+              activities={previewBilling.transformedActivities || []}
+              amount={previewBilling.amount.toString()}
             />
           )}
         </DialogContent>
