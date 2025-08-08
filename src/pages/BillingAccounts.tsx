@@ -19,17 +19,13 @@ export default function BillingAccounts() {
 
   useEffect(() => {
     loadUserProfile();
-  }, []);
+  }, []); // Only run once on mount
 
   const loadUserProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast({
-          title: "Error",
-          description: "No hay sesión activa",
-          variant: "destructive"
-        });
+        console.warn('No authenticated user found');
         return;
       }
 
@@ -44,7 +40,10 @@ export default function BillingAccounts() {
 
       if (error) {
         console.error('Error loading profile:', error);
-        throw error;
+        // Don't throw error, just log it and continue with defaults
+        setUserRole("employee");
+        setUserProfile(null);
+        return;
       }
 
       if (profile && profile.roles) {
@@ -53,11 +52,9 @@ export default function BillingAccounts() {
       }
     } catch (error: any) {
       console.error('Error loading user profile:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo cargar el perfil de usuario",
-        variant: "destructive"
-      });
+      // Set defaults instead of showing error toast
+      setUserRole("employee");
+      setUserProfile(null);
     } finally {
       setLoading(false);
     }
@@ -157,8 +154,8 @@ export default function BillingAccounts() {
           userProfile={userProfile}
           onSuccess={() => {
             setShowCreateDialog(false);
-            // Trigger refresh without page reload
-            loadUserProfile();
+            // Simple refresh without reloading profile
+            window.location.reload();
           }}
         />
       </div>

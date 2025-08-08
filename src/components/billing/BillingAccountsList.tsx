@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,20 +19,16 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
   const [billingAccounts, setBillingAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadBillingAccounts();
-  }, [filterType, userProfile]);
-
-  const loadBillingAccounts = async () => {
+  const loadBillingAccounts = useCallback(async () => {
     try {
       setLoading(true);
       
-      console.log('=== DEBUGGING BILLING ACCOUNTS LOAD ===');
-      console.log('Filter type:', filterType);
-      console.log('User role:', userRole);
-      console.log('UserProfile:', userProfile);
+      console.log('Loading billing accounts with:', {
+        filterType,
+        userRole,
+        userProfileId: userProfile?.id
+      });
       
-      // Simple query first - no complex joins
       let query = supabase
         .from('billing_accounts')
         .select(`
@@ -40,40 +36,18 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
           contracts(contract_number, client_name, total_amount)
         `);
 
-      // Apply filters based on type and user role only if needed
-      if (filterType === 'own') {
-        // For "own" view, we rely on RLS policies to filter automatically
-        console.log('Loading own accounts - RLS will filter automatically');
-      } else if (filterType === 'all' && !['super_admin', 'admin', 'supervisor'].includes(userRole)) {
-        // Non-admin users should only see their own accounts even in "all" view
-        console.log('Non-admin user in "all" view - RLS will filter automatically');
-      } else {
-        console.log('Admin/Supervisor user - will see all accounts per RLS');
-      }
-
-      console.log('Executing query...');
+      console.log('Executing billing accounts query...');
       const { data, error } = await query.order('created_at', { ascending: false });
 
-      console.log('=== QUERY RESULTS ===');
-      console.log('Error:', error);
-      console.log('Data count:', data?.length || 0);
-      console.log('Data:', data);
-      
       if (error) {
-        console.error('Supabase error details:', error);
+        console.error('Supabase error:', error);
         throw error;
       }
       
       setBillingAccounts(data || []);
       console.log('Successfully loaded billing accounts:', data?.length || 0);
     } catch (error: any) {
-      console.error('=== ERROR LOADING BILLING ACCOUNTS ===');
-      console.error('Error object:', error);
-      console.error('Error message:', error.message);
-      console.error('Error details:', error.details);
-      console.error('Error hint:', error.hint);
-      console.error('Error code:', error.code);
-      
+      console.error('Error loading billing accounts:', error);
       toast({
         title: "Error",
         description: `No se pudieron cargar las cuentas de cobro: ${error.message || 'Error desconocido'}`,
@@ -82,7 +56,13 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterType, userProfile?.id, userRole, toast]);
+
+  useEffect(() => {
+    if (userProfile) {
+      loadBillingAccounts();
+    }
+  }, [loadBillingAccounts, userProfile]);
 
   const getBillingStatusLabel = (status: string) => {
     switch (status) {
@@ -227,15 +207,15 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
                       {billing.profiles?.name || billing.profiles?.email || 'N/A'}
                     </TableCell>
                   )}
-                   <TableCell className="text-right">
-                     <BillingAccountActions
-                       billingAccount={billing}
-                       userRole={userRole}
-                       userProfile={userProfile}
-                       onEdit={() => {}}
-                       onRefresh={loadBillingAccounts}
-                     />
-                   </TableCell>
+                  <TableCell className="text-right">
+                    <BillingAccountActions
+                      billingAccount={billing}
+                      userRole={userRole}
+                      userProfile={userProfile}
+                      onEdit={() => {}}
+                      onRefresh={loadBillingAccounts}
+                    />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
