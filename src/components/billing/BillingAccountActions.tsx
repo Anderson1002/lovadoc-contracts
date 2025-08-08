@@ -26,23 +26,23 @@ export function BillingAccountActions({
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   const canEdit = () => {
-    // Can edit if: is owner and status is draft, or is admin/supervisor
+    // Puede editar si: es dueño y estado = borrador (admins también)
     const isOwner = billingAccount.created_by === userProfile?.id;
-    const isAdmin = ['super_admin', 'admin', 'supervisor'].includes(userRole);
-    return (isOwner && billingAccount.status === 'draft') || isAdmin;
+    const isAdmin = ['super_admin', 'admin'].includes(userRole); // supervisor no edita
+    return (isOwner && billingAccount.status === 'borrador') || isAdmin;
   };
 
   const canDelete = () => {
-    // Can delete if: is owner and status is draft, or is admin/supervisor
+    // Puede eliminar si: es dueño y estado = borrador (admins también)
     const isOwner = billingAccount.created_by === userProfile?.id;
-    const isAdmin = ['super_admin', 'admin', 'supervisor'].includes(userRole);
-    return (isOwner && billingAccount.status === 'draft') || isAdmin;
+    const isAdmin = ['super_admin', 'admin'].includes(userRole); // supervisor no elimina
+    return (isOwner && billingAccount.status === 'borrador') || isAdmin;
   };
 
   const canSubmitForReview = () => {
-    // Can submit if: is owner and status is draft
+    // Puede enviar si: es dueño y estado = borrador
     const isOwner = billingAccount.created_by === userProfile?.id;
-    return isOwner && billingAccount.status === 'draft';
+    return isOwner && billingAccount.status === 'borrador';
   };
 
   const handleSubmitForReview = async () => {
@@ -52,7 +52,7 @@ export function BillingAccountActions({
       const { error } = await supabase
         .from('billing_accounts')
         .update({
-          status: 'pending_review',
+          status: 'pendiente_revision',
           updated_at: new Date().toISOString()
         })
         .eq('id', billingAccount.id);

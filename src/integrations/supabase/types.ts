@@ -66,9 +66,11 @@ export type Database = {
           billing_end_date: string | null
           billing_month: string
           billing_start_date: string | null
+          comentario_supervisor: string | null
           contract_id: string
           created_at: string
           created_by: string
+          enviado_el: string | null
           id: string
           rejection_reason: string | null
           reviewed_at: string | null
@@ -82,9 +84,11 @@ export type Database = {
           billing_end_date?: string | null
           billing_month: string
           billing_start_date?: string | null
+          comentario_supervisor?: string | null
           contract_id: string
           created_at?: string
           created_by: string
+          enviado_el?: string | null
           id?: string
           rejection_reason?: string | null
           reviewed_at?: string | null
@@ -98,9 +102,11 @@ export type Database = {
           billing_end_date?: string | null
           billing_month?: string
           billing_start_date?: string | null
+          comentario_supervisor?: string | null
           contract_id?: string
           created_at?: string
           created_by?: string
+          enviado_el?: string | null
           id?: string
           rejection_reason?: string | null
           reviewed_at?: string | null
@@ -240,24 +246,30 @@ export type Database = {
         Row: {
           action: string
           billing_account_id: string
+          comentario: string | null
           comments: string | null
           created_at: string
+          decision: string | null
           id: string
           reviewer_id: string
         }
         Insert: {
           action: string
           billing_account_id: string
+          comentario?: string | null
           comments?: string | null
           created_at?: string
+          decision?: string | null
           id?: string
           reviewer_id: string
         }
         Update: {
           action?: string
           billing_account_id?: string
+          comentario?: string | null
           comments?: string | null
           created_at?: string
+          decision?: string | null
           id?: string
           reviewer_id?: string
         }
@@ -531,6 +543,41 @@ export type Database = {
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historial_estado_cuenta: {
+        Row: {
+          created_at: string
+          cuenta_id: string
+          estado_anterior: string | null
+          estado_nuevo: string
+          id: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          cuenta_id: string
+          estado_anterior?: string | null
+          estado_nuevo: string
+          id?: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          cuenta_id?: string
+          estado_anterior?: string | null
+          estado_nuevo?: string
+          id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historial_estado_cuenta_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "billing_accounts"
             referencedColumns: ["id"]
           },
         ]

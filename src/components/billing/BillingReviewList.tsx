@@ -14,9 +14,10 @@ import { formatCurrency } from "@/lib/utils";
 interface BillingReviewListProps {
   userProfile: any;
   userRole: string;
+  onCountChange?: (count: number) => void;
 }
 
-export function BillingReviewList({ userProfile, userRole }: BillingReviewListProps) {
+export function BillingReviewList({ userProfile, userRole, onCountChange }: BillingReviewListProps) {
   const { toast } = useToast();
   const [billingAccounts, setBillingAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,11 +41,12 @@ export function BillingReviewList({ userProfile, userRole }: BillingReviewListPr
           contracts(contract_number, client_name, total_amount),
           profiles!billing_accounts_created_by_fkey(name, email)
         `)
-        .eq('status', 'pending_review')
+        .eq('status', 'pendiente_revision')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setBillingAccounts(data || []);
+      onCountChange?.(data?.length || 0);
     } catch (error: any) {
       console.error('Error loading pending billing accounts:', error);
       toast({
@@ -94,16 +96,11 @@ export function BillingReviewList({ userProfile, userRole }: BillingReviewListPr
     try {
       setSubmitting(true);
 
-      // Update billing account status
+      // Update billing account status (solo estado y comentario_supervisor)
       const updates: any = {
-        status: reviewAction === 'approve' ? 'approved' : 'rejected',
-        reviewed_by: userProfile.id,
-        reviewed_at: new Date().toISOString()
+        status: reviewAction === 'approve' ? 'aprobada' : 'rechazada',
+        comentario_supervisor: comments.trim() || null
       };
-
-      if (reviewAction === 'reject') {
-        updates.rejection_reason = comments.trim();
-      }
 
       const { error: updateError } = await supabase
         .from('billing_accounts')
@@ -113,13 +110,16 @@ export function BillingReviewList({ userProfile, userRole }: BillingReviewListPr
       if (updateError) throw updateError;
 
       // Create review record
+      const decisionValue = reviewAction === 'approve' ? 'aprobada' : 'rechazada';
       const { error: reviewError } = await supabase
         .from('billing_reviews')
         .insert({
           billing_account_id: selectedBilling.id,
           reviewer_id: userProfile.id,
           action: reviewAction,
-          comments: comments.trim() || null
+          comments: comments.trim() || null,
+          decision: decisionValue,
+          comentario: comments.trim() || null
         });
 
       if (reviewError) throw reviewError;
@@ -244,7 +244,7 @@ export function BillingReviewList({ userProfile, userRole }: BillingReviewListPr
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {formatDate(billing.created_at)}
+                      {formatDate(billing.enviado_el || billing.created_at)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center gap-2 justify-end">
