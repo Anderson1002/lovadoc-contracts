@@ -96,9 +96,43 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
     setComments('');
   };
 
-  const handlePreview = (billing: any) => {
-    setPreviewBilling(billing);
-    setShowPreview(true);
+  const handlePreview = async (billing: any) => {
+    try {
+      // Load complete billing account data with activities
+      const { data: fullBillingData, error: billingError } = await supabase
+        .from('billing_accounts')
+        .select(`
+          *,
+          contracts(*),
+          billing_activities(*)
+        `)
+        .eq('id', billing.id)
+        .single();
+
+      if (billingError) throw billingError;
+
+      // Load creator profile
+      const { data: creatorProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', fullBillingData.created_by)
+        .single();
+
+      if (profileError) throw profileError;
+
+      setPreviewBilling({
+        ...fullBillingData,
+        created_by_profile: creatorProfile
+      });
+      setShowPreview(true);
+    } catch (error: any) {
+      console.error('Error loading preview data:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cargar la vista previa",
+        variant: "destructive"
+      });
+    }
   };
 
   const submitReview = async () => {
@@ -387,33 +421,193 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
             <DialogTitle>Vista Previa - Cuenta de Cobro</DialogTitle>
           </DialogHeader>
           {previewBilling && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Header */}
               <div className="text-center border-b pb-4">
-                <h2 className="text-xl font-bold">CUENTA DE COBRO</h2>
-                <p className="text-sm text-muted-foreground">Número: {previewBilling.account_number}</p>
+                <h2 className="text-xl font-bold">Ver Cuenta de Cobro - {previewBilling.account_number}</h2>
+                <p className="text-sm text-muted-foreground">Información detallada de la cuenta de cobro.</p>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-semibold mb-2">Información del Contrato</h3>
-                  <p><strong>Número:</strong> {previewBilling.contracts?.contract_number}</p>
-                  <p><strong>Cliente:</strong> {previewBilling.contracts?.client_name}</p>
-                  <p><strong>Valor Total:</strong> {formatCurrency(previewBilling.contracts?.total_amount || 0)}</p>
-                </div>
-                
-                <div>
-                  <h3 className="font-semibold mb-2">Información de Facturación</h3>
-                  <p><strong>Período:</strong> {new Date(previewBilling.billing_start_date).toLocaleDateString()} - {new Date(previewBilling.billing_end_date).toLocaleDateString()}</p>
-                  <p><strong>Valor Facturado:</strong> {formatCurrency(previewBilling.amount)}</p>
-                  <p><strong>Estado:</strong> <Badge variant="outline">{previewBilling.status}</Badge></p>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="font-semibold mb-2">Contratista</h3>
-                <p><strong>Nombre:</strong> {previewBilling.created_by_profile?.name}</p>
-                <p><strong>Email:</strong> {previewBilling.created_by_profile?.email}</p>
-              </div>
+              {/* Contract Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Información del Contrato</CardTitle>
+                  <div className="text-sm text-muted-foreground">Seleccione el contrato para esta cuenta de cobro</div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="font-medium">{previewBilling.contracts?.contract_number}</p>
+                      <p className="text-sm text-muted-foreground">{previewBilling.contracts?.client_name}</p>
+                    </div>
+                    
+                    <div className="border rounded p-3 bg-muted/50">
+                      <h4 className="font-medium mb-2">Detalles del Contrato Seleccionado</h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <strong>Cliente:</strong> {previewBilling.contracts?.client_name}
+                        </div>
+                        <div>
+                          <strong>Valor Total:</strong> {formatCurrency(previewBilling.contracts?.total_amount || 0)}
+                        </div>
+                        <div>
+                          <strong>Inicio:</strong> {previewBilling.contracts?.start_date ? new Date(previewBilling.contracts.start_date).toLocaleDateString() : 'N/A'}
+                        </div>
+                        <div>
+                          <strong>Fin:</strong> {previewBilling.contracts?.end_date ? new Date(previewBilling.contracts.end_date).toLocaleDateString() : 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Billing Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Detalles de Facturación</CardTitle>
+                  <div className="text-sm text-muted-foreground">Configure el valor y período de facturación</div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label>Valor a Facturar</Label>
+                      <div className="mt-1 p-2 border rounded bg-muted/50">
+                        {formatCurrency(previewBilling.amount)}
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Fecha de Inicio del Período</Label>
+                      <div className="mt-1 p-2 border rounded bg-muted/50">
+                        {new Date(previewBilling.billing_start_date).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Fecha de Fin del Período</Label>
+                      <div className="mt-1 p-2 border rounded bg-muted/50">
+                        {new Date(previewBilling.billing_end_date).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    <strong>Formato:</strong> {formatCurrency(previewBilling.amount)}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Activities */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Actividades del Contrato</CardTitle>
+                  <div className="text-sm text-muted-foreground">Lista las actividades realizadas durante este período de facturación</div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="font-medium">Actividades Registradas ({previewBilling.billing_activities?.length || 0})</div>
+                    {previewBilling.billing_activities && previewBilling.billing_activities.length > 0 ? (
+                      <div className="space-y-3">
+                        {previewBilling.billing_activities.map((activity: any, index: number) => (
+                          <div key={activity.id} className="border rounded p-3 bg-muted/50">
+                            <div className="font-medium">{index + 1}. {activity.activity_name}</div>
+                            <div className="text-sm text-muted-foreground mt-1">{activity.actions_developed}</div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground text-sm">No hay actividades registradas</div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Documents */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Documentos Requeridos</CardTitle>
+                  <div className="text-sm text-muted-foreground">Adjunte los documentos necesarios para la cuenta de cobro</div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Documento de Seguridad Social</Label>
+                      <div className="mt-1 flex items-center gap-2 p-2 border rounded bg-muted/50">
+                        <span className="text-sm">Subido</span>
+                        <Badge variant="default" className="bg-green-500">✓ Subido</Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">Solo archivos PDF, máximo 10MB</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Document Preview */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    Vista Previa del Documento
+                    <Badge variant="outline">Generación Automática</Badge>
+                  </CardTitle>
+                  <div className="text-sm text-muted-foreground">Visualización del documento generado</div>
+                </CardHeader>
+                <CardContent>
+                  <div className="border rounded p-6 bg-white text-black text-sm space-y-4 font-mono">
+                    <div className="text-center space-y-2">
+                      <div className="font-bold text-lg">JONATHAN RAMIREZ</div>
+                      <div>C.C. [Número de Cédula]</div>
+                      <div>Cl 9 # 14 - [Dirección]</div>
+                      <div>[Teléfono]</div>
+                      <div><strong>CORREO ELECTRÓNICO:</strong> {previewBilling.created_by_profile?.email}</div>
+                      <div>Régimen Simplificado</div>
+                    </div>
+                    
+                    <div className="text-center border-t border-b py-2">
+                      <div className="font-bold">DOCUMENTO EQUIVALENTE FACTURA No. DSE {new Date().getFullYear()}{String(new Date().getMonth() + 1).padStart(2, '0')}-{Math.floor(Math.random() * 1000).toString().padStart(3, '0')}</div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div><strong>Ciudad y fecha:</strong> Facatativá, {new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                      <div><strong>Cliente:</strong> {previewBilling.contracts?.client_name}</div>
+                      <div><strong>NIT:</strong> [NIT del Cliente]</div>
+                      <div><strong>Dirección:</strong> {previewBilling.contracts?.client_address || 'Cra 10 #14-42'}</div>
+                      <div><strong>Teléfono:</strong> {previewBilling.contracts?.client_phone || '3223956360'}</div>
+                    </div>
+                    
+                    <div className="border rounded p-3 space-y-2">
+                      <div><strong>POR PRESTACIÓN DE SERVICIOS COMO:</strong> {previewBilling.contracts?.description || `(PROFESIONAL DE SISTEMAS PARA EL DESARROLLO DE NUEVAS APLICACIONES Y/O TECNOLOGÍAS PARA LA ESE HOSPITAL SAN RAFAEL DE FACATATIVÁ).`}</div>
+                      <div><strong>DEL PERIODO DEL MES DE</strong> {new Date(previewBilling.billing_start_date).toLocaleDateString()} - {new Date(previewBilling.billing_end_date).toLocaleDateString()}, <strong>SEGÚN CONTRATO No.</strong> {previewBilling.contracts?.contract_number}</div>
+                      <div><strong>SON:</strong> {formatCurrency(previewBilling.amount)}</div>
+                      <div><strong>(PESOS COLOMBIANOS)</strong></div>
+                      <div><strong>No. CUENTA BANCARIA Nº:</strong> {previewBilling.contracts?.client_account_number || '9013465230'}</div>
+                      <div><strong>BANCO:</strong> {previewBilling.contracts?.client_bank_name || 'Banco de Bogotá'}</div>
+                    </div>
+                    
+                    <div>
+                      <div className="font-bold">ACTIVIDADES DESARROLLADAS:</div>
+                      {previewBilling.billing_activities && previewBilling.billing_activities.length > 0 ? (
+                        <ol className="list-decimal list-inside space-y-1 mt-2">
+                          {previewBilling.billing_activities.map((activity: any, index: number) => (
+                            <li key={activity.id}>{activity.activity_name} - {activity.actions_developed}</li>
+                          ))}
+                        </ol>
+                      ) : (
+                        <div className="mt-2">1. Act 1</div>
+                      )}
+                    </div>
+                    
+                    <div className="text-xs space-y-1">
+                      <div>Bajo la gravedad del juramento informo que no he contratado con más de 1 empleado por un término igual o superior a 90 días, y por consiguiente solicito se me aplique la retención en la fuente por salarios de acuerdo a lo establecido en el artículo 2 del decreto 1625 de 2016, adicionado conforme por el artículo 1 dec. 2392/16.</div>
+                    </div>
+                    
+                    <div className="text-center space-y-2 pt-4">
+                      <div>Actividad económica RUT 6201: 202110330</div>
+                      <div className="pt-8">
+                        <div className="border-t border-black inline-block px-8">(FIRMA DEL CONTRATISTA)</div>
+                      </div>
+                      <div>C.C. [Número de Cédula] de Bogotá</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
         </DialogContent>
