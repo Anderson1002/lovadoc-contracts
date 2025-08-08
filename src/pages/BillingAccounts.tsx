@@ -24,13 +24,28 @@ export default function BillingAccounts() {
   const loadUserProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "No hay sesión activa",
+          variant: "destructive"
+        });
+        return;
+      }
 
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from('profiles')
-        .select('*, roles!profiles_role_id_fkey(name)')
+        .select(`
+          *,
+          roles(name, display_name)
+        `)
         .eq('user_id', user.id)
-        .maybeSingle();
+        .single();
+
+      if (error) {
+        console.error('Error loading profile:', error);
+        throw error;
+      }
 
       if (profile && profile.roles) {
         setUserRole((profile.roles as any).name);
@@ -40,7 +55,7 @@ export default function BillingAccounts() {
       console.error('Error loading user profile:', error);
       toast({
         title: "Error",
-        description: "No se pudo cargar el perfil del usuario",
+        description: "No se pudo cargar el perfil de usuario",
         variant: "destructive"
       });
     } finally {
@@ -142,8 +157,8 @@ export default function BillingAccounts() {
           userProfile={userProfile}
           onSuccess={() => {
             setShowCreateDialog(false);
-            // Refresh the lists
-            window.location.reload();
+            // Trigger refresh without page reload
+            loadUserProfile();
           }}
         />
       </div>
