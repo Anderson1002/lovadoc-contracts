@@ -64,7 +64,7 @@ export function CreateBillingAccountDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [contractsLoading, setContractsLoading] = useState(true);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
-  const [billingStatus, setBillingStatus] = useState<'draft' | 'pending_review' | 'approved' | 'rejected' | 'paid'>('draft');
+  const [billingStatus, setBillingStatus] = useState<'borrador' | 'pendiente_revision' | 'aprobada' | 'rechazada' | 'pagada'>('borrador');
   
   const [uploads, setUploads] = useState<Record<string, Omit<FileUpload, 'type'>>>({
     social_security: { file: null, uploaded: false, uploading: false }
@@ -138,7 +138,7 @@ export function CreateBillingAccountDialog({
     });
     setShowCurrentActivity(false);
     setCurrentDraftId(null);
-    setBillingStatus('draft');
+    setBillingStatus('borrador');
     setUploads({
       social_security: { file: null, uploaded: false, uploading: false }
     });
@@ -227,7 +227,7 @@ export function CreateBillingAccountDialog({
           console.log('Found existing billing account, reusing:', existingBilling.id);
           billingAccountId = existingBilling.id;
           setCurrentDraftId(existingBilling.id);
-          setBillingStatus(existingBilling.status as 'draft' | 'pending_review' | 'approved' | 'rejected' | 'paid');
+          setBillingStatus(existingBilling.status as 'borrador' | 'pendiente_revision' | 'aprobada' | 'rechazada' | 'pagada');
         } else {
           // Create new billing account
           console.log('No existing billing account found, creating new one...');
@@ -240,7 +240,7 @@ export function CreateBillingAccountDialog({
               billing_start_date: startDateString,
               billing_end_date: format(endDate, 'yyyy-MM-dd'),
               created_by: userProfile.id,
-              status: 'draft',
+              status: 'borrador',
               account_number: ''
             })
             .select()
@@ -254,7 +254,7 @@ export function CreateBillingAccountDialog({
           console.log('Successfully created new billing account:', draftBilling.id);
           billingAccountId = draftBilling.id;
           setCurrentDraftId(draftBilling.id);
-          setBillingStatus('draft');
+          setBillingStatus('borrador');
         }
       }
 
@@ -266,7 +266,7 @@ export function CreateBillingAccountDialog({
           activity_name: currentActivity.activityName,
           actions_developed: currentActivity.actions,
           activity_order: activities.length + 1,
-          status: 'saved'
+          status: 'borrador'
         })
         .select()
         .single();
@@ -379,7 +379,7 @@ export function CreateBillingAccountDialog({
       if (existingBilling) {
         // Use existing billing account
         setCurrentDraftId(existingBilling.id);
-        setBillingStatus(existingBilling.status as 'draft' | 'pending_review' | 'approved' | 'rejected' | 'paid');
+        setBillingStatus(existingBilling.status as 'borrador' | 'pendiente_revision' | 'aprobada' | 'rechazada' | 'pagada');
         toast({
           title: "Borrador Encontrado",
           description: "Se encontró un borrador existente. Puede continuar editando.",
@@ -397,7 +397,7 @@ export function CreateBillingAccountDialog({
           billing_start_date: startDateString,
           billing_end_date: format(endDate, 'yyyy-MM-dd'),
           created_by: userProfile.id,
-          status: 'draft',
+          status: 'borrador',
           account_number: ''
         })
         .select()
@@ -406,7 +406,7 @@ export function CreateBillingAccountDialog({
       if (draftError) throw draftError;
       
       setCurrentDraftId(draftBilling.id);
-      setBillingStatus('draft');
+      setBillingStatus('borrador');
 
       toast({
         title: "Borrador Guardado",
@@ -458,7 +458,7 @@ export function CreateBillingAccountDialog({
             amount: parseFloat(amount),
             billing_start_date: format(startDate, 'yyyy-MM-dd'),
             billing_end_date: format(endDate, 'yyyy-MM-dd'),
-            status: 'pending_review'
+            status: 'pendiente_revision'
           })
           .eq('id', currentDraftId);
         
