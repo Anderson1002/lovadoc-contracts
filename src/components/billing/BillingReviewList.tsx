@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Eye, CheckCircle, XCircle, Calendar, DollarSign, FileText, MessageCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { BillingDocumentPreview } from "@/components/billing/BillingDocumentPreview";
 
 interface BillingReviewListProps {
   userProfile: any;
@@ -25,6 +26,8 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
   const [reviewAction, setReviewAction] = useState<'approve' | 'reject' | null>(null);
   const [comments, setComments] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewBilling, setPreviewBilling] = useState<any>(null);
 
   useEffect(() => {
     loadPendingBillingAccounts();
@@ -93,6 +96,11 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
     setComments('');
   };
 
+  const handlePreview = (billing: any) => {
+    setPreviewBilling(billing);
+    setShowPreview(true);
+  };
+
   const submitReview = async () => {
     if (!selectedBilling || !reviewAction) return;
 
@@ -100,7 +108,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
     if (reviewAction === 'reject' && !comments.trim()) {
       toast({
         title: "Error",
-        description: "Debe agregar un comentario al rechazar una cuenta de cobro",
+        description: "Debe agregar un comentario al devolver una cuenta de cobro",
         variant: "destructive"
       });
       return;
@@ -265,7 +273,8 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0"
-                          title="Ver documentos"
+                          title="Ver vista previa"
+                          onClick={() => handlePreview(billing)}
                         >
                           <FileText className="h-4 w-4" />
                         </Button>
@@ -285,7 +294,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           <XCircle className="h-4 w-4 mr-1" />
-                          Rechazar
+                          Devolver
                         </Button>
                       </div>
                     </TableCell>
@@ -316,7 +325,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
               ) : (
                 <XCircle className="h-5 w-5 text-red-600" />
               )}
-              {reviewAction === 'approve' ? 'Aprobar' : 'Rechazar'} Cuenta de Cobro
+              {reviewAction === 'approve' ? 'Aprobar' : 'Devolver'} Cuenta de Cobro
             </DialogTitle>
             <DialogDescription>
               {selectedBilling && (
@@ -332,7 +341,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
           <div className="space-y-4">
             <div>
               <Label htmlFor="comments">
-                {reviewAction === 'reject' ? 'Motivo del rechazo *' : 'Comentarios (opcional)'}
+                {reviewAction === 'reject' ? 'Motivo de la devolución *' : 'Comentarios (opcional)'}
               </Label>
               <Textarea
                 id="comments"
@@ -364,10 +373,49 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                 disabled={submitting || (reviewAction === 'reject' && !comments.trim())}
                 variant={reviewAction === 'approve' ? 'default' : 'destructive'}
               >
-                {submitting ? 'Procesando...' : (reviewAction === 'approve' ? 'Aprobar' : 'Rechazar')}
+                {submitting ? 'Procesando...' : (reviewAction === 'approve' ? 'Aprobar' : 'Devolver')}
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Vista Previa - Cuenta de Cobro</DialogTitle>
+          </DialogHeader>
+          {previewBilling && (
+            <div className="space-y-4">
+              <div className="text-center border-b pb-4">
+                <h2 className="text-xl font-bold">CUENTA DE COBRO</h2>
+                <p className="text-sm text-muted-foreground">Número: {previewBilling.account_number}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-semibold mb-2">Información del Contrato</h3>
+                  <p><strong>Número:</strong> {previewBilling.contracts?.contract_number}</p>
+                  <p><strong>Cliente:</strong> {previewBilling.contracts?.client_name}</p>
+                  <p><strong>Valor Total:</strong> {formatCurrency(previewBilling.contracts?.total_amount || 0)}</p>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold mb-2">Información de Facturación</h3>
+                  <p><strong>Período:</strong> {new Date(previewBilling.billing_start_date).toLocaleDateString()} - {new Date(previewBilling.billing_end_date).toLocaleDateString()}</p>
+                  <p><strong>Valor Facturado:</strong> {formatCurrency(previewBilling.amount)}</p>
+                  <p><strong>Estado:</strong> <Badge variant="outline">{previewBilling.status}</Badge></p>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold mb-2">Contratista</h3>
+                <p><strong>Nombre:</strong> {previewBilling.created_by_profile?.name}</p>
+                <p><strong>Email:</strong> {previewBilling.created_by_profile?.email}</p>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>

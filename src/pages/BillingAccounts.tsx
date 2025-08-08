@@ -93,16 +93,23 @@ export default function BillingAccounts() {
         </div>
 
         {/* Content */}
-        <Tabs defaultValue="my-accounts" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="my-accounts" className="flex items-center gap-2">
-              <Receipt className="w-4 h-4" />
-              Mis Cuentas
-            </TabsTrigger>
+        <Tabs defaultValue={userRole === 'supervisor' ? 'pending-review' : 'my-accounts'} className="space-y-6">
+          <TabsList className={`grid w-full ${userRole === 'supervisor' ? 'grid-cols-2' : 'grid-cols-3'}`}>
+            {userRole !== 'supervisor' && (
+              <TabsTrigger value="my-accounts" className="flex items-center gap-2">
+                <Receipt className="w-4 h-4" />
+                Mis Cuentas
+              </TabsTrigger>
+            )}
             {canReviewBilling && (
               <TabsTrigger value="pending-review" className="flex items-center gap-2">
                 <Eye className="w-4 h-4" />
                 Pendientes Revisión
+                {pendingCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    {pendingCount}
+                  </Badge>
+                )}
               </TabsTrigger>
             )}
             <TabsTrigger value="all-accounts" className="flex items-center gap-2">
@@ -111,19 +118,22 @@ export default function BillingAccounts() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="my-accounts" className="space-y-6">
-            <BillingAccountsList 
-              userProfile={userProfile}
-              userRole={userRole}
-              filterType="own"
-            />
-          </TabsContent>
+          {userRole !== 'supervisor' && (
+            <TabsContent value="my-accounts" className="space-y-6">
+              <BillingAccountsList 
+                userProfile={userProfile}
+                userRole={userRole}
+                filterType="own"
+              />
+            </TabsContent>
+          )}
 
           {canReviewBilling && (
             <TabsContent value="pending-review" className="space-y-6">
               <BillingReviewList 
                 userProfile={userProfile}
                 userRole={userRole}
+                onCountChange={setPendingCount}
               />
             </TabsContent>
           )}

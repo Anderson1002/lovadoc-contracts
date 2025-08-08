@@ -115,11 +115,11 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
 
   const getBillingStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
-      case 'draft': return 'outline';
-      case 'pending_review': return 'outline';
-      case 'approved': return 'default';
-      case 'rejected': return 'destructive';
-      case 'paid': return 'secondary';
+      case 'borrador': return 'outline';
+      case 'pendiente_revision': return 'outline';
+      case 'aprobada': return 'default';
+      case 'rechazada': return 'destructive';
+      case 'pagada': return 'secondary';
       default: return 'outline';
     }
   };
@@ -240,11 +240,14 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
                   <TableCell className="text-sm text-muted-foreground">
                     {formatDate(billing.created_at)}
                   </TableCell>
-                  {filterType === 'all' && ['super_admin', 'admin', 'supervisor'].includes(userRole) && (
-                    <TableCell className="text-sm">
-                      {billing.profiles?.name || billing.profiles?.email || 'N/A'}
-                    </TableCell>
-                  )}
+                   {filterType === 'all' && ['super_admin', 'admin', 'supervisor'].includes(userRole) && (
+                     <TableCell className="text-sm">
+                       <div>
+                         <p className="font-medium">{billing.created_by_profile?.name || 'N/A'}</p>
+                         <p className="text-sm text-muted-foreground">{billing.created_by_profile?.email}</p>
+                       </div>
+                     </TableCell>
+                   )}
                    <TableCell className="text-right">
                      <BillingAccountActions
                        billingAccount={billing}
