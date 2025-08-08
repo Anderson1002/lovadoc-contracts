@@ -3,10 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Eye, Download, Calendar, DollarSign, FileText } from "lucide-react";
+import { Calendar, DollarSign, FileText } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { EditBillingAccountDialog } from "./EditBillingAccountDialog";
+import { BillingAccountActions } from "./BillingAccountActions";
 
 interface BillingAccountsListProps {
   userProfile: any;
@@ -18,6 +19,8 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
   const { toast } = useToast();
   const [billingAccounts, setBillingAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingAccount, setEditingAccount] = useState<any>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   useEffect(() => {
     loadBillingAccounts();
@@ -227,32 +230,31 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
                       {billing.profiles?.name || billing.profiles?.email || 'N/A'}
                     </TableCell>
                   )}
-                  <TableCell className="text-right">
-                    <div className="flex items-center gap-2 justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        title="Ver detalles"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        title="Descargar documentos"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                   <TableCell className="text-right">
+                     <BillingAccountActions
+                       billingAccount={billing}
+                       userRole={userRole}
+                       userProfile={userProfile}
+                       onEdit={() => {
+                         setEditingAccount(billing);
+                         setShowEditDialog(true);
+                       }}
+                       onRefresh={loadBillingAccounts}
+                     />
+                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
       </CardContent>
+
+      <EditBillingAccountDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        billingAccount={editingAccount}
+        onSuccess={loadBillingAccounts}
+      />
     </Card>
   );
 }
