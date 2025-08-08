@@ -68,7 +68,10 @@ export default function EditBillingAccount() {
                             uploads.social_security.uploaded && canEdit;
 
   useEffect(() => {
-    loadUserProfile();
+    const initializePage = async () => {
+      await loadUserProfile();
+    };
+    initializePage();
   }, []);
 
   useEffect(() => {
@@ -80,10 +83,27 @@ export default function EditBillingAccount() {
 
   const loadUserProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+      console.log('Loading user profile...');
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('Auth error:', userError);
+        throw userError;
+      }
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        toast({
+          title: "Error de Autenticación",
+          description: "No hay sesión activa. Por favor, inicie sesión.",
+          variant: "destructive"
+        });
+        navigate('/auth');
+        return;
+      }
 
-      const { data: profile, error } = await supabase
+      console.log('User found, loading profile for:', user.id);
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select(`
           *,
@@ -92,13 +112,29 @@ export default function EditBillingAccount() {
         .eq('user_id', user.id)
         .single();
 
-      if (error) throw error;
+      if (profileError) {
+        console.error('Profile error:', profileError);
+        throw profileError;
+      }
+
+      if (!profile) {
+        console.error('No profile found for user');
+        toast({
+          title: "Error",
+          description: "No se encontró el perfil de usuario. Contacte al administrador.",
+          variant: "destructive"
+        });
+        navigate('/billing');
+        return;
+      }
+
+      console.log('Profile loaded successfully:', profile);
       setUserProfile(profile);
     } catch (error: any) {
       console.error('Error loading user profile:', error);
       toast({
         title: "Error",
-        description: "No se pudo cargar el perfil de usuario",
+        description: `Error al cargar el perfil: ${error.message || 'Error desconocido'}`,
         variant: "destructive"
       });
       navigate('/billing');
@@ -108,7 +144,12 @@ export default function EditBillingAccount() {
   const loadBillingAccount = async () => {
     try {
       setLoading(true);
+      console.log('Loading billing account with ID:', id);
       
+      if (!id) {
+        throw new Error('ID de cuenta de cobro no proporcionado');
+      }
+
       const { data: billingAccount, error } = await supabase
         .from('billing_accounts')
         .select(`
@@ -118,7 +159,8 @@ export default function EditBillingAccount() {
             contract_number,
             client_name,
             total_amount,
-            status
+            status,
+            description
           ),
           billing_activities(
             id,
@@ -139,26 +181,63 @@ export default function EditBillingAccount() {
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading billing account:', error);
+        throw error;
+      }
+
+      if (!billingAccount) {
+        throw new Error('Cuenta de cobro no encontrada');
+      }
+
+      console.log('Billing account loaded:', billingAccount);
+
+      // Validate user permissions
+      const userCanEdit = billingAccount.created_by === userProfile?.id || 
+                         ['super_admin', 'admin', 'supervisor'].includes(userProfile?.roles?.name);
+      
+      if (!userCanEdit) {
+        toast({
+          title: "Sin Permisos",
+          description: "No tiene permisos para ver esta cuenta de cobro",
+          variant: "destructive"
+        });
+        navigate('/billing');
+        return;
+      }
 
       // Populate form with existing data
       setSelectedContract(billingAccount.contract_id);
       setAmount(billingAccount.amount.toString());
-      setStartDate(new Date(billingAccount.billing_start_date || billingAccount.billing_month));
-      setEndDate(new Date(billingAccount.billing_end_date || billingAccount.billing_month));
+      
+      // Handle dates safely
+      if (billingAccount.billing_start_date) {
+        setStartDate(new Date(billingAccount.billing_start_date));
+      } else if (billingAccount.billing_month) {
+        setStartDate(new Date(billingAccount.billing_month));
+      }
+      
+      if (billingAccount.billing_end_date) {
+        setEndDate(new Date(billingAccount.billing_end_date));
+      } else if (billingAccount.billing_month) {
+        setEndDate(new Date(billingAccount.billing_month));
+      }
+      
       setBillingStatus(billingAccount.status as 'draft' | 'pending_review' | 'approved' | 'rejected' | 'paid');
 
       // Load activities safely
       let loadedActivities: Activity[] = [];
       if (billingAccount.billing_activities && Array.isArray(billingAccount.billing_activities)) {
-        loadedActivities = billingAccount.billing_activities.map((activity: any) => ({
-          id: activity.id,
-          activityName: activity.activity_name,
-          actions: activity.actions_developed,
-          evidences: [], // We'll load evidence files separately if needed
-          status: 'saved' as const,
-          dbId: activity.id
-        }));
+        loadedActivities = billingAccount.billing_activities
+          .sort((a, b) => a.activity_order - b.activity_order)
+          .map((activity: any) => ({
+            id: activity.id,
+            activityName: activity.activity_name || '',
+            actions: activity.actions_developed || '',
+            evidences: [], // We'll load evidence files separately if needed
+            status: 'saved' as const,
+            dbId: activity.id
+          }));
       }
       setActivities(loadedActivities);
 
@@ -169,6 +248,7 @@ export default function EditBillingAccount() {
           (doc: any) => doc.document_type === 'social_security'
         );
       }
+      
       if (socialSecurityDoc) {
         setUploads(prev => ({
           ...prev,
@@ -176,11 +256,13 @@ export default function EditBillingAccount() {
         }));
       }
 
+      console.log('Form data populated successfully');
+
     } catch (error: any) {
       console.error('Error loading billing account:', error);
       toast({
         title: "Error",
-        description: "No se pudo cargar la cuenta de cobro",
+        description: `No se pudo cargar la cuenta de cobro: ${error.message || 'Error desconocido'}`,
         variant: "destructive"
       });
       navigate('/billing');
@@ -192,24 +274,33 @@ export default function EditBillingAccount() {
   const loadContracts = async () => {
     try {
       setContractsLoading(true);
+      console.log('Loading contracts for user profile:', userProfile);
+      
       let query = supabase
         .from('contracts')
         .select('*')
         .in('status', ['active']);
 
-      if (!['super_admin', 'admin', 'supervisor'].includes(userProfile?.roles?.name)) {
+      // Apply role-based filtering
+      const userRole = userProfile?.roles?.name;
+      if (!['super_admin', 'admin', 'supervisor'].includes(userRole)) {
         query = query.eq('created_by', userProfile?.id);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading contracts:', error);
+        throw error;
+      }
+
+      console.log('Contracts loaded:', data?.length || 0);
       setContracts(data || []);
     } catch (error: any) {
       console.error('Error loading contracts:', error);
       toast({
         title: "Error",
-        description: "No se pudieron cargar los contratos",
+        description: `No se pudieron cargar los contratos: ${error.message || 'Error desconocido'}`,
         variant: "destructive"
       });
     } finally {
@@ -221,10 +312,37 @@ export default function EditBillingAccount() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    console.log('File selected:', file.name, file.type, file.size);
+    
+    // Validate file type for social security
+    if (type === 'social_security' && !file.type.includes('pdf')) {
+      toast({
+        title: "Error",
+        description: "El certificado de seguridad social debe ser un archivo PDF",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "El archivo es demasiado grande. Máximo 10MB permitido.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setUploads(prev => ({
       ...prev,
       [type]: { ...prev[type], file, uploaded: true }
     }));
+
+    toast({
+      title: "Archivo Cargado",
+      description: `${file.name} ha sido seleccionado correctamente`
+    });
   };
 
   const saveActivityIndividually = async () => {
@@ -315,14 +433,24 @@ export default function EditBillingAccount() {
   const saveAsDraft = async () => {
     if (!selectedContract || !amount || !startDate || !endDate) {
       toast({
-        title: "Error",
+        title: "Campos Requeridos",
         description: "Complete los campos básicos: contrato, valor y período de facturación",
         variant: "destructive"
       });
       return;
     }
 
+    if (!canEdit) {
+      toast({
+        title: "Sin Permisos",
+        description: "No puede editar esta cuenta en su estado actual",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
+      console.log('Saving as draft...');
       const { error: updateError } = await supabase
         .from('billing_accounts')
         .update({
@@ -334,8 +462,12 @@ export default function EditBillingAccount() {
         })
         .eq('id', id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating billing account:', updateError);
+        throw updateError;
+      }
 
+      console.log('Draft saved successfully');
       toast({
         title: "Cambios Guardados",
         description: "Los cambios han sido guardados como borrador",
@@ -351,10 +483,38 @@ export default function EditBillingAccount() {
   };
 
   const handleSubmit = async () => {
-    if (!canSubmitForReview) {
+    // Comprehensive validation
+    if (!selectedContract || !amount || !startDate || !endDate) {
       toast({
-        title: "Error",
-        description: "Complete todos los campos requeridos y registre al menos una actividad",
+        title: "Campos Requeridos",
+        description: "Complete todos los campos básicos: contrato, valor y período de facturación",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (activities.filter(a => a.status === 'saved').length === 0) {
+      toast({
+        title: "Actividades Requeridas",
+        description: "Debe registrar al menos una actividad antes de enviar a revisión",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!uploads.social_security.uploaded && !uploads.social_security.file) {
+      toast({
+        title: "Documento Requerido",
+        description: "Debe cargar el certificado de seguridad social",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!canEdit) {
+      toast({
+        title: "Sin Permisos",
+        description: "No puede enviar esta cuenta a revisión en su estado actual",
         variant: "destructive"
       });
       return;
@@ -362,8 +522,10 @@ export default function EditBillingAccount() {
 
     try {
       setIsSubmitting(true);
+      console.log('Submitting billing account for review...');
 
       // Update billing account status and details
+      console.log('Updating billing account...');
       const { error: updateError } = await supabase
         .from('billing_accounts')
         .update({
@@ -376,10 +538,16 @@ export default function EditBillingAccount() {
         })
         .eq('id', id);
       
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating billing account:', updateError);
+        throw updateError;
+      }
+
+      console.log('Billing account updated successfully');
 
       // Upload social security document if new file
       if (uploads.social_security.file) {
+        console.log('Uploading new social security document...');
         const fileExt = uploads.social_security.file.name.split('.').pop();
         const fileName = `${userProfile.user_id}/${id}/social_security.${fileExt}`;
 
@@ -387,7 +555,12 @@ export default function EditBillingAccount() {
           .from('billing-documents')
           .upload(fileName, uploads.social_security.file, { upsert: true });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Error uploading file:', uploadError);
+          throw uploadError;
+        }
+
+        console.log('File uploaded successfully:', uploadData.path);
 
         // Update or insert document record
         const { error: docError } = await supabase
@@ -402,9 +575,15 @@ export default function EditBillingAccount() {
             mime_type: uploads.social_security.file.type
           });
 
-        if (docError) throw docError;
+        if (docError) {
+          console.error('Error saving document record:', docError);
+          throw docError;
+        }
+
+        console.log('Document record saved successfully');
       }
 
+      console.log('Billing account submission completed successfully');
       toast({
         title: "Cuenta Enviada a Revisión",
         description: "La cuenta de cobro ha sido enviada para revisión exitosamente"
@@ -424,7 +603,16 @@ export default function EditBillingAccount() {
   };
 
   const selectedContractData = contracts.find(c => c.id === selectedContract);
-  const formattedAmount = amount ? `$ ${parseFloat(amount).toLocaleString('es-CO')}` : '';
+  
+  // Format amount with proper currency display
+  const formatAmountDisplay = (value: string) => {
+    if (!value) return '';
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) return '';
+    return `$ ${numValue.toLocaleString('es-CO')}`;
+  };
+
+  const formattedAmount = formatAmountDisplay(amount);
 
   if (loading) {
     return (
@@ -432,7 +620,28 @@ export default function EditBillingAccount() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-muted rounded w-1/4"></div>
           <div className="h-64 bg-muted rounded"></div>
+          <div className="text-center text-muted-foreground">
+            Cargando cuenta de cobro...
+          </div>
         </div>
+      </div>
+    );
+  }
+
+  // Show error state if critical data is missing
+  if (!userProfile) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <div className="text-center space-y-4">
+              <p className="text-destructive">Error: No se pudo cargar la información del usuario</p>
+              <Button onClick={() => navigate('/billing')} variant="outline">
+                Volver a Cuentas de Cobro
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -521,12 +730,18 @@ export default function EditBillingAccount() {
                 type="text"
                 value={formattedAmount}
                 onChange={(e) => {
+                  // Remove all non-numeric characters and format
                   const value = e.target.value.replace(/[^\d]/g, '');
                   setAmount(value);
                 }}
-                placeholder="Ingrese el valor"
+                placeholder="$ 0"
                 disabled={!canEdit}
               />
+              {amount && (
+                <p className="text-sm text-muted-foreground">
+                  Valor ingresado: {formatAmountDisplay(amount)}
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
