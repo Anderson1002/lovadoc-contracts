@@ -196,10 +196,11 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
 
       // Create review record
       const decisionValue = reviewAction === 'approve' ? 'aprobada' : 'rechazada';
+      const actionValue = reviewAction === 'approve' ? 'approved' : 'rejected'; // Fixed: using correct constraint values
       const reviewData = {
         billing_account_id: selectedBilling.id,
         reviewer_id: userProfile.id,
-        action: reviewAction,
+        action: actionValue, // Fixed: using correct action value
         comments: comments.trim() || null,
         decision: decisionValue,
         comentario: comments.trim() || null
