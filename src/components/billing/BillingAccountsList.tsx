@@ -34,6 +34,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
       if (!userProfile?.id) {
         console.log('No userProfile id found, skipping load');
         setBillingAccounts([]);
+        setLoading(false);
         return;
       }
       

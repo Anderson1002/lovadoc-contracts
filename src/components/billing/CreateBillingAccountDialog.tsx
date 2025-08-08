@@ -412,7 +412,7 @@ export function CreateBillingAccountDialog({
 
       let billingAccountId = currentDraftId;
 
-      // Update existing draft or create new billing account
+      // Always update existing draft, never create new one during submission
       if (currentDraftId) {
         console.log('Updating existing billing account:', currentDraftId);
         const { error: updateError } = await supabase
@@ -431,29 +431,8 @@ export function CreateBillingAccountDialog({
         }
         console.log('Successfully updated billing account status to pending_review');
       } else {
-        console.log('Creating new billing account...');
-        const startDateString = format(startDate, 'yyyy-MM-dd');
-        const { data: newBilling, error: billingError } = await supabase
-          .from('billing_accounts')
-          .insert({
-            contract_id: selectedContract,
-            amount: parseFloat(amount),
-            billing_month: startDateString,
-            billing_start_date: startDateString,
-            billing_end_date: format(endDate, 'yyyy-MM-dd'),
-            created_by: userProfile.id,
-            status: 'pending_review',
-            account_number: ''
-          })
-          .select()
-          .single();
-        
-        if (billingError) {
-          console.error('Error creating billing account:', billingError);
-          throw billingError;
-        }
-        console.log('Successfully created new billing account:', newBilling.id);
-        billingAccountId = newBilling.id;
+        // This should not happen during submission, but handle it anyway
+        throw new Error('No se encontró el borrador de la cuenta de cobro. Guarde como borrador primero.');
       }
 
       // Upload social security document
