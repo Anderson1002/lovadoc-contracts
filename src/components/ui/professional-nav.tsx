@@ -183,43 +183,50 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
           </div>
 
           {/* Navigation Menu */}
-          <NavigationMenu className="flex-1 mx-8">
-            <NavigationMenuList className="flex items-center space-x-1">
+          <div className="flex-1 mx-8">
+            <div className="flex items-center space-x-1">
               {getFilteredMenuItems().map((menu) => {
                 const Icon = menu.icon;
                 const isActive = isActiveMenu(menu.items);
                 
                 return (
-                  <NavigationMenuItem key={menu.label}>
-                    <NavigationMenuTrigger 
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 h-10 rounded-lg transition-all duration-300 font-medium",
-                        "bg-transparent hover:bg-accent/50 hover:text-accent-foreground",
-                        "data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
-                        "focus:bg-accent focus:text-accent-foreground",
-                        isActive && "bg-primary/10 text-primary border border-primary/20"
-                      )}
+                  <DropdownMenu key={menu.label}>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "flex items-center gap-2 px-4 py-2 h-10 rounded-lg transition-all duration-300 font-medium",
+                          "bg-transparent hover:bg-accent/50 hover:text-accent-foreground",
+                          "data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+                          "focus:bg-accent focus:text-accent-foreground",
+                          isActive && "bg-primary/10 text-primary border border-primary/20"
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{menu.label}</span>
+                        <ChevronDown className="h-3 w-3 transition-transform duration-300" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      className="w-80 p-4 bg-card border border-border shadow-xl rounded-lg z-50"
+                      align="start"
+                      sideOffset={8}
                     >
-                      <Icon className="h-4 w-4" />
-                      <span>{menu.label}</span>
-                      <ChevronDown className="h-3 w-3 transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                    </NavigationMenuTrigger>
-                     <NavigationMenuContent className="w-80 p-4 bg-card border border-border shadow-xl rounded-lg z-50">
-                       <div className="grid gap-2">
-                         <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
-                           <Icon className="h-5 w-5 text-primary" />
-                           <span className="font-semibold text-foreground">{menu.label}</span>
-                         </div>
-                         {menu.items.map((item) => {
+                      <div className="grid gap-2">
+                        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
+                          <Icon className="h-5 w-5 text-primary" />
+                          <span className="font-semibold text-foreground">{menu.label}</span>
+                        </div>
+                        {menu.items.map((item) => {
                           const ItemIcon = item.icon;
                           const itemActive = isActiveItem(item.url);
                           
                           return (
-                            <NavigationMenuLink key={item.url} asChild>
+                            <DropdownMenuItem key={item.url} asChild>
                               <Link
                                 to={item.url}
                                 className={cn(
-                                  "group flex items-start gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-accent hover:text-accent-foreground no-underline",
+                                  "group flex items-start gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-accent hover:text-accent-foreground no-underline cursor-pointer",
                                   itemActive && "bg-primary text-primary-foreground shadow-sm"
                                 )}
                               >
@@ -240,16 +247,16 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
                                   )}
                                 </div>
                               </Link>
-                            </NavigationMenuLink>
+                            </DropdownMenuItem>
                           );
                         })}
                       </div>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 );
               })}
-            </NavigationMenuList>
-          </NavigationMenu>
+            </div>
+          </div>
 
           {/* User Menu */}
           <div className="flex items-center gap-4">
