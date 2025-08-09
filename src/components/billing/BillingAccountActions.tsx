@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Eye, Edit, Send, Trash2, Loader2 } from "lucide-react";
+import { Eye, Edit, Send, Trash2, Loader2, DollarSign, ArrowLeft } from "lucide-react";
 
 interface BillingAccountActionsProps {
   billingAccount: any;
@@ -24,6 +24,8 @@ export function BillingAccountActions({
   const [loading, setLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [showPayDialog, setShowPayDialog] = useState(false);
+  const [showReturnDialog, setShowReturnDialog] = useState(false);
 
   const canEdit = () => {
     // Puede editar si: es dueño y estado = borrador o rechazada (admins también)
@@ -31,6 +33,16 @@ export function BillingAccountActions({
     const isAdmin = ['super_admin', 'admin'].includes(userRole);
     const editableStates = ['borrador', 'rechazada'];
     return (isOwner && editableStates.includes(billingAccount.status)) || isAdmin;
+  };
+
+  const canMarkAsPaid = () => {
+    // Treasury puede marcar como causada si está aprobada
+    return userRole === 'treasury' && billingAccount.status === 'aprobada';
+  };
+
+  const canReturnToSupervisor = () => {
+    // Treasury puede devolver al supervisor si está aprobada
+    return userRole === 'treasury' && billingAccount.status === 'aprobada';
   };
 
   const canDelete = () => {
@@ -126,6 +138,76 @@ export function BillingAccountActions({
     }
   };
 
+  const handleMarkAsPaid = async () => {
+    try {
+      setLoading(true);
+
+      const { error } = await supabase
+        .from('billing_accounts')
+        .update({
+          status: 'causada',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', billingAccount.id);
+
+      if (error) {
+        console.error('Error marking as paid:', error);
+        throw error;
+      }
+
+      toast({
+        title: "Éxito",
+        description: "Cuenta de cobro marcada como causada correctamente"
+      });
+
+      onRefresh();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Error al marcar como causada: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+      setShowPayDialog(false);
+    }
+  };
+
+  const handleReturnToSupervisor = async () => {
+    try {
+      setLoading(true);
+
+      const { error } = await supabase
+        .from('billing_accounts')
+        .update({
+          status: 'pendiente_revision',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', billingAccount.id);
+
+      if (error) {
+        console.error('Error returning to supervisor:', error);
+        throw error;
+      }
+
+      toast({
+        title: "Éxito",
+        description: "Cuenta de cobro devuelta al supervisor correctamente"
+      });
+
+      onRefresh();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Error al devolver al supervisor: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+      setShowReturnDialog(false);
+    }
+  };
+
   return (
     <>
       <div className="flex items-center gap-2 justify-end">
@@ -177,6 +259,32 @@ export function BillingAccountActions({
             <Trash2 className="h-4 w-4" />
           </Button>
         )}
+
+        {canMarkAsPaid() && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+            title="Marcar como Causada"
+            onClick={() => setShowPayDialog(true)}
+            disabled={loading}
+          >
+            <DollarSign className="h-4 w-4" />
+          </Button>
+        )}
+
+        {canReturnToSupervisor() && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700"
+            title="Devolver al Supervisor"
+            onClick={() => setShowReturnDialog(true)}
+            disabled={loading}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Submit for Review Confirmation Dialog */}
@@ -218,6 +326,54 @@ export function BillingAccountActions({
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Mark as Paid Confirmation Dialog */}
+      <AlertDialog open={showPayDialog} onOpenChange={setShowPayDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Marcar como Causada</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Está seguro que desea marcar esta cuenta de cobro como causada (pagada)? 
+              Esta acción indica que el pago ha sido procesado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleMarkAsPaid} 
+              disabled={loading}
+              className="bg-green-600 text-white hover:bg-green-700"
+            >
+              {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Marcar como Causada
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Return to Supervisor Confirmation Dialog */}
+      <AlertDialog open={showReturnDialog} onOpenChange={setShowReturnDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Devolver al Supervisor</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Está seguro que desea devolver esta cuenta de cobro al supervisor para revisión? 
+              El supervisor tendrá que aprobarla nuevamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleReturnToSupervisor} 
+              disabled={loading}
+              className="bg-orange-600 text-white hover:bg-orange-700"
+            >
+              {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Devolver al Supervisor
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

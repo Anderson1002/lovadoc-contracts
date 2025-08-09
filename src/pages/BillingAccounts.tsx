@@ -51,6 +51,7 @@ export default function BillingAccounts() {
 
   const canCreateBilling = ['super_admin', 'admin', 'employee'].includes(userRole);
   const canReviewBilling = ['super_admin', 'admin', 'supervisor'].includes(userRole);
+  const canManagePayments = ['super_admin', 'admin', 'treasury'].includes(userRole);
   const [pendingCount, setPendingCount] = useState(0);
 
   if (loading) {
@@ -93,9 +94,9 @@ export default function BillingAccounts() {
         </div>
 
         {/* Content */}
-        <Tabs defaultValue={userRole === 'supervisor' ? 'pending-review' : 'my-accounts'} className="space-y-6">
-          <TabsList className={`grid w-full ${userRole === 'supervisor' ? 'grid-cols-2' : 'grid-cols-3'}`}>
-            {userRole !== 'supervisor' && (
+        <Tabs defaultValue={userRole === 'supervisor' ? 'pending-review' : userRole === 'treasury' ? 'pending-payment' : 'my-accounts'} className="space-y-6">
+          <TabsList className={`grid w-full ${userRole === 'supervisor' ? 'grid-cols-2' : userRole === 'treasury' ? 'grid-cols-2' : 'grid-cols-3'}`}>
+            {userRole !== 'supervisor' && userRole !== 'treasury' && (
               <TabsTrigger value="my-accounts" className="flex items-center gap-2">
                 <Receipt className="w-4 h-4" />
                 Mis Cuentas
@@ -112,13 +113,19 @@ export default function BillingAccounts() {
                 )}
               </TabsTrigger>
             )}
+            {canManagePayments && (
+              <TabsTrigger value="pending-payment" className="flex items-center gap-2">
+                <Receipt className="w-4 h-4" />
+                Cuentas por Pagar
+              </TabsTrigger>
+            )}
             <TabsTrigger value="all-accounts" className="flex items-center gap-2">
               <Receipt className="w-4 h-4" />
               Todas las Cuentas
             </TabsTrigger>
           </TabsList>
 
-          {userRole !== 'supervisor' && (
+          {userRole !== 'supervisor' && userRole !== 'treasury' && (
             <TabsContent value="my-accounts" className="space-y-6">
               <BillingAccountsList 
                 userProfile={userProfile}
@@ -134,6 +141,16 @@ export default function BillingAccounts() {
                 userProfile={userProfile}
                 userRole={userRole}
                 onCountChange={setPendingCount}
+              />
+            </TabsContent>
+          )}
+
+          {canManagePayments && (
+            <TabsContent value="pending-payment" className="space-y-6">
+              <BillingAccountsList 
+                userProfile={userProfile}
+                userRole={userRole}
+                filterType="approved"
               />
             </TabsContent>
           )}

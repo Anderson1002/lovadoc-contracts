@@ -13,7 +13,7 @@ import { BillingAccountStatusBadge } from "./BillingAccountStatusBadge";
 interface BillingAccountsListProps {
   userProfile: any;
   userRole: string;
-  filterType: 'own' | 'all';
+  filterType: 'own' | 'all' | 'approved';
 }
 
 export function BillingAccountsList({ userProfile, userRole, filterType }: BillingAccountsListProps) {
@@ -48,11 +48,15 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
       if (filterType === 'own') {
         // For "own" view, we rely on RLS policies to filter automatically
         console.log('Loading own accounts - RLS will filter automatically');
-      } else if (filterType === 'all' && !['super_admin', 'admin', 'supervisor'].includes(userRole)) {
+      } else if (filterType === 'approved') {
+        // For treasury - show only approved accounts ready for payment
+        query = query.eq('status', 'aprobada');
+        console.log('Loading approved accounts for treasury');
+      } else if (filterType === 'all' && !['super_admin', 'admin', 'supervisor', 'treasury'].includes(userRole)) {
         // Non-admin users should only see their own accounts even in "all" view
         console.log('Non-admin user in "all" view - RLS will filter automatically');
       } else {
-        console.log('Admin/Supervisor user - will see all accounts per RLS');
+        console.log('Admin/Supervisor/Treasury user - will see all accounts per RLS');
       }
 
       console.log('Executing query...');
@@ -109,6 +113,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
       case 'pendiente_revision': return 'Pendiente Revisión';
       case 'aprobada': return 'Aprobada';
       case 'rechazada': return 'Rechazada';
+      case 'causada': return 'Causada';
       case 'pagada': return 'Pagada';
       default: return status;
     }
@@ -120,6 +125,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
       case 'pendiente_revision': return 'outline';
       case 'aprobada': return 'default';
       case 'rechazada': return 'destructive';
+      case 'causada': return 'secondary';
       case 'pagada': return 'secondary';
       default: return 'outline';
     }
