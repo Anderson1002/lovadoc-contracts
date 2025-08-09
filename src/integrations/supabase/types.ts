@@ -98,7 +98,13 @@ export type Database = {
           created_at: string
           created_by: string
           enviado_el: string | null
+          firma_url: string | null
           id: string
+          notes: string | null
+          planilla_fecha: string | null
+          planilla_file_url: string | null
+          planilla_numero: string | null
+          planilla_valor: number | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -117,7 +123,13 @@ export type Database = {
           created_at?: string
           created_by: string
           enviado_el?: string | null
+          firma_url?: string | null
           id?: string
+          notes?: string | null
+          planilla_fecha?: string | null
+          planilla_file_url?: string | null
+          planilla_numero?: string | null
+          planilla_valor?: number | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -136,7 +148,13 @@ export type Database = {
           created_at?: string
           created_by?: string
           enviado_el?: string | null
+          firma_url?: string | null
           id?: string
+          notes?: string | null
+          planilla_fecha?: string | null
+          planilla_file_url?: string | null
+          planilla_numero?: string | null
+          planilla_valor?: number | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -694,35 +712,56 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar: string | null
+          bank_account: string | null
+          bank_name: string | null
           created_at: string
+          document_number: string | null
           email: string
           id: string
           last_login: string | null
           name: string
+          nit: string | null
+          phone: string | null
           role_id: string
+          tax_regime: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          address?: string | null
           avatar?: string | null
+          bank_account?: string | null
+          bank_name?: string | null
           created_at?: string
+          document_number?: string | null
           email: string
           id?: string
           last_login?: string | null
           name: string
+          nit?: string | null
+          phone?: string | null
           role_id: string
+          tax_regime?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          address?: string | null
           avatar?: string | null
+          bank_account?: string | null
+          bank_name?: string | null
           created_at?: string
+          document_number?: string | null
           email?: string
           id?: string
           last_login?: string | null
           name?: string
+          nit?: string | null
+          phone?: string | null
           role_id?: string
+          tax_regime?: string | null
           updated_at?: string
           user_id?: string
         }
