@@ -93,13 +93,13 @@ export function BillingDocumentPreview({
         <div className="border rounded-lg p-6 bg-white text-black font-mono text-sm space-y-4">
           {/* Header */}
           <div className="text-center space-y-2">
-            <h1 className="font-bold uppercase">{userProfile.name}</h1>
-            <p>C.C. {userProfile.document_number || '[Número de Cédula]'}</p>
-            <p>{userProfile.address || '[Dirección]'}</p>
-            <p>{userProfile.phone || '[Teléfono]'}</p>
-            <p>CORREO ELECTRÓNICO: {userProfile.email}</p>
-            <p>{userProfile.tax_regime || 'Régimen Simplificado'}</p>
-            {userProfile.nit && <p>NIT: {userProfile.nit}</p>}
+            <h1 className="font-bold uppercase">{userProfile?.name || '[Nombre del Contratista]'}</h1>
+            <p>C.C. {userProfile?.document_number || '[Número de Cédula]'}</p>
+            <p>{userProfile?.address || '[Dirección]'}</p>
+            <p>{userProfile?.phone || '[Teléfono]'}</p>
+            <p>CORREO ELECTRÓNICO: {userProfile?.email || '[Correo Electrónico]'}</p>
+            <p>{userProfile?.tax_regime || 'Régimen Simplificado'}</p>
+            {userProfile?.nit && <p>NIT: {userProfile.nit}</p>}
           </div>
 
           <div className="border-t pt-4">
@@ -120,15 +120,13 @@ export function BillingDocumentPreview({
           {/* Service Description */}
           <div className="border border-black p-4 mt-4">
             <p className="font-bold">
-              POR PRESTACIÓN DE SERVICIOS COMO: (PROFESIONAL DE SISTEMAS PARA EL 
-              DESARROLLO DE NUEVAS APLICACIONES Y/O TECNOLOGÍAS PARA LA ESE 
-              HOSPITAL SAN RAFAEL DE FACATATIVÁ). DEL PERIODO DEL MES DE{' '}
+              POR PRESTACIÓN DE SERVICIOS COMO: {selectedContract?.description || '(PROFESIONAL DE SISTEMAS PARA EL DESARROLLO DE NUEVAS APLICACIONES Y/O TECNOLOGÍAS PARA LA ESE HOSPITAL SAN RAFAEL DE FACATATIVÁ)'}. DEL PERIODO DEL MES DE{' '}
               {startDate && endDate && (
                 <>
                   {format(startDate, 'dd/MM/yyyy')} - {format(endDate, 'dd/MM/yyyy')}
                 </>
               )}
-              , SEGÚN CONTRATO No. {selectedContract.contract_number}
+              , SEGÚN CONTRATO No. {selectedContract?.contract_number || '[Número de Contrato]'}
             </p>
             
             <div className="mt-4">
@@ -137,8 +135,8 @@ export function BillingDocumentPreview({
             </div>
 
             <p className="mt-4">
-              <strong>No. CUENTA BANCARIA Nº:</strong> {userProfile.bank_account || '[Número de Cuenta]'}<br/>
-              <strong>BANCO:</strong> {userProfile.bank_name || '[Nombre del Banco]'}
+              <strong>No. CUENTA BANCARIA Nº:</strong> {userProfile?.bank_account || '[Número de Cuenta]'}<br/>
+              <strong>BANCO:</strong> {userProfile?.bank_name || '[Nombre del Banco]'}
             </p>
           </div>
 
@@ -205,7 +203,7 @@ export function BillingDocumentPreview({
                   <p className="mt-2"><strong>(FIRMA DEL CONTRATISTA)</strong></p>
                 </div>
               )}
-              <p>C.C. {userProfile.document_number || '[Número de Cédula]'} de Bogotá</p>
+              <p>C.C. {userProfile?.document_number || '[Número de Cédula]'} de Bogotá</p>
             </div>
           </div>
         </div>

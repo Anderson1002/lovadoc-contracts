@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,13 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Loader2, Trash2 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatCurrencyInput } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { BillingDocumentPreview } from "@/components/billing/BillingDocumentPreview";
+import SignatureCanvas from "react-signature-canvas";
 
 interface EditBillingAccountDialogProps {
   open: boolean;
@@ -71,6 +72,12 @@ export function EditBillingAccountDialog({
     social_security: { file: null, uploaded: false, uploading: false }
   });
 
+  // Campos adicionales para planilla y firma
+  const [planillaNumero, setPlanillaNumero] = useState<string>("");
+  const [planillaValor, setPlanillaValor] = useState<string>("");
+  const [planillaFecha, setPlanillaFecha] = useState<Date>();
+  const signatureRef = useRef<SignatureCanvas>(null);
+
   const canEdit = billingAccount?.status === 'borrador' || billingAccount?.status === 'rechazada';
   const canSubmitForReview = selectedContract && amount && startDate && endDate && 
                             activities.filter(a => a.status === 'saved').length > 0 && 
@@ -107,6 +114,16 @@ export function EditBillingAccountDialog({
       setAmount(billing.amount?.toString() || '');
       setStartDate(billing.billing_start_date ? new Date(billing.billing_start_date) : undefined);
       setEndDate(billing.billing_end_date ? new Date(billing.billing_end_date) : undefined);
+      
+      // Load planilla data
+      setPlanillaNumero((billing as any).planilla_numero || "");
+      setPlanillaValor((billing as any).planilla_valor?.toString() || "");
+      setPlanillaFecha((billing as any).planilla_fecha ? new Date((billing as any).planilla_fecha) : undefined);
+      
+      // Load signature if exists
+      if ((billing as any).firma_url && signatureRef.current) {
+        signatureRef.current.fromDataURL((billing as any).firma_url);
+      }
 
       // Load activities
       const { data: activitiesData, error: activitiesError } = await supabase
@@ -370,6 +387,12 @@ export function EditBillingAccountDialog({
     try {
       setIsSubmitting(true);
 
+      // Guardar firma como base64 si existe
+      let firmaUrl = null;
+      if (signatureRef.current && !signatureRef.current.isEmpty()) {
+        firmaUrl = signatureRef.current.toDataURL();
+      }
+
       const { error } = await supabase
         .from('billing_accounts')
         .update({
@@ -377,6 +400,10 @@ export function EditBillingAccountDialog({
           amount: parseFloat(amount),
           billing_start_date: format(startDate, 'yyyy-MM-dd'),
           billing_end_date: format(endDate, 'yyyy-MM-dd'),
+          planilla_numero: planillaNumero || null,
+          planilla_valor: planillaValor ? parseFloat(planillaValor) : null,
+          planilla_fecha: planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : null,
+          firma_url: firmaUrl,
           status: 'borrador'
         })
         .eq('id', billingAccount.id);
@@ -445,6 +472,12 @@ export function EditBillingAccountDialog({
     try {
       setIsSubmitting(true);
 
+      // Guardar firma como base64 si existe
+      let firmaUrl = null;
+      if (signatureRef.current && !signatureRef.current.isEmpty()) {
+        firmaUrl = signatureRef.current.toDataURL();
+      }
+
       const { error } = await supabase
         .from('billing_accounts')
         .update({
@@ -452,6 +485,10 @@ export function EditBillingAccountDialog({
           amount: parseFloat(amount),
           billing_start_date: format(startDate, 'yyyy-MM-dd'),
           billing_end_date: format(endDate, 'yyyy-MM-dd'),
+          planilla_numero: planillaNumero || null,
+          planilla_valor: planillaValor ? parseFloat(planillaValor) : null,
+          planilla_fecha: planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : null,
+          firma_url: firmaUrl,
           status: 'pendiente_revision'
         })
         .eq('id', billingAccount.id);
@@ -610,10 +647,12 @@ export function EditBillingAccountDialog({
                   <Label htmlFor="amount">Valor a Facturar *</Label>
                   <Input
                     id="amount"
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d]/g, '');
+                      setAmount(value);
+                    }}
                     placeholder="Ingrese el valor"
                     disabled={!canEdit}
                   />
@@ -817,38 +856,133 @@ export function EditBillingAccountDialog({
             </CardContent>
           </Card>
 
-          {/* Document Upload */}
+          {/* Planilla de Seguridad Social */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Documentos Requeridos</CardTitle>
-              <CardDescription>Adjunte los documentos necesarios para la cuenta de cobro</CardDescription>
+              <CardTitle className="text-lg">Planilla de Seguridad Social</CardTitle>
+              <CardDescription>Información y documentos de la planilla de seguridad social</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="social_security">Documento de Seguridad Social *</Label>
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <Input
-                        id="social_security"
-                        type="file"
-                        accept=".pdf"
-                        onChange={(e) => handleFileUpload(e, 'social_security')}
-                        disabled={!canEdit}
-                        className="cursor-pointer"
-                      />
-                    </div>
-                    {uploads.social_security.uploaded && (
-                      <div className="flex items-center gap-2 text-green-600">
-                        <CheckCircle className="h-4 w-4" />
-                        <span className="text-sm">Subido</span>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Solo archivos PDF, máximo 10MB
-                  </p>
+                  <Label htmlFor="planillaNumero">Número de Planilla</Label>
+                  <Input
+                    id="planillaNumero"
+                    value={planillaNumero}
+                    onChange={(e) => setPlanillaNumero(e.target.value)}
+                    placeholder="Ej: 123456789"
+                    disabled={!canEdit}
+                  />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="planillaValor">Valor Pagado</Label>
+                  <Input
+                    id="planillaValor"
+                    type="text"
+                    value={planillaValor}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d]/g, '');
+                      setPlanillaValor(value);
+                    }}
+                    placeholder="$ 0"
+                    disabled={!canEdit}
+                  />
+                  {planillaValor && (
+                    <p className="text-sm text-muted-foreground">
+                      {formatCurrency(parseFloat(planillaValor))}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Fecha de Pago</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !planillaFecha && "text-muted-foreground"
+                        )}
+                        disabled={!canEdit}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {planillaFecha ? format(planillaFecha, "dd/MM/yyyy") : "Seleccionar fecha"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={planillaFecha}
+                        onSelect={setPlanillaFecha}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="social_security">Archivo de Planilla *</Label>
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <Input
+                      id="social_security"
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => handleFileUpload(e, 'social_security')}
+                      disabled={!canEdit}
+                      className="cursor-pointer"
+                    />
+                  </div>
+                  {uploads.social_security.uploaded && (
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="text-sm">Subido</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Solo archivos PDF, máximo 10MB
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Firma del Contratista */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Firma del Contratista</CardTitle>
+              <CardDescription>Firme digitalmente el documento de cuenta de cobro</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Área de Firma</Label>
+                <div className="border border-gray-300 rounded-lg p-4 bg-white">
+                  <SignatureCanvas
+                    ref={signatureRef}
+                    canvasProps={{
+                      width: 500,
+                      height: 200,
+                      className: 'signature-canvas w-full h-48 border border-gray-200 rounded'
+                    }}
+                    backgroundColor="rgb(255,255,255)"
+                  />
+                </div>
+                {canEdit && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => signatureRef.current?.clear()}
+                  >
+                    Limpiar Firma
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Dibuje su firma en el recuadro arriba usando el mouse o pantalla táctil
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -868,6 +1002,10 @@ export function EditBillingAccountDialog({
                   startDate={startDate}
                   endDate={endDate}
                   activities={activities}
+                  planillaNumero={planillaNumero}
+                  planillaValor={planillaValor}
+                  planillaFecha={planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : undefined}
+                  signatureRef={signatureRef.current}
                 />
               </CardContent>
             </Card>
