@@ -11,5 +11,15 @@ export function formatCurrency(amount: number): string {
     currency: 'COP',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
-  }).format(amount);
+  }).format(amount).replace(/\s/g, ' ');
+}
+
+export function formatCurrencyInput(value: string): string {
+  // Remove non-numeric characters except decimal point
+  const numericValue = value.replace(/[^\d]/g, '');
+  
+  if (!numericValue) return '';
+  
+  // Format with thousands separator
+  return new Intl.NumberFormat('es-CO').format(parseInt(numericValue));
 }
