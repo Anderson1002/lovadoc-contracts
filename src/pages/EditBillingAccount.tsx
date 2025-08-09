@@ -648,12 +648,14 @@ export function EditBillingAccountDialog({
                   <Input
                     id="amount"
                     type="text"
+                    inputMode="numeric"
                     value={amount}
                     onChange={(e) => {
+                      // Permitir solo números
                       const value = e.target.value.replace(/[^\d]/g, '');
                       setAmount(value);
                     }}
-                    placeholder="Ingrese el valor"
+                    placeholder="0"
                     disabled={!canEdit}
                   />
                   {formattedAmount && (
@@ -880,12 +882,14 @@ export function EditBillingAccountDialog({
                   <Input
                     id="planillaValor"
                     type="text"
+                    inputMode="numeric"
                     value={planillaValor}
                     onChange={(e) => {
+                      // Permitir solo números
                       const value = e.target.value.replace(/[^\d]/g, '');
                       setPlanillaValor(value);
                     }}
-                    placeholder="$ 0"
+                    placeholder="0"
                     disabled={!canEdit}
                   />
                   {planillaValor && (

@@ -621,7 +621,7 @@ export function CreateBillingAccountDialog({
                     type="text"
                     value={amount ? formatCurrencyInput(amount) : ''}
                     onChange={(e) => {
-                      const numericValue = e.target.value.replace(/[^\\d]/g, '');
+                      const numericValue = e.target.value.replace(/[^\d]/g, '');
                       setAmount(numericValue);
                     }}
                     placeholder="$ 0"
@@ -830,7 +830,7 @@ export function CreateBillingAccountDialog({
                       type="text"
                       value={planillaValor ? formatCurrencyInput(planillaValor) : ''}
                       onChange={(e) => {
-                        const numericValue = e.target.value.replace(/[^\\d]/g, '');
+                        const numericValue = e.target.value.replace(/[^\d]/g, '');
                         setPlanillaValor(numericValue);
                       }}
                       placeholder="$ 0"
