@@ -117,7 +117,7 @@ export default function Auth() {
               <Building2 className="w-8 h-8 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">HospitalDoc</h1>
+          <h1 className="text-2xl font-bold text-foreground">LexPay</h1>
           <p className="text-muted-foreground">Gestión Digital de Contratos</p>
         </div>
 

@@ -46,7 +46,7 @@ export function Navbar({ userRole = "employee", onLogout }: NavbarProps) {
                 <Building2 className="w-5 h-5 text-primary-foreground" />
               </div>
               <div className="flex flex-col">
-                <span className="text-lg font-bold text-foreground">HospitalDoc</span>
+                <span className="text-lg font-bold text-foreground">LexPay</span>
                 <span className="text-xs text-muted-foreground">Gestión de Contratos</span>
               </div>
             </Link>
