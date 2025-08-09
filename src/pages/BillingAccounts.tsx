@@ -36,6 +36,7 @@ export default function BillingAccounts() {
       if (profile && profile.roles) {
         setUserRole((profile.roles as any).name);
         setUserProfile(profile);
+        console.log('User profile loaded in BillingAccounts:', profile);
       }
     } catch (error: any) {
       console.error('Error loading user profile:', error);

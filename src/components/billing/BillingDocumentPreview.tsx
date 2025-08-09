@@ -61,6 +61,10 @@ export function BillingDocumentPreview({
   planillaFecha,
   signatureRef
 }: BillingDocumentPreviewProps) {
+  console.log('BillingDocumentPreview - userProfile:', userProfile);
+  console.log('BillingDocumentPreview - selectedContract:', selectedContract);
+  console.log('BillingDocumentPreview - signatureRef:', signatureRef);
+  
   const documentNumber = `DSE ${format(new Date(), 'yyyMM')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
   if (!selectedContract || !startDate || !endDate) {
@@ -200,7 +204,7 @@ export function BillingDocumentPreview({
               ) : (
                 <div>
                   <div className="border-t border-black w-48 mx-auto"></div>
-              <p className="mt-2"><strong>(FIRMA DEL CONTRATISTA)</strong></p>
+                  <p className="mt-2"><strong>(FIRMA DEL CONTRATISTA)</strong></p>
                 </div>
               )}
               <p>C.C. {userProfile?.document_number || '[Número de Cédula]'} de Bogotá</p>

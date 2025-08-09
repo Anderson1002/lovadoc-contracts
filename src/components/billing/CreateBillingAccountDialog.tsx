@@ -83,13 +83,30 @@ export function CreateBillingAccountDialog({
                             activities.filter(a => a.status === 'saved').length > 0 && 
                             planillaNumero && planillaValor && planillaFecha && planillaFile &&
                             signatureRef && !signatureRef.isEmpty();
+  
+  console.log('Validation check:', {
+    selectedContract: !!selectedContract,
+    amount: !!amount,
+    startDate: !!startDate,
+    endDate: !!endDate,
+    activities: activities.filter(a => a.status === 'saved').length,
+    planillaNumero: !!planillaNumero,
+    planillaValor: !!planillaValor,
+    planillaFecha: !!planillaFecha,
+    planillaFile: !!planillaFile,
+    signatureRef: !!signatureRef,
+    signatureNotEmpty: signatureRef ? !signatureRef.isEmpty() : false,
+    canSubmit: canSubmitForReview
+  });
 
   useEffect(() => {
     if (open) {
       loadContracts();
       resetForm();
+      // Ensure we have user profile data
+      console.log('User profile data:', userProfile);
     }
-  }, [open]);
+  }, [open, userProfile]);
 
   // Load contract details when contract is selected
   useEffect(() => {
@@ -135,6 +152,7 @@ export function CreateBillingAccountDialog({
         .single();
 
       if (error) throw error;
+      console.log('Contract details loaded:', contract);
       setContractDetails(contract);
     } catch (error: any) {
       console.error('Error loading contract details:', error);
