@@ -8,14 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Download } from "lucide-react";
+import { formatCurrency, formatCurrencyInput } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { BillingDocumentPreview } from "./BillingDocumentPreview";
+import SignatureCanvas from "react-signature-canvas";
 
 interface CreateBillingAccountDialogProps {
   open: boolean;
@@ -49,6 +50,7 @@ export function CreateBillingAccountDialog({
   const { toast } = useToast();
   const [contracts, setContracts] = useState<any[]>([]);
   const [selectedContract, setSelectedContract] = useState<string>("");
+  const [contractDetails, setContractDetails] = useState<any>(null);
   const [amount, setAmount] = useState<string>("");
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
@@ -66,27 +68,21 @@ export function CreateBillingAccountDialog({
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [billingStatus, setBillingStatus] = useState<'borrador' | 'pendiente_revision' | 'aprobada' | 'rechazada' | 'pagada'>('borrador');
   
+  // New fields for planilla and signature
+  const [planillaNumero, setPlanillaNumero] = useState('');
+  const [planillaValor, setPlanillaValor] = useState('');
+  const [planillaFecha, setPlanillaFecha] = useState('');
+  const [planillaFile, setPlanillaFile] = useState<File | null>(null);
+  const [signatureRef, setSignatureRef] = useState<SignatureCanvas | null>(null);
+  
   const [uploads, setUploads] = useState<Record<string, Omit<FileUpload, 'type'>>>({
     social_security: { file: null, uploaded: false, uploading: false }
   });
   
   const canSubmitForReview = selectedContract && amount && startDate && endDate && 
                             activities.filter(a => a.status === 'saved').length > 0 && 
-                            uploads.social_security.uploaded;
-
-  // Debug logging for canSubmitForReview
-  useEffect(() => {
-    console.log('canSubmitForReview check:', {
-      selectedContract: !!selectedContract,
-      amount: !!amount,
-      startDate: !!startDate,
-      endDate: !!endDate,
-      activitiesCount: activities.filter(a => a.status === 'saved').length,
-      socialSecurityUploaded: uploads.social_security.uploaded,
-      socialSecurityFile: !!uploads.social_security.file,
-      canSubmitForReview
-    });
-  }, [selectedContract, amount, startDate, endDate, activities, uploads.social_security]);
+                            planillaNumero && planillaValor && planillaFecha && planillaFile &&
+                            signatureRef && !signatureRef.isEmpty();
 
   useEffect(() => {
     if (open) {
@@ -94,6 +90,13 @@ export function CreateBillingAccountDialog({
       resetForm();
     }
   }, [open]);
+
+  // Load contract details when contract is selected
+  useEffect(() => {
+    if (selectedContract) {
+      loadContractDetails();
+    }
+  }, [selectedContract]);
 
   const loadContracts = async () => {
     try {
@@ -123,8 +126,24 @@ export function CreateBillingAccountDialog({
     }
   };
 
+  const loadContractDetails = async () => {
+    try {
+      const { data: contract, error } = await supabase
+        .from('contracts')
+        .select('*')
+        .eq('id', selectedContract)
+        .single();
+
+      if (error) throw error;
+      setContractDetails(contract);
+    } catch (error: any) {
+      console.error('Error loading contract details:', error);
+    }
+  };
+
   const resetForm = () => {
     setSelectedContract("");
+    setContractDetails(null);
     setAmount("");
     setStartDate(undefined);
     setEndDate(undefined);
@@ -139,6 +158,13 @@ export function CreateBillingAccountDialog({
     setShowCurrentActivity(false);
     setCurrentDraftId(null);
     setBillingStatus('borrador');
+    setPlanillaNumero('');
+    setPlanillaValor('');
+    setPlanillaFecha('');
+    setPlanillaFile(null);
+    if (signatureRef) {
+      signatureRef.clear();
+    }
     setUploads({
       social_security: { file: null, uploaded: false, uploading: false }
     });
@@ -146,23 +172,137 @@ export function CreateBillingAccountDialog({
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
     const file = e.target.files?.[0];
-    if (!file) {
-      console.log('No file selected');
+    if (!file) return;
+
+    if (type === 'planilla') {
+      setPlanillaFile(file);
       return;
     }
-
-    console.log('File selected:', {
-      name: file.name,
-      size: file.size,
-      type: file.type
-    });
 
     setUploads(prev => ({
       ...prev,
       [type]: { ...prev[type], file, uploaded: true }
     }));
+  };
 
-    console.log('File upload state updated:', type, 'uploaded: true');
+  const saveAsDraft = async () => {
+    try {
+      setIsSubmitting(true);
+
+      if (!selectedContract || !amount || !startDate || !endDate) {
+        toast({
+          title: "Error",
+          description: "Complete los campos básicos: contrato, valor y período de facturación",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const startDateString = format(startDate, 'yyyy-MM-dd');
+
+      const { data: existingBilling, error: searchError } = await supabase
+        .from('billing_accounts')
+        .select('*')
+        .eq('contract_id', selectedContract)
+        .eq('billing_month', startDateString)
+        .eq('created_by', userProfile.id)
+        .maybeSingle();
+
+      if (searchError) throw searchError;
+
+      let billingAccountId = currentDraftId;
+
+      if (existingBilling) {
+        billingAccountId = existingBilling.id;
+        setCurrentDraftId(existingBilling.id);
+        setBillingStatus(existingBilling.status as 'borrador' | 'pendiente_revision' | 'aprobada' | 'rechazada' | 'pagada');
+      } else {
+        const { data: draftBilling, error: draftError } = await supabase
+          .from('billing_accounts')
+          .insert({
+            contract_id: selectedContract,
+            amount: parseFloat(amount),
+            billing_month: startDateString,
+            billing_start_date: startDateString,
+            billing_end_date: format(endDate, 'yyyy-MM-dd'),
+            created_by: userProfile.id,
+            status: 'borrador',
+            account_number: ''
+          })
+          .select()
+          .single();
+
+        if (draftError) throw draftError;
+
+        billingAccountId = draftBilling.id;
+        setCurrentDraftId(draftBilling.id);
+        setBillingStatus('borrador');
+      }
+
+      // Save activities
+      const activityPromises = activities.map(async (activity, index) => {
+        if (activity.status === 'draft') {
+          const { data: savedActivity, error: activityError } = await supabase
+            .from('billing_activities')
+            .insert({
+              billing_account_id: billingAccountId,
+              activity_name: activity.activityName,
+              actions_developed: activity.actions,
+              activity_order: index + 1,
+              status: 'borrador'
+            })
+            .select()
+            .single();
+
+          if (activityError) throw activityError;
+
+          if (activity.evidences.length > 0) {
+            const evidencePromises = activity.evidences.map(async (file) => {
+              const fileExt = file.name.split('.').pop();
+              const fileName = `${userProfile.user_id}/${billingAccountId}/evidence_${savedActivity.id}_${Date.now()}.${fileExt}`;
+
+              const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('billing-evidence')
+                .upload(fileName, file);
+
+              if (uploadError) throw uploadError;
+
+              await supabase
+                .from('billing_activity_evidence')
+                .insert({
+                  billing_activity_id: savedActivity.id,
+                  file_name: file.name,
+                  file_path: uploadData.path,
+                  file_size: file.size,
+                  mime_type: file.type,
+                  uploaded_by: userProfile.id
+                });
+            });
+
+            await Promise.all(evidencePromises);
+          }
+        }
+      });
+
+      await Promise.all(activityPromises);
+
+      toast({
+        title: "Borrador Guardado",
+        description: "El borrador de la cuenta ha sido guardado exitosamente",
+      });
+
+      onSuccess();
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error('Error saving billing account as draft:', error);
+      toast({
+        title: "Error",
+        description: `Error al guardar borrador: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const saveActivityIndividually = async () => {
@@ -176,16 +316,6 @@ export function CreateBillingAccountDialog({
     }
 
     try {
-      console.log('Saving activity with data:', {
-        selectedContract,
-        amount,
-        startDate,
-        endDate,
-        currentActivity: currentActivity.activityName,
-        userProfile: userProfile.id
-      });
-      
-      // Create draft billing account if it doesn't exist
       let billingAccountId = currentDraftId;
       
       if (!billingAccountId) {
@@ -200,13 +330,6 @@ export function CreateBillingAccountDialog({
 
         const startDateString = format(startDate, 'yyyy-MM-dd');
         
-        // Check if a billing account already exists for this contract and month
-        console.log('Checking for existing billing account:', {
-          contract_id: selectedContract,
-          billing_month: startDateString,
-          created_by: userProfile.id
-        });
-        
         const { data: existingBilling, error: searchError } = await supabase
           .from('billing_accounts')
           .select('*')
@@ -215,22 +338,13 @@ export function CreateBillingAccountDialog({
           .eq('created_by', userProfile.id)
           .maybeSingle();
 
-        console.log('Existing billing search result:', { existingBilling, searchError });
-
-        if (searchError) {
-          console.error('Error searching for existing billing account:', searchError);
-          throw searchError;
-        }
+        if (searchError) throw searchError;
 
         if (existingBilling) {
-          // Use existing billing account
-          console.log('Found existing billing account, reusing:', existingBilling.id);
           billingAccountId = existingBilling.id;
           setCurrentDraftId(existingBilling.id);
           setBillingStatus(existingBilling.status as 'borrador' | 'pendiente_revision' | 'aprobada' | 'rechazada' | 'pagada');
         } else {
-          // Create new billing account
-          console.log('No existing billing account found, creating new one...');
           const { data: draftBilling, error: draftError } = await supabase
             .from('billing_accounts')
             .insert({
@@ -246,19 +360,14 @@ export function CreateBillingAccountDialog({
             .select()
             .single();
 
-          if (draftError) {
-            console.error('Error creating draft billing account:', draftError);
-            throw draftError;
-          }
+          if (draftError) throw draftError;
           
-          console.log('Successfully created new billing account:', draftBilling.id);
           billingAccountId = draftBilling.id;
           setCurrentDraftId(draftBilling.id);
           setBillingStatus('borrador');
         }
       }
 
-      // Save activity to database
       const { data: savedActivity, error: activityError } = await supabase
         .from('billing_activities')
         .insert({
@@ -271,24 +380,19 @@ export function CreateBillingAccountDialog({
         .select()
         .single();
 
-      if (activityError) {
-        console.error('Error saving activity:', activityError);
-        throw activityError;
-      }
+      if (activityError) throw activityError;
 
-      // Upload evidence files if any
       if (currentActivity.evidences.length > 0) {
         const evidencePromises = currentActivity.evidences.map(async (file) => {
           const fileExt = file.name.split('.').pop();
           const fileName = `${userProfile.user_id}/${billingAccountId}/evidence_${savedActivity.id}_${Date.now()}.${fileExt}`;
           
           const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('billing-documents')
+            .from('billing-evidence')
             .upload(fileName, file);
 
           if (uploadError) throw uploadError;
 
-          // Save evidence record
           await supabase
             .from('billing_activity_evidence')
             .insert({
@@ -304,7 +408,6 @@ export function CreateBillingAccountDialog({
         await Promise.all(evidencePromises);
       }
       
-      // Add activity to local state and reset current activity
       const newSavedActivity = {
         ...currentActivity,
         status: 'saved' as const,
@@ -327,12 +430,6 @@ export function CreateBillingAccountDialog({
       });
     } catch (error: any) {
       console.error('Error saving activity:', error);
-      console.error('Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
       toast({
         title: "Error",
         description: `No se pudo registrar la actividad: ${error.message || 'Error desconocido'}`,
@@ -341,94 +438,11 @@ export function CreateBillingAccountDialog({
     }
   };
 
-  const saveAsDraft = async () => {
-    if (!selectedContract || !amount || !startDate || !endDate) {
-      toast({
-        title: "Error",
-        description: "Complete los campos básicos: contrato, valor y período de facturación",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      if (currentDraftId) {
-        toast({
-          title: "Información",
-          description: "El borrador ya ha sido guardado. Continúe editando.",
-        });
-        return;
-      }
-
-      const startDateString = format(startDate, 'yyyy-MM-dd');
-      
-      // Check if a draft already exists for this contract and month
-      const { data: existingBilling, error: searchError } = await supabase
-        .from('billing_accounts')
-        .select('*')
-        .eq('contract_id', selectedContract)
-        .eq('billing_month', startDateString)
-        .eq('created_by', userProfile.id)
-        .maybeSingle();
-
-      if (searchError) {
-        console.error('Error searching for existing billing account:', searchError);
-        throw searchError;
-      }
-
-      if (existingBilling) {
-        // Use existing billing account
-        setCurrentDraftId(existingBilling.id);
-        setBillingStatus(existingBilling.status as 'borrador' | 'pendiente_revision' | 'aprobada' | 'rechazada' | 'pagada');
-        toast({
-          title: "Borrador Encontrado",
-          description: "Se encontró un borrador existente. Puede continuar editando.",
-        });
-        return;
-      }
-
-      // Create new draft
-      const { data: draftBilling, error: draftError } = await supabase
-        .from('billing_accounts')
-        .insert({
-          contract_id: selectedContract,
-          amount: parseFloat(amount),
-          billing_month: startDateString,
-          billing_start_date: startDateString,
-          billing_end_date: format(endDate, 'yyyy-MM-dd'),
-          created_by: userProfile.id,
-          status: 'borrador',
-          account_number: ''
-        })
-        .select()
-        .single();
-
-      if (draftError) throw draftError;
-      
-      setCurrentDraftId(draftBilling.id);
-      setBillingStatus('borrador');
-
-      toast({
-        title: "Borrador Guardado",
-        description: "Los datos han sido guardados como borrador para edición posterior",
-      });
-    } catch (error: any) {
-      console.error('Error saving draft:', error);
-      toast({
-        title: "Error",
-        description: `No se pudo guardar el borrador: ${error.message || 'Error desconocido'}`,
-        variant: "destructive"
-      });
-    }
-  };
-
   const handleSubmit = async () => {
-    if (!selectedContract || !amount || !startDate || !endDate || 
-        activities.filter(a => a.status === 'saved').length === 0 || 
-        !uploads.social_security.file) {
+    if (!canSubmitForReview) {
       toast({
         title: "Error",
-        description: "Complete todos los campos requeridos y registre al menos una actividad",
+        description: "Complete todos los campos requeridos, registre al menos una actividad, complete la planilla y firme el documento",
         variant: "destructive"
       });
       return;
@@ -436,96 +450,67 @@ export function CreateBillingAccountDialog({
 
     try {
       setIsSubmitting(true);
-      console.log('Starting billing account submission...');
-      console.log('Form data:', {
-        selectedContract,
-        amount,
-        startDate,
-        endDate,
-        activitiesCount: activities.filter(a => a.status === 'saved').length,
-        socialSecurityFile: uploads.social_security.file?.name,
-        currentDraftId
-      });
 
       let billingAccountId = currentDraftId;
 
-      // Always update existing draft, never create new one during submission
-      if (currentDraftId) {
-        console.log('Updating existing billing account:', currentDraftId);
-        const { error: updateError } = await supabase
-          .from('billing_accounts')
-          .update({
-            amount: parseFloat(amount),
-            billing_start_date: format(startDate, 'yyyy-MM-dd'),
-            billing_end_date: format(endDate, 'yyyy-MM-dd'),
-            status: 'pendiente_revision'
-          })
-          .eq('id', currentDraftId);
+      // Upload signature
+      const signatureBlob = await new Promise<Blob>((resolve) => {
+        signatureRef!.getCanvas().toBlob(resolve as any, 'image/png');
+      });
+      
+      const signatureFile = new File([signatureBlob], 'signature.png', { type: 'image/png' });
+      const signaturePath = `${billingAccountId}/signature.png`;
+      
+      const { data: signatureUploadData, error: signatureUploadError } = await supabase.storage
+        .from('billing-signatures')
+        .upload(signaturePath, signatureFile, { upsert: true });
         
-        if (updateError) {
-          console.error('Error updating billing account:', updateError);
-          throw updateError;
-        }
-        console.log('Successfully updated billing account status to pending_review');
-      } else {
-        // This should not happen during submission, but handle it anyway
-        throw new Error('No se encontró el borrador de la cuenta de cobro. Guarde como borrador primero.');
-      }
+      if (signatureUploadError) throw signatureUploadError;
 
-      // Upload social security document
-      if (uploads.social_security.file) {
-        console.log('Uploading social security document...');
-        const fileExt = uploads.social_security.file.name.split('.').pop();
-        const fileName = `${userProfile.user_id}/${billingAccountId}/social_security.${fileExt}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
+      // Upload planilla file
+      let planillaFileUrl = null;
+      if (planillaFile) {
+        const planillaPath = `${billingAccountId}/planilla.${planillaFile.name.split('.').pop()}`;
+        
+        const { data: planillaUploadData, error: planillaUploadError } = await supabase.storage
           .from('billing-documents')
-          .upload(fileName, uploads.social_security.file);
-
-        if (uploadError) {
-          console.error('Error uploading file:', uploadError);
-          throw uploadError;
-        }
-        console.log('Successfully uploaded file, saving record...');
-
-        const { error: docError } = await supabase
-          .from('billing_documents')
-          .insert({
-            billing_account_id: billingAccountId,
-            document_type: 'social_security',
-            uploaded_by: userProfile.id,
-            file_name: uploads.social_security.file.name,
-            file_path: uploadData.path,
-            file_size: uploads.social_security.file.size,
-            mime_type: uploads.social_security.file.type
-          });
+          .upload(planillaPath, planillaFile, { upsert: true });
           
-        if (docError) {
-          console.error('Error saving document record:', docError);
-          throw docError;
-        }
-        console.log('Successfully saved document record');
+        if (planillaUploadError) throw planillaUploadError;
+        planillaFileUrl = planillaUploadData.path;
       }
 
-      console.log('Billing account submission completed successfully');
+      // Update billing account with all new fields
+      const { error: updateError } = await supabase
+        .from('billing_accounts')
+        .update({
+          amount: parseFloat(amount),
+          billing_start_date: format(startDate!, 'yyyy-MM-dd'),
+          billing_end_date: format(endDate!, 'yyyy-MM-dd'),
+          status: 'pendiente_revision',
+          planilla_numero: planillaNumero,
+          planilla_valor: parseFloat(planillaValor),
+          planilla_fecha: planillaFecha,
+          planilla_file_url: planillaFileUrl,
+          firma_url: signatureUploadData.path,
+          enviado_el: new Date().toISOString()
+        })
+        .eq('id', billingAccountId);
+      
+      if (updateError) throw updateError;
+
       toast({
         title: "Éxito",
-        description: "Cuenta de cobro enviada para revisión exitosamente",
+        description: "Cuenta de cobro enviada para revisión correctamente"
       });
 
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error submitting billing account:', error);
-      console.error('Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
       toast({
         title: "Error",
-        description: `No se pudo enviar la cuenta de cobro: ${error.message || 'Error desconocido'}`,
+        description: `Error al enviar la cuenta: ${error.message}`,
         variant: "destructive"
       });
     } finally {
@@ -537,439 +522,418 @@ export function CreateBillingAccountDialog({
     setShowCurrentActivity(true);
   };
 
-  const removeActivity = (id: string) => {
-    setActivities(prev => prev.filter(activity => activity.id !== id));
+  const removeActivity = (activityId: string) => {
+    setActivities(prev => prev.filter(a => a.id !== activityId));
   };
 
-  const editActivity = (id: string) => {
-    const activity = activities.find(a => a.id === id);
-    if (activity) {
-      setCurrentActivity(activity);
-      setShowCurrentActivity(true);
-      // Remove from activities list temporarily
-      setActivities(prev => prev.filter(a => a.id !== id));
-    }
+  const addEvidenceToCurrentActivity = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setCurrentActivity(prev => ({
+      ...prev,
+      evidences: [...prev.evidences, ...files]
+    }));
   };
 
-  const selectedContractData = contracts.find(c => c.id === selectedContract);
+  const removeEvidenceFromCurrentActivity = (index: number) => {
+    setCurrentActivity(prev => ({
+      ...prev,
+      evidences: prev.evidences.filter((_, i) => i !== index)
+    }));
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nueva Cuenta de Cobro</DialogTitle>
           <DialogDescription>
-            Complete los campos básicos, registre actividades y suba los documentos necesarios
+            Complete la información para crear una nueva cuenta de cobro
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Contract Selection */}
-          <div className="space-y-3">
-            <Label htmlFor="contract">Contrato *</Label>
-            <Select value={selectedContract} onValueChange={setSelectedContract}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccione un contrato activo" />
-              </SelectTrigger>
-              <SelectContent>
-                {contractsLoading ? (
-                  <SelectItem value="loading" disabled>Cargando contratos...</SelectItem>
-                ) : contracts.length === 0 ? (
-                  <SelectItem value="no-contracts" disabled>No hay contratos activos disponibles</SelectItem>
-                ) : (
-                  contracts.map((contract) => (
-                    <SelectItem key={contract.id} value={contract.id}>
-                      {contract.contract_number} - {contract.client_name}
-                    </SelectItem>
-                  ))
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Form */}
+          <div className="space-y-6">
+            {/* Contract Selection */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Selección de Contrato</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Contrato *</Label>
+                  <Select value={selectedContract} onValueChange={setSelectedContract}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione un contrato activo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contracts.map((contract) => (
+                        <SelectItem key={contract.id} value={contract.id}>
+                          {contract.contract_number} - {contract.client_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Contract Details */}
+                {contractDetails && (
+                  <div className="mt-4 p-4 bg-muted rounded-lg space-y-2">
+                    <h4 className="font-medium">Detalles del Contrato</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div><strong>Cliente:</strong> {contractDetails.client_name}</div>
+                      <div><strong>Email:</strong> {contractDetails.client_email || 'No especificado'}</div>
+                      <div><strong>Valor Total:</strong> {formatCurrency(contractDetails.total_amount)}</div>
+                      <div><strong>Descripción:</strong> {contractDetails.description || 'No especificada'}</div>
+                    </div>
+                  </div>
                 )}
-              </SelectContent>
-            </Select>
-            
-            {selectedContractData && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Detalles del Contrato</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Cliente:</span>
-                      <p className="font-medium">{selectedContractData.client_name}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Valor Total:</span>
-                      <p className="font-medium">{formatCurrency(selectedContractData.total_amount)}</p>
+
+                {/* User Profile Details */}
+                {userProfile && (
+                  <div className="mt-4 p-4 bg-muted rounded-lg space-y-2">
+                    <h4 className="font-medium">Datos del Contratista</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div><strong>Nombre:</strong> {userProfile.name}</div>
+                      <div><strong>Email:</strong> {userProfile.email}</div>
+                      <div><strong>Documento:</strong> {userProfile.document_number || 'No especificado'}</div>
+                      <div><strong>Teléfono:</strong> {userProfile.phone || 'No especificado'}</div>
+                      <div><strong>Dirección:</strong> {userProfile.address || 'No especificada'}</div>
+                      <div><strong>NIT:</strong> {userProfile.nit || 'No especificado'}</div>
+                      <div><strong>Régimen:</strong> {userProfile.tax_regime || 'Régimen Simplificado'}</div>
+                      <div><strong>Banco:</strong> {userProfile.bank_name || 'No especificado'}</div>
+                      <div><strong>Cuenta:</strong> {userProfile.bank_account || 'No especificada'}</div>
                     </div>
                   </div>
-                  {selectedContractData.description && (
-                    <div>
-                      <span className="text-muted-foreground">Descripción:</span>
-                      <p className="text-sm">{selectedContractData.description}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                )}
+              </CardContent>
+            </Card>
 
-          {/* Amount and Period */}
-          <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="amount">Valor de la Cuenta *</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-                  $
-                </span>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="0"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  min="0"
-                  step="0.01"
-                  className="pl-8"
-                />
-              </div>
-              {amount && (
-                <p className="text-sm text-muted-foreground">
-                  {formatCurrency(parseFloat(amount) || 0)}
-                </p>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Fecha de Inicio del Período *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !startDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {startDate ? format(startDate, "dd/MM/yyyy") : "Fecha inicio"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={startDate}
-                      onSelect={setStartDate}
-                      disabled={(date) => {
-                        if (!selectedContractData) return false;
-                        const contractStartDate = new Date(selectedContractData.start_date);
-                        return date < contractStartDate;
-                      }}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Fecha de Fin del Período *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !endDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {endDate ? format(endDate, "dd/MM/yyyy") : "Fecha fin"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={endDate}
-                      onSelect={setEndDate}
-                      disabled={(date) => {
-                        if (!selectedContractData) return false;
-                        const contractStartDate = new Date(selectedContractData.start_date);
-                        const minDate = startDate ? startDate : contractStartDate;
-                        return date < minDate;
-                      }}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-          </div>
+            {/* Billing Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Detalles de Facturación</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Valor de la Cuenta *</Label>
+                  <Input
+                    type="text"
+                    value={amount ? formatCurrencyInput(amount) : ''}
+                    onChange={(e) => {
+                      const numericValue = e.target.value.replace(/[^\\d]/g, '');
+                      setAmount(numericValue);
+                    }}
+                    placeholder="$ 0"
+                  />
+                </div>
 
-          {/* Activity Management Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label className="text-base font-medium">Actividades del Contrato</Label>
-              <Button
-                type="button"
-                onClick={addActivity}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Agregar Actividad
-              </Button>
-            </div>
-
-            {/* Current Activity Form */}
-            {showCurrentActivity && (
-              <Card className="border-primary/20">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Nueva Actividad</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="activityName">Actividades del Contrato *</Label>
-                    <Input
-                      id="activityName"
-                      value={currentActivity.activityName}
-                      onChange={(e) => setCurrentActivity(prev => ({
-                        ...prev,
-                        activityName: e.target.value
-                      }))}
-                      placeholder="Nombre de la actividad..."
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="actions">Acciones Desarrolladas *</Label>
-                    <Textarea
-                      id="actions"
-                      value={currentActivity.actions}
-                      onChange={(e) => setCurrentActivity(prev => ({
-                        ...prev,
-                        actions: e.target.value
-                      }))}
-                      placeholder="Describe las acciones desarrolladas..."
-                      rows={3}
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Evidencias</Label>
-                    <div className="border-2 border-dashed border-gray-200 rounded-lg p-4">
-                      <input
-                        type="file"
-                        multiple
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
-                          setCurrentActivity(prev => ({
-                            ...prev,
-                            evidences: [...prev.evidences, ...files]
-                          }));
-                        }}
-                        className="hidden"
-                        id="evidences"
-                      />
-                      <label
-                        htmlFor="evidences"
-                        className="flex flex-col items-center justify-center cursor-pointer"
-                      >
-                        <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                        <span className="text-sm text-gray-600">
-                          Arrastra archivos aquí o haz clic para seleccionar
-                        </span>
-                        <span className="text-xs text-gray-400 mt-1">
-                          PDF, Word, Imágenes
-                        </span>
-                      </label>
-                    </div>
-
-                    {/* Show uploaded evidence files */}
-                    {currentActivity.evidences.length > 0 && (
-                      <div className="mt-2 space-y-2">
-                        {currentActivity.evidences.map((file, index) => (
-                          <div key={index} className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded">
-                            <FileText className="h-4 w-4" />
-                            <span className="flex-1">{file.name}</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setCurrentActivity(prev => ({
-                                  ...prev,
-                                  evidences: prev.evidences.filter((_, i) => i !== index)
-                                }));
-                              }}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      onClick={saveActivityIndividually}
-                      disabled={!currentActivity.activityName.trim() || !currentActivity.actions.trim()}
-                      className="flex items-center gap-2"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      Registrar Actividad
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowCurrentActivity(false);
-                        setCurrentActivity({
-                          id: crypto.randomUUID(),
-                          activityName: '',
-                          actions: '',
-                          evidences: [],
-                          status: 'draft'
-                        });
-                      }}
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Registered Activities List */}
-            {activities.filter(a => a.status === 'saved').length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Actividades Registradas</Label>
-                {activities.filter(a => a.status === 'saved').map((activity, index) => (
-                  <Card key={activity.id} className="border-green-200 bg-green-50">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                            <Badge variant="outline" className="text-green-700 border-green-300">
-                              Registrada
-                            </Badge>
-                          </div>
-                          <h4 className="font-medium text-sm text-gray-900">
-                            {index + 1}. {activity.activityName}
-                          </h4>
-                          <p className="text-sm text-gray-600 mt-1">{activity.actions}</p>
-                          {activity.evidences.length > 0 && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Evidencias: {activity.evidences.map(f => f.name).join(', ')}
-                            </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Fecha Inicio *</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !startDate && "text-muted-foreground"
                           )}
-                        </div>
-                        <div className="flex gap-1 ml-4">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => editActivity(activity.id)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <FileText className="h-3 w-3" />
-                          </Button>
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {startDate ? format(startDate, "PPP") : "Seleccionar fecha"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={startDate}
+                          onSelect={setStartDate}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Fecha Fin *</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !endDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {endDate ? format(endDate, "PPP") : "Seleccionar fecha"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={endDate}
+                          onSelect={setEndDate}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Activities */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Actividades Desarrolladas
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addActivity}
+                    disabled={!selectedContract}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Agregar Actividad
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {activities.filter(a => a.status === 'saved').length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">
+                    No hay actividades registradas. Agregue al menos una actividad.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {activities.filter(a => a.status === 'saved').map((activity, index) => (
+                      <div key={activity.id} className="border rounded-lg p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium">{index + 1}. {activity.activityName}</h4>
+                            <p className="text-sm text-muted-foreground mt-1">{activity.actions}</p>
+                            {activity.evidences.length > 0 && (
+                              <div className="mt-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {activity.evidences.length} evidencia(s)
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             onClick={() => removeActivity(activity.id)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
-                            <X className="h-3 w-3" />
+                            <X className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
+                    ))}
+                  </div>
+                )}
 
-          {/* Billing Document Preview */}
-          <BillingDocumentPreview
-            userProfile={userProfile}
-            selectedContract={selectedContractData}
-            amount={amount}
-            startDate={startDate}
-            endDate={endDate}
-            activities={activities.filter(a => a.status === 'saved')}
-          />
+                {/* Current Activity Form */}
+                {showCurrentActivity && (
+                  <div className="mt-4 p-4 border rounded-lg bg-muted">
+                    <h4 className="font-medium mb-3">Nueva Actividad</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <Label>Nombre de la Actividad *</Label>
+                        <Input
+                          value={currentActivity.activityName}
+                          onChange={(e) => setCurrentActivity(prev => ({ ...prev, activityName: e.target.value }))}
+                          placeholder="Ej: Desarrollo de módulo de usuarios"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Acciones Desarrolladas *</Label>
+                        <Textarea
+                          value={currentActivity.actions}
+                          onChange={(e) => setCurrentActivity(prev => ({ ...prev, actions: e.target.value }))}
+                          placeholder="Describa las acciones específicas realizadas..."
+                          rows={3}
+                        />
+                      </div>
 
-          {/* Required Documents */}
-          <div className="space-y-4">
-            <Label className="text-base font-medium">Documentos Requeridos</Label>
-            
-            {/* Social Security Document */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Planilla de Seguridad Social *</Label>
-              <div className="border-2 border-dashed border-gray-200 rounded-lg p-4">
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={(e) => handleFileUpload(e, 'social_security')}
-                  className="hidden"
-                  id="socialSecurity"
-                />
-                <label
-                  htmlFor="socialSecurity"
-                  className="flex flex-col items-center justify-center cursor-pointer"
-                >
-                  <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                  <span className="text-sm text-gray-600">
-                    {uploads.social_security.file 
-                      ? `Archivo: ${uploads.social_security.file.name}`
-                      : "Haz clic para seleccionar archivo PDF"
-                    }
-                  </span>
-                </label>
-              </div>
-              {uploads.social_security.uploading && (
-                <div className="text-sm text-blue-600">Subiendo archivo...</div>
-              )}
-              {uploads.social_security.uploaded && (
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <CheckCircle className="h-4 w-4" />
-                  Archivo cargado correctamente
+                      <div>
+                        <Label>Evidencias (opcional)</Label>
+                        <Input
+                          type="file"
+                          multiple
+                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                          onChange={addEvidenceToCurrentActivity}
+                        />
+                        {currentActivity.evidences.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            {currentActivity.evidences.map((file, index) => (
+                              <div key={index} className="flex items-center justify-between text-sm">
+                                <span>{file.name}</span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeEvidenceFromCurrentActivity(index)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          onClick={saveActivityIndividually}
+                          disabled={!currentActivity.activityName.trim() || !currentActivity.actions.trim()}
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          Registrar Actividad
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowCurrentActivity(false)}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Planilla Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Planilla de Seguridad Social</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Número de Planilla *</Label>
+                    <Input
+                      value={planillaNumero}
+                      onChange={(e) => setPlanillaNumero(e.target.value)}
+                      placeholder="Ej: 123456789"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Valor Pagado *</Label>
+                    <Input
+                      type="text"
+                      value={planillaValor ? formatCurrencyInput(planillaValor) : ''}
+                      onChange={(e) => {
+                        const numericValue = e.target.value.replace(/[^\\d]/g, '');
+                        setPlanillaValor(numericValue);
+                      }}
+                      placeholder="$ 0"
+                    />
+                  </div>
                 </div>
-              )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Fecha de Pago *</Label>
+                    <Input
+                      type="date"
+                      value={planillaFecha}
+                      onChange={(e) => setPlanillaFecha(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Archivo de Planilla *</Label>
+                    <Input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      onChange={(e) => handleFileUpload(e, 'planilla')}
+                    />
+                    {planillaFile && (
+                      <p className="text-sm text-muted-foreground">
+                        Archivo seleccionado: {planillaFile.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Signature Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Firma del Contratista</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="border rounded-lg p-4">
+                    <SignatureCanvas
+                      ref={(ref) => setSignatureRef(ref)}
+                      canvasProps={{
+                        className: 'signature-canvas border rounded w-full h-32',
+                        width: 400,
+                        height: 128
+                      }}
+                    />
+                    <div className="flex justify-between mt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => signatureRef?.clear()}
+                      >
+                        Limpiar
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        Dibuje su firma en el recuadro
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancelar
+              </Button>
+              
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!canSubmitForReview || isSubmitting}
+              >
+                {isSubmitting && <Send className="h-4 w-4 mr-2 animate-pulse" />}
+                Enviar para Revisión
+              </Button>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              onClick={saveAsDraft}
-              variant="outline"
-              disabled={isSubmitting || !selectedContract || !amount || !startDate || !endDate}
-              className="flex items-center gap-2"
-            >
-              <Save className="h-4 w-4" />
-              Guardar como Borrador
-            </Button>
-            
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isSubmitting || !canSubmitForReview}
-              className="flex items-center gap-2"
-            >
-              <Send className="h-4 w-4" />
-              {isSubmitting ? "Enviando..." : "Enviar para Revisión"}
-            </Button>
+          {/* Right Column - Preview */}
+          <div className="space-y-4">
+            <BillingDocumentPreview
+              userProfile={userProfile}
+              selectedContract={contractDetails}
+              amount={amount}
+              startDate={startDate}
+              endDate={endDate}
+              activities={activities.filter(a => a.status === 'saved')}
+              planillaNumero={planillaNumero}
+              planillaValor={planillaValor}
+              planillaFecha={planillaFecha}
+              signatureRef={signatureRef}
+            />
           </div>
         </div>
       </DialogContent>

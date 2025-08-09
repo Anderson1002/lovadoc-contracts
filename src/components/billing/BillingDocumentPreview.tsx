@@ -1,6 +1,8 @@
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/utils";
+import SignatureCanvas from "react-signature-canvas";
 
 interface Contract {
   id: string;
@@ -19,7 +21,13 @@ interface Contract {
 interface UserProfile {
   name: string;
   email: string;
-  // Add other user fields as needed
+  document_number?: string;
+  phone?: string;
+  address?: string;
+  nit?: string;
+  tax_regime?: string;
+  bank_name?: string;
+  bank_account?: string;
 }
 
 interface Activity {
@@ -35,6 +43,10 @@ interface BillingDocumentPreviewProps {
   startDate: Date | undefined;
   endDate: Date | undefined;
   activities: Activity[];
+  planillaNumero?: string;
+  planillaValor?: string;
+  planillaFecha?: string;
+  signatureRef?: SignatureCanvas | null;
 }
 
 export function BillingDocumentPreview({
@@ -43,7 +55,11 @@ export function BillingDocumentPreview({
   amount,
   startDate,
   endDate,
-  activities
+  activities,
+  planillaNumero,
+  planillaValor,
+  planillaFecha,
+  signatureRef
 }: BillingDocumentPreviewProps) {
   const documentNumber = `DSE ${format(new Date(), 'yyyMM')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
@@ -78,11 +94,12 @@ export function BillingDocumentPreview({
           {/* Header */}
           <div className="text-center space-y-2">
             <h1 className="font-bold uppercase">{userProfile.name}</h1>
-            <p>C.C. [Número de Cédula]</p>
-            <p>Cl 9 # 14 - [Dirección] </p>
-            <p>[Teléfono]</p>
+            <p>C.C. {userProfile.document_number || '[Número de Cédula]'}</p>
+            <p>{userProfile.address || '[Dirección]'}</p>
+            <p>{userProfile.phone || '[Teléfono]'}</p>
             <p>CORREO ELECTRÓNICO: {userProfile.email}</p>
-            <p>Régimen Simplificado</p>
+            <p>{userProfile.tax_regime || 'Régimen Simplificado'}</p>
+            {userProfile.nit && <p>NIT: {userProfile.nit}</p>}
           </div>
 
           <div className="border-t pt-4">
@@ -115,13 +132,13 @@ export function BillingDocumentPreview({
             </p>
             
             <div className="mt-4">
-              <p><strong>SON:</strong> $ {amount ? parseFloat(amount).toLocaleString('es-CO') : '0'}</p>
-              <p><strong>({amount ? 'PESOS COLOMBIANOS' : ''})</strong></p>
+              <p><strong>SON:</strong> {amount ? formatCurrency(parseFloat(amount)) : '$ 0'}</p>
+              <p><strong>PESOS COLOMBIANOS</strong></p>
             </div>
 
             <p className="mt-4">
-              <strong>No. CUENTA BANCARIA Nº:</strong> {selectedContract.client_account_number || '[Número de Cuenta]'}<br/>
-              <strong>BANCO:</strong> {selectedContract.client_bank_name || '[Nombre del Banco]'}
+              <strong>No. CUENTA BANCARIA Nº:</strong> {userProfile.bank_account || '[Número de Cuenta]'}<br/>
+              <strong>BANCO:</strong> {userProfile.bank_name || '[Nombre del Banco]'}
             </p>
           </div>
 
@@ -155,13 +172,40 @@ export function BillingDocumentPreview({
             </p>
           </div>
 
+          {/* Planilla Section */}
+          {(planillaNumero || planillaValor || planillaFecha) && (
+            <div className="mt-4 border-t pt-4">
+              <h3 className="font-bold mb-2">PLANILLA DE SEGURIDAD SOCIAL:</h3>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <p><strong>Número:</strong> {planillaNumero || 'No especificado'}</p>
+                <p><strong>Valor:</strong> {planillaValor ? formatCurrency(parseFloat(planillaValor)) : 'No especificado'}</p>
+                <p><strong>Fecha:</strong> {planillaFecha ? format(new Date(planillaFecha), 'dd/MM/yyyy') : 'No especificada'}</p>
+              </div>
+            </div>
+          )}
+
           {/* Signature Area */}
           <div className="mt-6 text-center border-t pt-4">
             <p>Actividad económica RUT 6201: 202110330</p>
             <div className="mt-8">
-              <div className="border-t border-black w-48 mx-auto"></div>
-              <p className="mt-2"><strong>(FIRMA DEL CONTRATISTA)</strong></p>
-              <p>C.C. [Número de Cédula] de Bogotá</p>
+              {signatureRef && !signatureRef.isEmpty() ? (
+                <div className="flex flex-col items-center">
+                  <div className="w-48 h-24 border border-gray-300 rounded flex items-center justify-center">
+                    <img 
+                      src={signatureRef.toDataURL()} 
+                      alt="Firma" 
+                      className="max-w-full max-h-full"
+                    />
+                  </div>
+                  <p className="mt-2"><strong>(FIRMA DEL CONTRATISTA)</strong></p>
+                </div>
+              ) : (
+                <div>
+                  <div className="border-t border-black w-48 mx-auto"></div>
+                  <p className="mt-2"><strong>(FIRMA DEL CONTRATISTA)</strong></p>
+                </div>
+              )}
+              <p>C.C. {userProfile.document_number || '[Número de Cédula]'} de Bogotá</p>
             </div>
           </div>
         </div>
