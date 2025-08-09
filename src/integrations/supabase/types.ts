@@ -825,7 +825,12 @@ export type Database = {
         | "cancelled"
         | "returned"
       contract_type: "fixed_amount" | "variable_amount" | "contractor"
-      user_role_type: "super_admin" | "supervisor" | "admin" | "employee"
+      user_role_type:
+        | "super_admin"
+        | "supervisor"
+        | "admin"
+        | "employee"
+        | "treasury"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -968,7 +973,13 @@ export const Constants = {
         "returned",
       ],
       contract_type: ["fixed_amount", "variable_amount", "contractor"],
-      user_role_type: ["super_admin", "supervisor", "admin", "employee"],
+      user_role_type: [
+        "super_admin",
+        "supervisor",
+        "admin",
+        "employee",
+        "treasury",
+      ],
     },
   },
 } as const
