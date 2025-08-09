@@ -26,10 +26,11 @@ export function BillingAccountActions({
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
   const canEdit = () => {
-    // Puede editar si: es dueño y estado = borrador (admins también)
+    // Puede editar si: es dueño y estado = borrador o rechazada (admins también)
     const isOwner = billingAccount.created_by === userProfile?.id;
-    const isAdmin = ['super_admin', 'admin'].includes(userRole); // supervisor no edita
-    return (isOwner && billingAccount.status === 'borrador') || isAdmin;
+    const isAdmin = ['super_admin', 'admin'].includes(userRole);
+    const editableStates = ['borrador', 'rechazada'];
+    return (isOwner && editableStates.includes(billingAccount.status)) || isAdmin;
   };
 
   const canDelete = () => {
@@ -40,9 +41,10 @@ export function BillingAccountActions({
   };
 
   const canSubmitForReview = () => {
-    // Puede enviar si: es dueño y estado = borrador
+    // Puede enviar si: es dueño y estado = borrador o rechazada
     const isOwner = billingAccount.created_by === userProfile?.id;
-    return isOwner && billingAccount.status === 'borrador';
+    const submittableStates = ['borrador', 'rechazada'];
+    return isOwner && submittableStates.includes(billingAccount.status);
   };
 
   const handleSubmitForReview = async () => {

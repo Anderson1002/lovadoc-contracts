@@ -71,7 +71,7 @@ export function EditBillingAccountDialog({
     social_security: { file: null, uploaded: false, uploading: false }
   });
 
-  const canEdit = billingAccount?.status === 'draft';
+  const canEdit = billingAccount?.status === 'borrador' || billingAccount?.status === 'rechazada';
   const canSubmitForReview = selectedContract && amount && startDate && endDate && 
                             activities.filter(a => a.status === 'saved').length > 0 && 
                             uploads.social_security.uploaded;
@@ -376,7 +376,7 @@ export function EditBillingAccountDialog({
           amount: parseFloat(amount),
           billing_start_date: format(startDate, 'yyyy-MM-dd'),
           billing_end_date: format(endDate, 'yyyy-MM-dd'),
-          status: 'draft'
+          status: 'borrador'
         })
         .eq('id', billingAccount.id);
 
@@ -451,7 +451,7 @@ export function EditBillingAccountDialog({
           amount: parseFloat(amount),
           billing_start_date: format(startDate, 'yyyy-MM-dd'),
           billing_end_date: format(endDate, 'yyyy-MM-dd'),
-          status: 'pending_review'
+          status: 'pendiente_revision'
         })
         .eq('id', billingAccount.id);
 
