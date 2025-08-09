@@ -74,7 +74,8 @@ export function EditBillingAccountDialog({
   const canEdit = billingAccount?.status === 'borrador' || billingAccount?.status === 'rechazada';
   const canSubmitForReview = selectedContract && amount && startDate && endDate && 
                             activities.filter(a => a.status === 'saved').length > 0 && 
-                            uploads.social_security.uploaded;
+                            uploads.social_security.uploaded &&
+                            (billingAccount?.status === 'borrador' || billingAccount?.status === 'rechazada');
 
   useEffect(() => {
     if (open && billingAccount) {
@@ -214,7 +215,7 @@ export function EditBillingAccountDialog({
 
     setUploads(prev => ({
       ...prev,
-      [type]: { ...prev[type], file, uploaded: true }
+      [type]: { ...prev[type], file, uploaded: true, uploading: false }
     }));
   };
 

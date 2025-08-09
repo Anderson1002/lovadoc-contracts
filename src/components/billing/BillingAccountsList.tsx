@@ -8,6 +8,7 @@ import { Calendar, DollarSign, FileText } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { EditBillingAccountDialog } from "../../pages/EditBillingAccount";
 import { BillingAccountActions } from "./BillingAccountActions";
+import { BillingAccountStatusBadge } from "./BillingAccountStatusBadge";
 
 interface BillingAccountsListProps {
   userProfile: any;
@@ -233,9 +234,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getBillingStatusVariant(billing.status)}>
-                      {getBillingStatusLabel(billing.status)}
-                    </Badge>
+                    <BillingAccountStatusBadge status={billing.status} />
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatDate(billing.created_at)}
