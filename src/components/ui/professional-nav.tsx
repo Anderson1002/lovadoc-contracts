@@ -204,13 +204,13 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
                       <span>{menu.label}</span>
                       <ChevronDown className="h-3 w-3 transition-transform duration-300 group-data-[state=open]:rotate-180" />
                     </NavigationMenuTrigger>
-                    <NavigationMenuContent className="w-80 p-4 bg-card border border-border shadow-xl rounded-lg">
-                      <div className="grid gap-2">
-                        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
-                          <Icon className="h-5 w-5 text-primary" />
-                          <span className="font-semibold text-foreground">{menu.label}</span>
-                        </div>
-                        {menu.items.map((item) => {
+                     <NavigationMenuContent className="w-80 p-4 bg-card border border-border shadow-xl rounded-lg z-50">
+                       <div className="grid gap-2">
+                         <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
+                           <Icon className="h-5 w-5 text-primary" />
+                           <span className="font-semibold text-foreground">{menu.label}</span>
+                         </div>
+                         {menu.items.map((item) => {
                           const ItemIcon = item.icon;
                           const itemActive = isActiveItem(item.url);
                           
