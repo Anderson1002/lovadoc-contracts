@@ -176,7 +176,7 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
                 <Building2 className="h-6 w-6 text-primary" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-foreground">LexPay Pro</span>
+                <span className="text-xl font-bold text-foreground">Maktub Pro</span>
                 <span className="text-xs text-muted-foreground">Gestor de Contratos y Cuentas Médicas</span>
               </div>
             </div>
