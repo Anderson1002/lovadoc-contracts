@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Receipt, Eye } from "lucide-react";
+import { Plus, Receipt, Eye, MessageSquare } from "lucide-react";
 import { CreateBillingAccountDialog } from "@/components/billing/CreateBillingAccountDialog";
 import { BillingAccountsList } from "@/components/billing/BillingAccountsList";
 import { BillingReviewList } from "@/components/billing/BillingReviewList";
+import { BillingReviewComments } from "@/components/billing/BillingReviewComments";
 
 export default function BillingAccounts() {
   const { toast } = useToast();
@@ -96,7 +97,7 @@ export default function BillingAccounts() {
 
         {/* Content */}
         <Tabs defaultValue={userRole === 'supervisor' ? 'pending-review' : userRole === 'treasury' ? 'pending-payment' : 'my-accounts'} className="space-y-6">
-          <TabsList className={`grid w-full ${userRole === 'supervisor' ? 'grid-cols-2' : userRole === 'treasury' ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          <TabsList className="grid w-full grid-cols-5">
             {userRole !== 'supervisor' && userRole !== 'treasury' && (
               <TabsTrigger value="my-accounts" className="flex items-center gap-2">
                 <Receipt className="w-4 h-4" />
@@ -123,6 +124,10 @@ export default function BillingAccounts() {
             <TabsTrigger value="all-accounts" className="flex items-center gap-2">
               <Receipt className="w-4 h-4" />
               Todas las Cuentas
+            </TabsTrigger>
+            <TabsTrigger value="review-comments" className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Comentarios
             </TabsTrigger>
           </TabsList>
 
@@ -161,6 +166,12 @@ export default function BillingAccounts() {
               userProfile={userProfile}
               userRole={userRole}
               filterType="all"
+            />
+          </TabsContent>
+
+          <TabsContent value="review-comments" className="space-y-6">
+            <BillingReviewComments 
+              userRole={userRole}
             />
           </TabsContent>
         </Tabs>
