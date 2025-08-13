@@ -101,6 +101,7 @@ export default function Contracts() {
 
       let contractsQuery = supabase.from('contracts').select('*');
 
+      // Only employees see their own contracts, others see all
       if (profile && profile.roles && (profile.roles as any).name === 'employee') {
         contractsQuery = contractsQuery.eq('created_by', profile.id);
       }

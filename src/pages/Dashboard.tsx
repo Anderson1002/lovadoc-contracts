@@ -266,7 +266,7 @@ export default function Dashboard() {
       </div>
 
       {/* Quick Actions for admins */}
-      {["super_admin", "admin"].includes(userRole) && (
+      {["super_admin", "admin", "supervisor", "treasury"].includes(userRole) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
