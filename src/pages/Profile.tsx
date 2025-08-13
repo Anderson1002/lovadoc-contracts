@@ -37,6 +37,11 @@ interface ProfileFormData {
   name: string;
   email: string;
   avatar: string;
+  document_number: string;
+  phone: string;
+  address: string;
+  bank_account: string;
+  bank_name: string;
 }
 
 export default function Profile() {
@@ -105,7 +110,12 @@ export default function Profile() {
         reset({
           name: profile.name,
           email: profile.email,
-          avatar: profile.avatar || ""
+          avatar: profile.avatar || "",
+          document_number: profile.document_number || "",
+          phone: profile.phone || "",
+          address: profile.address || "",
+          bank_account: profile.bank_account || "",
+          bank_name: profile.bank_name || ""
         });
       }
     } catch (error) {
@@ -128,7 +138,12 @@ export default function Profile() {
         .update({
           name: data.name,
           email: data.email,
-          avatar: data.avatar || null
+          avatar: data.avatar || null,
+          document_number: data.document_number || null,
+          phone: data.phone || null,
+          address: data.address || null,
+          bank_account: data.bank_account || null,
+          bank_name: data.bank_name || null
         })
         .eq('id', userProfile.id);
 
@@ -139,7 +154,12 @@ export default function Profile() {
         ...userProfile,
         name: data.name,
         email: data.email,
-        avatar: data.avatar
+        avatar: data.avatar,
+        document_number: data.document_number,
+        phone: data.phone,
+        address: data.address,
+        bank_account: data.bank_account,
+        bank_name: data.bank_name
       });
 
       setIsEditing(false);
@@ -335,6 +355,20 @@ export default function Profile() {
                           </div>
 
                           <div className="space-y-2">
+                            <Label htmlFor="document_number" className="text-base font-semibold">Número de Documento</Label>
+                            <Input
+                              id="document_number"
+                              {...register("document_number", { required: "El número de documento es requerido" })}
+                              placeholder="Número de cédula o NIT"
+                              disabled={!isEditing}
+                              className="text-lg"
+                            />
+                            {errors.document_number && (
+                              <p className="text-destructive text-sm">{errors.document_number.message}</p>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
                             <Label htmlFor="email" className="text-base font-semibold">Email</Label>
                             <Input
                               id="email"
@@ -347,6 +381,50 @@ export default function Profile() {
                             {errors.email && (
                               <p className="text-destructive text-sm">{errors.email.message}</p>
                             )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="phone" className="text-base font-semibold">Teléfono</Label>
+                            <Input
+                              id="phone"
+                              {...register("phone")}
+                              placeholder="Número de teléfono"
+                              disabled={!isEditing}
+                              className="text-lg"
+                            />
+                          </div>
+
+                          <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="address" className="text-base font-semibold">Dirección</Label>
+                            <Input
+                              id="address"
+                              {...register("address")}
+                              placeholder="Tu dirección"
+                              disabled={!isEditing}
+                              className="text-lg"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="bank_account" className="text-base font-semibold">Número de Cuenta Bancaria</Label>
+                            <Input
+                              id="bank_account"
+                              {...register("bank_account")}
+                              placeholder="Número de cuenta"
+                              disabled={!isEditing}
+                              className="text-lg"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="bank_name" className="text-base font-semibold">Banco</Label>
+                            <Input
+                              id="bank_name"
+                              {...register("bank_name")}
+                              placeholder="Nombre del banco"
+                              disabled={!isEditing}
+                              className="text-lg"
+                            />
                           </div>
 
                           <div className="space-y-2 md:col-span-2">
