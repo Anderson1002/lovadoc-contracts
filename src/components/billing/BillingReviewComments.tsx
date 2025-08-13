@@ -6,20 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { MessageSquare, Search, Calendar, User } from "lucide-react";
+import { MessageSquare, Search, Calendar } from "lucide-react";
 
 interface BillingReview {
   id: string;
-  action: string;
-  comments: string;
-  created_at: string;
-  reviewer_name: string;
-  reviewer_email: string;
-  account_number: string;
-  amount: number;
-  status: string;
-  contract_number: string;
-  client_name: string;
+  numero: string;
+  contract_id: string;
+  periodo: string;
+  valor: number;
+  estado: string;
+  fecha: string;
+  last_comment: string | null;
+  last_decision: string | null;
+  last_review_at: string | null;
 }
 
 interface BillingReviewCommentsProps {
@@ -43,10 +42,9 @@ export function BillingReviewComments({ userRole }: BillingReviewCommentsProps) 
       setFilteredReviews(reviews);
     } else {
       const filtered = reviews.filter(review =>
-        review.comments?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        review.account_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        review.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        review.reviewer_name?.toLowerCase().includes(searchTerm.toLowerCase())
+        review.last_comment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        review.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        review.periodo?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredReviews(filtered);
     }
@@ -56,73 +54,19 @@ export function BillingReviewComments({ userRole }: BillingReviewCommentsProps) 
     try {
       setLoading(true);
       
-      // Get billing reviews
+      // Get data from the new view
       const { data: reviewsData, error: reviewsError } = await supabase
-        .from('billing_reviews')
+        .from('v_billing_accounts_last_review')
         .select('*')
-        .order('created_at', { ascending: false });
+        .not('last_comment', 'is', null) // Only show accounts that have comments
+        .order('fecha', { ascending: false });
       
       if (reviewsError) {
         throw reviewsError;
       }
 
-      if (!reviewsData || reviewsData.length === 0) {
-        setReviews([]);
-        return;
-      }
-
-      // Get unique reviewer IDs and billing account IDs
-      const reviewerIds = [...new Set(reviewsData.map(r => r.reviewer_id))];
-      const billingAccountIds = [...new Set(reviewsData.map(r => r.billing_account_id))];
-
-      // Get reviewer profiles
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, name, email')
-        .in('id', reviewerIds);
-
-      // Get billing accounts with contracts
-      const { data: billingAccountsData } = await supabase
-        .from('billing_accounts')
-        .select(`
-          id,
-          account_number,
-          amount,
-          status,
-          contract_id
-        `)
-        .in('id', billingAccountIds);
-
-      // Get contracts
-      const contractIds = billingAccountsData?.map(ba => ba.contract_id).filter(Boolean) || [];
-      const { data: contractsData } = await supabase
-        .from('contracts')
-        .select('id, contract_number, client_name')
-        .in('id', contractIds);
-
-      // Transform data
-      const transformedReviews = reviewsData.map(review => {
-        const reviewer = profilesData?.find(p => p.id === review.reviewer_id);
-        const billingAccount = billingAccountsData?.find(ba => ba.id === review.billing_account_id);
-        const contract = contractsData?.find(c => c.id === billingAccount?.contract_id);
-
-        return {
-          id: review.id,
-          action: review.action,
-          comments: review.comments || '',
-          created_at: review.created_at,
-          reviewer_name: reviewer?.name || 'N/A',
-          reviewer_email: reviewer?.email || 'N/A',
-          account_number: billingAccount?.account_number || 'N/A',
-          amount: billingAccount?.amount || 0,
-          status: billingAccount?.status || 'N/A',
-          contract_number: contract?.contract_number || 'N/A',
-          client_name: contract?.client_name || 'N/A'
-        };
-      });
-
-      console.log('Loaded billing reviews:', transformedReviews);
-      setReviews(transformedReviews);
+      console.log('Loaded billing reviews from view:', reviewsData);
+      setReviews(reviewsData || []);
     } catch (error: any) {
       console.error('Error loading reviews:', error);
       toast({
@@ -135,14 +79,16 @@ export function BillingReviewComments({ userRole }: BillingReviewCommentsProps) 
     }
   };
 
-  const getActionBadge = (action: string) => {
-    switch (action) {
+  const getDecisionBadge = (decision: string | null) => {
+    switch (decision) {
       case 'approved':
         return <Badge variant="default" className="bg-green-100 text-green-800">✅ Aprobado</Badge>;
       case 'rejected':
         return <Badge variant="destructive">❌ Rechazado</Badge>;
+      case 'changes_requested':
+        return <Badge variant="secondary">🔄 Cambios Solicitados</Badge>;
       default:
-        return <Badge variant="outline">{action}</Badge>;
+        return <Badge variant="outline">{decision || 'N/A'}</Badge>;
     }
   };
 
@@ -204,7 +150,7 @@ export function BillingReviewComments({ userRole }: BillingReviewCommentsProps) 
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
           <Input
-            placeholder="Buscar por comentario, cuenta, cliente o revisor..."
+            placeholder="Buscar por comentario, cuenta o período..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -223,57 +169,46 @@ export function BillingReviewComments({ userRole }: BillingReviewCommentsProps) 
               <TableHeader>
                 <TableRow>
                   <TableHead>Cuenta</TableHead>
-                  <TableHead>Cliente</TableHead>
+                  <TableHead>Período</TableHead>
                   <TableHead>Monto</TableHead>
-                  <TableHead>Acción</TableHead>
                   <TableHead>Estado Actual</TableHead>
-                  <TableHead>Comentario</TableHead>
-                  <TableHead>Revisor</TableHead>
-                  <TableHead>Fecha</TableHead>
+                  <TableHead>Último Comentario</TableHead>
+                  <TableHead>Decisión</TableHead>
+                  <TableHead>Fecha Revisión</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredReviews.map((review) => (
                   <TableRow key={review.id}>
                     <TableCell className="font-medium">
-                      {review.account_number || 'N/A'}
+                      {review.numero || 'N/A'}
                     </TableCell>
                     <TableCell>
-                      <div className="space-y-1">
-                        <p className="font-medium text-sm">
-                          {review.client_name || 'N/A'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {review.contract_number || 'N/A'}
-                        </p>
-                      </div>
+                      {review.periodo || 'N/A'}
                     </TableCell>
                     <TableCell>
-                      {review.amount ? formatCurrency(review.amount) : 'N/A'}
+                      {review.valor ? formatCurrency(review.valor) : 'N/A'}
                     </TableCell>
                     <TableCell>
-                      {getActionBadge(review.action)}
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(review.status || '')}
+                      {getStatusBadge(review.estado || '')}
                     </TableCell>
                     <TableCell className="max-w-xs">
-                      <div className="truncate" title={review.comments || 'Sin comentarios'}>
+                      <div className="truncate" title={review.last_comment || 'Sin comentarios'}>
                         <span className="font-medium text-blue-700">
-                          {review.comments || 'Sin comentarios'}
+                          {review.last_comment || 'Sin comentarios'}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm">{review.reviewer_name || 'N/A'}</span>
-                      </div>
+                      {getDecisionBadge(review.last_decision)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="w-4 h-4" />
-                        {format(new Date(review.created_at), 'dd/MM/yyyy HH:mm')}
+                        {review.last_review_at 
+                          ? format(new Date(review.last_review_at), 'dd/MM/yyyy HH:mm')
+                          : 'N/A'
+                        }
                       </div>
                     </TableCell>
                   </TableRow>

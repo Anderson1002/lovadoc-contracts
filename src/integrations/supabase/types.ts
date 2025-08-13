@@ -295,6 +295,13 @@ export type Database = {
             referencedRelation: "billing_accounts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "billing_documents_billing_account_id_fkey"
+            columns: ["billing_account_id"]
+            isOneToOne: false
+            referencedRelation: "v_billing_accounts_last_review"
+            referencedColumns: ["id"]
+          },
         ]
       }
       billing_reviews: {
@@ -334,6 +341,13 @@ export type Database = {
             columns: ["billing_account_id"]
             isOneToOne: false
             referencedRelation: "billing_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_reviews_billing_account_id_fkey"
+            columns: ["billing_account_id"]
+            isOneToOne: false
+            referencedRelation: "v_billing_accounts_last_review"
             referencedColumns: ["id"]
           },
         ]
@@ -672,6 +686,13 @@ export type Database = {
             referencedRelation: "billing_accounts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "historial_estado_cuenta_cuenta_id_fkey"
+            columns: ["cuenta_id"]
+            isOneToOne: false
+            referencedRelation: "v_billing_accounts_last_review"
+            referencedColumns: ["id"]
+          },
         ]
       }
       permissions: {
@@ -808,7 +829,29 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_billing_accounts_last_review: {
+        Row: {
+          contract_id: string | null
+          estado: string | null
+          fecha: string | null
+          id: string | null
+          last_comment: string | null
+          last_decision: string | null
+          last_review_at: string | null
+          numero: string | null
+          periodo: string | null
+          valor: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_accounts_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       generate_billing_account_number: {
