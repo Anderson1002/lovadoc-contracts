@@ -120,6 +120,8 @@ export function EditBillingAccountDialog({
         `)
         .eq('billing_account_id', billingAccount.id)
         .order('created_at', { ascending: false });
+      
+      console.log('Review comments loaded:', reviewComments);
 
       if (billingError) throw billingError;
       if (reviewsError) {
