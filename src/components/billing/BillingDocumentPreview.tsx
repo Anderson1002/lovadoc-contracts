@@ -47,6 +47,14 @@ interface BillingDocumentPreviewProps {
   planillaValor?: string;
   planillaFecha?: string;
   signatureRef?: SignatureCanvas | null;
+  reviewComments?: Array<{
+    action: string;
+    comments: string;
+    created_at: string;
+    reviewer: {
+      name: string;
+    };
+  }>;
 }
 
 export function BillingDocumentPreview({
@@ -59,7 +67,8 @@ export function BillingDocumentPreview({
   planillaNumero,
   planillaValor,
   planillaFecha,
-  signatureRef
+  signatureRef,
+  reviewComments
 }: BillingDocumentPreviewProps) {
   console.log('BillingDocumentPreview - userProfile:', userProfile);
   console.log('BillingDocumentPreview - selectedContract:', selectedContract);
@@ -182,6 +191,33 @@ export function BillingDocumentPreview({
                 <p><strong>Número:</strong> {planillaNumero || 'No especificado'}</p>
                 <p><strong>Valor:</strong> {planillaValor ? formatCurrency(parseFloat(planillaValor)) : 'No especificado'}</p>
                 <p><strong>Fecha:</strong> {planillaFecha ? format(new Date(planillaFecha), 'dd/MM/yyyy') : 'No especificada'}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Review Comments Section */}
+          {reviewComments && reviewComments.length > 0 && (
+            <div className="mt-4 border-t pt-4">
+              <h3 className="font-bold mb-2">COMENTARIOS DE REVISIÓN:</h3>
+              <div className="space-y-3">
+                {reviewComments.map((review, index) => (
+                  <div key={index} className="border border-gray-300 rounded p-3 bg-gray-50">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="font-semibold text-sm">
+                        {review.action === 'approve' ? '✅ Aprobado' : '❌ Devuelto'}
+                      </span>
+                      <span className="text-xs text-gray-600">
+                        {format(new Date(review.created_at), 'dd/MM/yyyy HH:mm')}
+                      </span>
+                    </div>
+                    <p className="text-sm mb-1">
+                      <strong>Por:</strong> {review.reviewer.name}
+                    </p>
+                    <p className="text-sm">
+                      <strong>Comentario:</strong> {review.comments || 'Sin comentarios'}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           )}

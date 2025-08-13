@@ -76,6 +76,7 @@ export function EditBillingAccountDialog({
   const [planillaNumero, setPlanillaNumero] = useState<string>("");
   const [planillaValor, setPlanillaValor] = useState<string>("");
   const [planillaFecha, setPlanillaFecha] = useState<Date>();
+  const [reviewComments, setReviewComments] = useState<any[]>([]);
   const signatureRef = useRef<SignatureCanvas>(null);
 
   const canEdit = billingAccount?.status === 'borrador' || billingAccount?.status === 'rechazada';
@@ -107,7 +108,24 @@ export function EditBillingAccountDialog({
         .eq('id', billingAccount.id)
         .single();
 
+      // Load review comments
+      const { data: reviewComments, error: reviewsError } = await supabase
+        .from('billing_reviews')
+        .select(`
+          action,
+          comments,
+          created_at,
+          reviewer:profiles!billing_reviews_reviewer_id_fkey(name)
+        `)
+        .eq('billing_account_id', billingAccount.id)
+        .order('created_at', { ascending: false });
+
       if (billingError) throw billingError;
+      if (reviewsError) {
+        console.error('Error loading review comments:', reviewsError);
+      }
+
+      setReviewComments(reviewComments || []);
 
       // Set form data
       setSelectedContract(billing.contract_id);
@@ -1010,6 +1028,7 @@ export function EditBillingAccountDialog({
                   planillaValor={planillaValor}
                   planillaFecha={planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : undefined}
                   signatureRef={signatureRef.current}
+                  reviewComments={reviewComments}
                 />
               </CardContent>
             </Card>

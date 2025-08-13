@@ -140,7 +140,22 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
         .eq('id', fullBilling.created_by)
         .single();
 
+      // Load review comments
+      const { data: reviewComments, error: reviewsError } = await supabase
+        .from('billing_reviews')
+        .select(`
+          action,
+          comments,
+          created_at,
+          reviewer:profiles!billing_reviews_reviewer_id_fkey(name)
+        `)
+        .eq('billing_account_id', billing.id)
+        .order('created_at', { ascending: false });
+
       if (profileError) throw profileError;
+      if (reviewsError) {
+        console.error('Error loading review comments:', reviewsError);
+      }
 
       // Transform activities to match the expected interface
       const transformedActivities = (activities || []).map((activity: any) => ({
@@ -152,7 +167,8 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
       setPreviewBilling({
         ...fullBilling,
         created_by_profile: profile,
-        transformedActivities
+        transformedActivities,
+        reviewComments: reviewComments || []
       });
       setShowPreview(true);
     } catch (error: any) {
@@ -461,6 +477,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
               endDate={new Date(previewBilling.billing_end_date)}
               activities={previewBilling.transformedActivities || []}
               amount={previewBilling.amount.toString()}
+              reviewComments={previewBilling.reviewComments}
             />
           )}
         </DialogContent>
