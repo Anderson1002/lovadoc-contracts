@@ -73,6 +73,7 @@ export function BillingDocumentPreview({
   console.log('BillingDocumentPreview - userProfile:', userProfile);
   console.log('BillingDocumentPreview - selectedContract:', selectedContract);
   console.log('BillingDocumentPreview - signatureRef:', signatureRef);
+  console.log('BillingDocumentPreview - reviewComments:', reviewComments);
   
   const documentNumber = `DSE ${format(new Date(), 'yyyMM')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
@@ -103,6 +104,33 @@ export function BillingDocumentPreview({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Review Comments Section - Always at the top when present */}
+        {reviewComments && reviewComments.length > 0 && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="font-bold mb-3 text-lg text-blue-800">📝 HISTORIAL DE REVISIONES</h3>
+            <div className="space-y-3">
+              {reviewComments.map((review, index) => (
+                <div key={index} className="border border-blue-300 rounded p-3 bg-white">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="font-semibold text-sm">
+                      {review.action === 'approved' ? '✅ Aprobado' : '❌ Devuelto'}
+                    </span>
+                    <span className="text-xs text-gray-600">
+                      {format(new Date(review.created_at), 'dd/MM/yyyy HH:mm')}
+                    </span>
+                  </div>
+                  <p className="text-sm mb-1">
+                    <strong>Revisor:</strong> {review.reviewer.name}
+                  </p>
+                  <p className="text-sm">
+                    <strong>Comentario:</strong> {review.comments || 'Sin comentarios'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
         <div className="border rounded-lg p-6 bg-white text-black font-mono text-sm space-y-4">
           {/* Header */}
           <div className="text-center space-y-2">
@@ -195,32 +223,6 @@ export function BillingDocumentPreview({
             </div>
           )}
 
-          {/* Review Comments Section */}
-          {reviewComments && reviewComments.length > 0 && (
-            <div className="mt-4 border-t pt-4">
-              <h3 className="font-bold mb-2">COMENTARIOS DE REVISIÓN:</h3>
-              <div className="space-y-3">
-                {reviewComments.map((review, index) => (
-                  <div key={index} className="border border-gray-300 rounded p-3 bg-gray-50">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="font-semibold text-sm">
-                        {review.action === 'approved' ? '✅ Aprobado' : '❌ Devuelto'}
-                      </span>
-                      <span className="text-xs text-gray-600">
-                        {format(new Date(review.created_at), 'dd/MM/yyyy HH:mm')}
-                      </span>
-                    </div>
-                    <p className="text-sm mb-1">
-                      <strong>Por:</strong> {review.reviewer.name}
-                    </p>
-                    <p className="text-sm">
-                      <strong>Comentario:</strong> {review.comments || 'Sin comentarios'}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Signature Area */}
           <div className="mt-6 text-center border-t pt-4">
