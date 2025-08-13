@@ -88,51 +88,88 @@ const bankOptions = [
 export default function CreateContract() {
   const [isLoading, setIsLoading] = useState(false);
   const [supervisors, setSupervisors] = useState<any[]>([]);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string>("");
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Load supervisors for the dropdown
+  // Load supervisors and user profile for the dropdown
   useEffect(() => {
     loadSupervisors();
+    loadUserProfile();
   }, []);
 
-    const loadSupervisors = async () => {
-      try {
-        console.log('Loading supervisors...');
-        
-        // Primero obtenemos el ID del rol de supervisor
-        const { data: roleData, error: roleError } = await supabase
-          .from('roles')
-          .select('id')
-          .eq('name', 'supervisor')
-          .single();
+  const loadSupervisors = async () => {
+    try {
+      console.log('Loading supervisors...');
+      
+      // Primero obtenemos el ID del rol de supervisor
+      const { data: roleData, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('name', 'supervisor')
+        .single();
 
-        if (roleError) {
-          console.error('Error loading supervisor role:', roleError);
-          return;
-        }
-
-        console.log('Supervisor role ID:', roleData.id);
-
-        // Luego obtenemos los perfiles con ese rol
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, name, email')
-          .eq('role_id', roleData.id);
-
-        if (error) {
-          console.error('Error loading supervisors:', error);
-          console.error('Error details:', error.message, error.details, error.hint);
-          return;
-        }
-        
-        console.log('Supervisors loaded:', data);
-        console.log('Number of supervisors found:', data?.length || 0);
-        setSupervisors(data || []);
-      } catch (error) {
-        console.error('Error loading supervisors:', error);
+      if (roleError) {
+        console.error('Error loading supervisor role:', roleError);
+        return;
       }
-    };
+
+      console.log('Supervisor role ID:', roleData.id);
+
+      // Luego obtenemos los perfiles con ese rol
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .eq('role_id', roleData.id);
+
+      if (error) {
+        console.error('Error loading supervisors:', error);
+        console.error('Error details:', error.message, error.details, error.hint);
+        return;
+      }
+      
+      console.log('Supervisors loaded:', data);
+      console.log('Number of supervisors found:', data?.length || 0);
+      setSupervisors(data || []);
+    } catch (error) {
+      console.error('Error loading supervisors:', error);
+    }
+  };
+
+  const loadUserProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*, roles!profiles_role_id_fkey(name, display_name)')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error loading user profile:', error);
+        return;
+      }
+
+      setUserProfile(profile);
+      setUserRole((profile.roles as any)?.name || '');
+
+      // Auto-populate client fields for employees
+      if ((profile.roles as any)?.name === 'employee') {
+        setValue("clientName", profile.name || '');
+        setValue("clientDocumentNumber", profile.document_number || '');
+        setValue("clientEmail", profile.email || '');
+        setValue("clientPhone", profile.phone || '');
+        setValue("clientAddress", profile.address || '');
+        setValue("clientAccountNumber", profile.bank_account || '');
+        setValue("clientBankName", profile.bank_name || '');
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
 
   const {
     register,
@@ -300,19 +337,28 @@ export default function CreateContract() {
           {/* Información del Cliente */}
           <Card>
             <CardHeader>
-              <CardTitle>Información del Cliente</CardTitle>
+              <CardTitle>
+                {userRole === 'employee' ? 'Tu Información Personal' : 'Información del Cliente'}
+              </CardTitle>
               <CardDescription>
-                Datos principales del cliente o proveedor
+                {userRole === 'employee' 
+                  ? 'Esta información se toma automáticamente de tu perfil. Si necesitas actualizarla, ve a tu perfil.' 
+                  : 'Datos principales del cliente o proveedor'
+                }
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="clientName">Nombre del Cliente *</Label>
+                  <Label htmlFor="clientName">
+                    {userRole === 'employee' ? 'Tu Nombre *' : 'Nombre del Cliente *'}
+                  </Label>
                   <Input
                     id="clientName"
                     placeholder="Nombre completo o razón social"
                     {...register("clientName")}
+                    disabled={userRole === 'employee'}
+                    className={userRole === 'employee' ? 'bg-muted' : ''}
                   />
                   {errors.clientName && (
                     <p className="text-sm text-destructive">
@@ -322,11 +368,15 @@ export default function CreateContract() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="clientDocumentNumber">Número de Documento *</Label>
+                  <Label htmlFor="clientDocumentNumber">
+                    {userRole === 'employee' ? 'Tu Número de Documento *' : 'Número de Documento *'}
+                  </Label>
                   <Input
                     id="clientDocumentNumber"
                     placeholder="Número de cédula o NIT"
                     {...register("clientDocumentNumber")}
+                    disabled={userRole === 'employee'}
+                    className={userRole === 'employee' ? 'bg-muted' : ''}
                   />
                   {errors.clientDocumentNumber && (
                     <p className="text-sm text-destructive">
@@ -336,12 +386,16 @@ export default function CreateContract() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="clientEmail">Email del Cliente</Label>
+                  <Label htmlFor="clientEmail">
+                    {userRole === 'employee' ? 'Tu Email' : 'Email del Cliente'}
+                  </Label>
                   <Input
                     id="clientEmail"
                     type="email"
                     placeholder="cliente@email.com"
                     {...register("clientEmail")}
+                    disabled={userRole === 'employee'}
+                    className={userRole === 'employee' ? 'bg-muted' : ''}
                   />
                   {errors.clientEmail && (
                     <p className="text-sm text-destructive">
@@ -351,39 +405,54 @@ export default function CreateContract() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="clientPhone">Teléfono del Cliente</Label>
+                  <Label htmlFor="clientPhone">
+                    {userRole === 'employee' ? 'Tu Teléfono' : 'Teléfono del Cliente'}
+                  </Label>
                   <Input
                     id="clientPhone"
                     placeholder="Número de teléfono"
                     {...register("clientPhone")}
+                    disabled={userRole === 'employee'}
+                    className={userRole === 'employee' ? 'bg-muted' : ''}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="clientAddress">Dirección</Label>
+                  <Label htmlFor="clientAddress">
+                    {userRole === 'employee' ? 'Tu Dirección' : 'Dirección'}
+                  </Label>
                   <Input
                     id="clientAddress"
                     placeholder="Dirección del cliente"
                     {...register("clientAddress")}
+                    disabled={userRole === 'employee'}
+                    className={userRole === 'employee' ? 'bg-muted' : ''}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="clientAccountNumber">Número de Cuenta</Label>
+                  <Label htmlFor="clientAccountNumber">
+                    {userRole === 'employee' ? 'Tu Número de Cuenta' : 'Número de Cuenta'}
+                  </Label>
                   <Input
                     id="clientAccountNumber"
                     placeholder="Número de cuenta bancaria"
                     {...register("clientAccountNumber")}
+                    disabled={userRole === 'employee'}
+                    className={userRole === 'employee' ? 'bg-muted' : ''}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="clientBankName">Banco *</Label>
+                  <Label htmlFor="clientBankName">
+                    {userRole === 'employee' ? 'Tu Banco *' : 'Banco *'}
+                  </Label>
                   <Select
                     value={watch("clientBankName")}
                     onValueChange={(value) => setValue("clientBankName", value)}
+                    disabled={userRole === 'employee'}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={userRole === 'employee' ? 'bg-muted' : ''}>
                       <SelectValue placeholder="Seleccionar banco" />
                     </SelectTrigger>
                     <SelectContent className="bg-background border shadow-lg z-50">
