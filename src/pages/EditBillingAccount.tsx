@@ -78,6 +78,7 @@ export function EditBillingAccountDialog({
   const [planillaFecha, setPlanillaFecha] = useState<Date>();
   const [reviewComments, setReviewComments] = useState<any[]>([]);
   const signatureRef = useRef<SignatureCanvas>(null);
+  const [creatorProfile, setCreatorProfile] = useState<any>(null);
 
   const canEdit = billingAccount?.status === 'borrador' || billingAccount?.status === 'rechazada';
   const canSubmitForReview = selectedContract && amount && startDate && endDate && 
@@ -126,6 +127,18 @@ export function EditBillingAccountDialog({
       }
 
       setReviewComments(reviewComments || []);
+
+      // Load contractor profile (creator of the billing account)
+      try {
+        const { data: creator, error: creatorError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', billing.created_by)
+          .single();
+        if (!creatorError) setCreatorProfile(creator);
+      } catch (e) {
+        console.warn('No se pudo cargar el perfil del creador de la cuenta de cobro', e);
+      }
 
       // Set form data
       setSelectedContract(billing.contract_id);
@@ -1018,7 +1031,7 @@ export function EditBillingAccountDialog({
               </CardHeader>
               <CardContent>
                 <BillingDocumentPreview
-                  userProfile={userProfile}
+                  userProfile={creatorProfile || userProfile}
                   selectedContract={selectedContractData}
                   amount={amount}
                   startDate={startDate}

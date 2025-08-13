@@ -204,7 +204,7 @@ export function BillingDocumentPreview({
                   <div key={index} className="border border-gray-300 rounded p-3 bg-gray-50">
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-semibold text-sm">
-                        {review.action === 'approve' ? '✅ Aprobado' : '❌ Devuelto'}
+                        {review.action === 'approved' ? '✅ Aprobado' : '❌ Devuelto'}
                       </span>
                       <span className="text-xs text-gray-600">
                         {format(new Date(review.created_at), 'dd/MM/yyyy HH:mm')}
