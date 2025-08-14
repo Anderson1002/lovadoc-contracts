@@ -120,6 +120,7 @@ export function ContractTable({
               <TableHead>Cliente</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Área</TableHead>
+              <TableHead>Super DAvys</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>
                 <div className="flex items-center gap-1">
