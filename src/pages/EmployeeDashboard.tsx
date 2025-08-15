@@ -66,13 +66,11 @@ export default function EmployeeDashboard() {
       await supabase.rpc('update_contract_statuses');
 
       // Load only the employee's contracts
-      console.log('Profile ID:', profile.id);
       const { data: contracts, error: contractsError } = await supabase
         .from('contracts')
         .select('*')
         .eq('created_by', profile.id)
         .order('created_at', { ascending: false });
-      console.log('Contracts query result:', { contracts, contractsError });
 
       if (contractsError) throw contractsError;
 
