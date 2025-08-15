@@ -204,7 +204,7 @@ export default function Users() {
     }
   };
 
-  const canEdit = userRole === "super_admin" || userRole === "admin";
+  const canEdit = userRole === "super_admin" || userRole === "admin" || userRole === "supervisor";
 
   if (loading) {
     return (
