@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Users as UsersIcon, 
   Plus, 
@@ -29,6 +29,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -58,6 +59,12 @@ interface User {
   };
 }
 
+interface Role {
+  id: string;
+  name: string;
+  display_name: string;
+}
+
 export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -67,10 +74,12 @@ export default function Users() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState("");
+  const [roles, setRoles] = useState<Role[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     loadUsers();
+    loadRoles();
   }, []);
 
   useEffect(() => {
@@ -201,6 +210,60 @@ export default function Users() {
         return Building2;
       default:
         return UsersIcon;
+    }
+  };
+
+  const loadRoles = async () => {
+    try {
+      const { data: rolesData, error } = await supabase
+        .from('roles')
+        .select('id, name, display_name')
+        .order('display_name');
+
+      if (error) throw error;
+      setRoles(rolesData || []);
+    } catch (error) {
+      console.error('Error loading roles:', error);
+    }
+  };
+
+  const getAvailableRolesForUser = () => {
+    if (userRole === 'super_admin') {
+      return roles;
+    } else if (userRole === 'admin') {
+      return roles.filter(role => role.name !== 'super_admin');
+    } else if (userRole === 'supervisor') {
+      return roles.filter(role => !['super_admin', 'admin'].includes(role.name));
+    }
+    return [];
+  };
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      const roleData = roles.find(r => r.name === newRole);
+      if (!roleData) {
+        throw new Error('Rol no encontrado');
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role_id: roleData.id })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Rol actualizado",
+        description: "El rol del usuario ha sido actualizado exitosamente",
+      });
+
+      loadUsers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo actualizar el rol del usuario",
+        variant: "destructive"
+      });
     }
   };
 
@@ -370,13 +433,40 @@ export default function Users() {
                       </TableCell>
                       
                       <TableCell>
-                        <Badge 
-                          variant={getRoleBadgeVariant(user.roles.name)}
-                          className="flex items-center gap-1 w-fit"
-                        >
-                          <RoleIcon className="h-3 w-3" />
-                          {user.roles.display_name}
-                        </Badge>
+                        {canEdit ? (
+                          <Select 
+                            value={user.roles.name} 
+                            onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
+                          >
+                            <SelectTrigger className="w-fit">
+                              <Badge 
+                                variant={getRoleBadgeVariant(user.roles.name)}
+                                className="flex items-center gap-1 border-0 bg-transparent hover:bg-accent cursor-pointer"
+                              >
+                                <RoleIcon className="h-3 w-3" />
+                                {user.roles.display_name}
+                              </Badge>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getAvailableRolesForUser().map((role) => (
+                                <SelectItem key={role.id} value={role.name}>
+                                  <div className="flex items-center gap-2">
+                                    {React.createElement(getRoleIcon(role.name), { className: "h-3 w-3" })}
+                                    {role.display_name}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge 
+                            variant={getRoleBadgeVariant(user.roles.name)}
+                            className="flex items-center gap-1 w-fit"
+                          >
+                            <RoleIcon className="h-3 w-3" />
+                            {user.roles.display_name}
+                          </Badge>
+                        )}
                       </TableCell>
                       
                       <TableCell>
