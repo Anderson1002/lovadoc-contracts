@@ -54,7 +54,7 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
   const navigationItems: NavigationItem[] = [
     {
       title: "Dashboard",
-      url: "/",
+      url: userRole === "employee" ? "/employee-dashboard" : "/dashboard",
       icon: Home,
       roles: ["super_admin", "admin", "supervisor", "employee"]
     },
