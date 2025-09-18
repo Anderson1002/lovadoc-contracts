@@ -45,7 +45,9 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
         .maybeSingle();
 
       if (profile && profile.roles) {
-        setCurrentUserRole((profile.roles as any).name);
+        const roleName = (profile.roles as any).name;
+        console.log('Usuario actual:', profile.name, 'Rol:', roleName);
+        setCurrentUserRole(roleName);
       }
     } catch (error) {
       console.error('Error getting current user role:', error);
