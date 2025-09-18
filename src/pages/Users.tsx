@@ -44,6 +44,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { UserForm } from "@/components/users/UserForm";
+import { ProcessFilter } from "@/components/users/ProcessFilter";
 import { Layout } from "@/components/Layout";
 
 interface User {
@@ -70,6 +71,7 @@ export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProcess, setSelectedProcess] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -85,7 +87,7 @@ export default function Users() {
 
   useEffect(() => {
     filterUsers();
-  }, [users, searchTerm]);
+  }, [users, searchTerm, selectedProcess]);
 
   const loadUsers = async () => {
     try {
@@ -105,7 +107,7 @@ export default function Users() {
         setUserRole((currentProfile.roles as any).name);
       }
 
-      // Load all users with their roles
+      // Load all users with their roles and processes
       const { data: profiles, error } = await supabase
         .from('profiles')
         .select(`
@@ -113,6 +115,10 @@ export default function Users() {
           roles!profiles_role_id_fkey (
             name,
             display_name
+          ),
+          procesos (
+            id,
+            nombre_proceso
           )
         `)
         .order('created_at', { ascending: false });
@@ -134,16 +140,24 @@ export default function Users() {
   };
 
   const filterUsers = () => {
-    if (!searchTerm) {
-      setFilteredUsers(users);
-      return;
+    let filtered = users;
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(user =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.roles?.display_name || '').toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
-    const filtered = users.filter(user =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.roles?.display_name || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Filter by process (only for supervisors with assigned process)
+    if (selectedProcess && userRole === 'admin') {
+      filtered = filtered.filter(user => {
+        const userProcess = (user as any).procesos;
+        return userProcess && userProcess.id.toString() === selectedProcess;
+      });
+    }
 
     setFilteredUsers(filtered);
   };
@@ -383,10 +397,19 @@ export default function Users() {
           />
         </div>
 
-        <Badge variant="outline" className="flex items-center gap-1">
-          <UsersIcon className="h-3 w-3" />
-          {filteredUsers.length} usuarios
-        </Badge>
+        <div className="flex items-center gap-4">
+          {userRole === 'admin' && (
+            <ProcessFilter
+              value={selectedProcess}
+              onChange={setSelectedProcess}
+              className="w-64"
+            />
+          )}
+          <Badge variant="outline" className="flex items-center gap-1">
+            <UsersIcon className="h-3 w-3" />
+            {filteredUsers.length} usuarios
+          </Badge>
+        </div>
       </div>
 
       {/* Users Table */}
@@ -397,6 +420,7 @@ export default function Users() {
               <TableRow>
                 <TableHead>Usuario</TableHead>
                 <TableHead>Rol</TableHead>
+                <TableHead>Proceso</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Fecha Registro</TableHead>
                 <TableHead>Último Acceso</TableHead>
@@ -407,7 +431,7 @@ export default function Users() {
               {filteredUsers.length === 0 ? (
                 <TableRow>
                   <TableCell 
-                    colSpan={canEdit ? 6 : 5} 
+                    colSpan={canEdit ? 7 : 6} 
                     className="text-center py-8 text-muted-foreground"
                   >
                     No se encontraron usuarios
@@ -475,6 +499,17 @@ export default function Users() {
                             <Building2 className="h-3 w-3" />
                             Sin rol asignado
                           </Badge>
+                        )}
+                      </TableCell>
+                      
+                      <TableCell>
+                        {(user as any).procesos ? (
+                          <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                            <Building2 className="h-3 w-3" />
+                            {(user as any).procesos.nombre_proceso}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">Sin proceso</span>
                         )}
                       </TableCell>
                       

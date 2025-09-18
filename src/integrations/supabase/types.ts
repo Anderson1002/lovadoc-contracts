@@ -937,6 +937,10 @@ export type Database = {
           name: string
         }[]
       }
+      get_current_user_proceso_id: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["user_role_type"]

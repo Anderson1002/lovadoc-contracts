@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ContractStatusChart } from "@/components/dashboard/ContractStatusChart";
+import { ProcessCard } from "@/components/dashboard/ProcessCard";
 import { 
   FileText, 
   DollarSign, 
@@ -173,7 +174,10 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+        <div className="lg:col-span-1">
+          <ProcessCard />
+        </div>
         <StatsCard
           title="Total Contratos"
           value={stats.totalContracts}
