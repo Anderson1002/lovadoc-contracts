@@ -118,32 +118,6 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
       ]
     },
     {
-      title: "Trámites y Firmas",
-      url: "/procedures",
-      icon: FileCheck,
-      roles: ["super_admin", "admin", "supervisor", "employee"],
-      children: [
-        {
-          title: "Buscar Trámite",
-          url: "/procedures/search",
-          icon: FileText,
-          roles: ["super_admin", "admin", "supervisor", "employee"]
-        },
-        {
-          title: "Firma Electrónica",
-          url: "/procedures/signature",
-          icon: FileCheck,
-          roles: ["super_admin", "admin", "supervisor", "employee"]
-        },
-        {
-          title: "Causado",
-          url: "/procedures/causado",
-          icon: TrendingUp,
-          roles: ["super_admin", "admin", "supervisor"]
-        }
-      ]
-    },
-    {
       title: "Equipos Biomédicos",
       url: "/equipment",
       icon: Building2,
