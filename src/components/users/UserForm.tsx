@@ -94,11 +94,34 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
           description: "La información del usuario ha sido actualizada exitosamente",
         });
       } else {
-        // Create new user - this would need to be implemented with auth admin
+        // Create new user
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          throw new Error('No hay sesión activa');
+        }
+
+        const response = await fetch(`https://cwgzjahsqzloshhvlwmr.supabase.co/functions/v1/create-user`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            roleId: roleData.id
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Error al crear usuario');
+        }
+
         toast({
-          title: "Funcionalidad pendiente",
-          description: "La creación de nuevos usuarios está en desarrollo",
-          variant: "destructive"
+          title: "Usuario creado",
+          description: "El usuario ha sido creado exitosamente",
         });
       }
 
