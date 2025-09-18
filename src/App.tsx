@@ -14,6 +14,7 @@ import EditContract from "./pages/EditContract";
 import ContractQuery from "./pages/ContractQuery";
 import BillingAccounts from "./pages/BillingAccounts";
 import Users from "./pages/Users";
+import Procesos from "./pages/Procesos";
 import Profile from "./pages/Profile";
 import Notifications from "./pages/Notifications";
 import { Layout } from "@/components/Layout";
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/contracts/query" element={<ContractQuery />} />
           <Route path="/billing" element={<BillingAccounts />} />
           <Route path="/users" element={<Users />} />
+          <Route path="/procesos" element={<Procesos />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/notifications" element={<Notifications />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

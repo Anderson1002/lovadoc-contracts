@@ -753,6 +753,27 @@ export type Database = {
           },
         ]
       }
+      procesos: {
+        Row: {
+          created_at: string
+          id: number
+          nombre_proceso: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          nombre_proceso: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          nombre_proceso?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null

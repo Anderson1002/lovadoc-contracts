@@ -162,6 +162,12 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
           roles: ["super_admin", "admin"]
         },
         {
+          title: "Procesos",
+          url: "/procesos",
+          icon: Building2,
+          roles: ["super_admin", "admin"]
+        },
+        {
           title: "Contratistas",
           url: "/users/contractors",
           icon: UserCheck,
