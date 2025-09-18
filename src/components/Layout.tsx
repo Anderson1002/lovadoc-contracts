@@ -60,6 +60,12 @@ export function Layout({ children }: LayoutProps) {
       if (profile && profile.roles) {
         setUserRole((profile.roles as any).name);
         setUserName(profile.name || user?.email || "Usuario");
+        
+        // Update last_login timestamp
+        await supabase
+          .from('profiles')
+          .update({ last_login: new Date().toISOString() })
+          .eq('user_id', userId);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
