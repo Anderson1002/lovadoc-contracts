@@ -57,7 +57,7 @@ interface User {
   roles: {
     name: string;
     display_name: string;
-  };
+  } | null;
 }
 
 interface Role {
@@ -142,7 +142,7 @@ export default function Users() {
     const filtered = users.filter(user =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.roles.display_name.toLowerCase().includes(searchTerm.toLowerCase())
+      (user.roles?.display_name || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     setFilteredUsers(filtered);
@@ -341,7 +341,7 @@ export default function Users() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {users.filter(u => u.roles.name === 'super_admin' || u.roles.name === 'admin').length}
+              {users.filter(u => u.roles?.name === 'super_admin' || u.roles?.name === 'admin').length}
             </div>
           </CardContent>
         </Card>
@@ -353,7 +353,7 @@ export default function Users() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {users.filter(u => u.roles.name === 'supervisor').length}
+              {users.filter(u => u.roles?.name === 'supervisor').length}
             </div>
           </CardContent>
         </Card>
@@ -365,7 +365,7 @@ export default function Users() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {users.filter(u => u.roles.name === 'employee').length}
+              {users.filter(u => u.roles?.name === 'employee').length}
             </div>
           </CardContent>
         </Card>
@@ -415,7 +415,7 @@ export default function Users() {
                 </TableRow>
               ) : (
                 filteredUsers.map((user) => {
-                  const RoleIcon = getRoleIcon(user.roles.name);
+                  const RoleIcon = getRoleIcon(user.roles?.name || 'employee');
                   return (
                     <TableRow key={user.id} className="hover:bg-muted/50">
                       <TableCell>
@@ -435,38 +435,45 @@ export default function Users() {
                       </TableCell>
                       
                       <TableCell>
-                        {canEdit ? (
-                          <Select 
-                            value={user.roles.name} 
-                            onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
-                          >
-                            <SelectTrigger className="w-fit">
-                              <Badge 
-                                variant={getRoleBadgeVariant(user.roles.name)}
-                                className="flex items-center gap-1 border-0 bg-transparent hover:bg-accent cursor-pointer"
-                              >
-                                <RoleIcon className="h-3 w-3" />
-                                {user.roles.display_name}
-                              </Badge>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getAvailableRolesForUser().map((role) => (
-                                <SelectItem key={role.id} value={role.name}>
-                                  <div className="flex items-center gap-2">
-                                    {React.createElement(getRoleIcon(role.name), { className: "h-3 w-3" })}
-                                    {role.display_name}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        {user.roles ? (
+                          canEdit ? (
+                            <Select 
+                              value={user.roles.name} 
+                              onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
+                            >
+                              <SelectTrigger className="w-fit">
+                                <Badge 
+                                  variant={getRoleBadgeVariant(user.roles.name)}
+                                  className="flex items-center gap-1 border-0 bg-transparent hover:bg-accent cursor-pointer"
+                                >
+                                  <RoleIcon className="h-3 w-3" />
+                                  {user.roles.display_name}
+                                </Badge>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getAvailableRolesForUser().map((role) => (
+                                  <SelectItem key={role.id} value={role.name}>
+                                    <div className="flex items-center gap-2">
+                                      {React.createElement(getRoleIcon(role.name), { className: "h-3 w-3" })}
+                                      {role.display_name}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Badge 
+                              variant={getRoleBadgeVariant(user.roles.name)}
+                              className="flex items-center gap-1 w-fit"
+                            >
+                              <RoleIcon className="h-3 w-3" />
+                              {user.roles.display_name}
+                            </Badge>
+                          )
                         ) : (
-                          <Badge 
-                            variant={getRoleBadgeVariant(user.roles.name)}
-                            className="flex items-center gap-1 w-fit"
-                          >
-                            <RoleIcon className="h-3 w-3" />
-                            {user.roles.display_name}
+                          <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                            <Building2 className="h-3 w-3" />
+                            Sin rol asignado
                           </Badge>
                         )}
                       </TableCell>
