@@ -13,35 +13,32 @@ interface EmailRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log('Send confirmation email function called');
+  console.log('Send confirmation email function started');
 
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { email, name, confirmationUrl }: EmailRequest = await req.json();
-    console.log('Sending confirmation email to:', email);
+    console.log('Processing email for:', email);
 
-    // SMTP Configuration from Hostinger
     const smtpHost = Deno.env.get('SMTP_HOST') || 'smtp.hostinger.com';
     const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '465');
     const smtpUser = Deno.env.get('SMTP_USER') || '';
     const smtpPassword = Deno.env.get('SMTP_PASSWORD') || '';
 
-    console.log('SMTP Config:', { 
-      hostname: smtpHost, 
+    console.log('SMTP Configuration:', { 
+      host: smtpHost, 
       port: smtpPort, 
-      username: smtpUser,
-      passwordSet: !!smtpPassword 
+      user: smtpUser,
+      hasPassword: !!smtpPassword 
     });
 
     if (!smtpUser || !smtpPassword) {
       throw new Error('SMTP credentials not configured');
     }
 
-    // Create SMTP client
     const client = new SMTPClient({
       connection: {
         hostname: smtpHost,
@@ -54,8 +51,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
 
-    // Email HTML content
-    const htmlContent = `
+    const emailTemplate = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -66,7 +62,7 @@ const handler = async (req: Request): Promise<Response> => {
     <div style="background-color: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
         <div style="text-align: center; margin-bottom: 30px;">
             <div style="width: 64px; height: 64px; background-color: #007bff; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                     <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
                     <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
                     <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
@@ -86,12 +82,12 @@ const handler = async (req: Request): Promise<Response> => {
         
         <p style="color: #666; font-size: 16px; line-height: 1.5;">
             Gracias por registrarte en nuestro Sistema de Gestión Digital de Contratos. 
-            Para completar tu registro y acceder a todas las funcionalidades, necesitas confirmar tu dirección de correo electrónico.
+            Para completar tu registro, necesitas confirmar tu dirección de correo electrónico.
         </p>
         
         <div style="text-align: center; margin: 40px 0;">
             <a href="${confirmationUrl}" 
-               style="background-color: #007bff; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px; transition: background-color 0.3s;">
+               style="background-color: #007bff; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px;">
                 Confirmar mi cuenta
             </a>
         </div>
@@ -103,7 +99,7 @@ const handler = async (req: Request): Promise<Response> => {
             <p style="color: #666; font-size: 14px; margin: 0 0 10px 0;">
                 Copia y pega este enlace en tu navegador:
             </p>
-            <p style="color: #007bff; word-break: break-all; font-size: 14px; margin: 0; background-color: white; padding: 10px; border-radius: 4px; border: 1px solid #e9ecef;">
+            <p style="color: #007bff; word-break: break-all; font-size: 14px; margin: 0; background-color: white; padding: 10px; border-radius: 4px;">
                 ${confirmationUrl}
             </p>
         </div>
@@ -111,33 +107,31 @@ const handler = async (req: Request): Promise<Response> => {
         <div style="border-top: 1px solid #eee; padding-top: 30px; margin-top: 40px;">
             <p style="color: #999; font-size: 14px; text-align: center; margin: 0;">
                 <strong>Sistema de Gestión Digital de Contratos</strong><br>
-                Versión 1.0 | Este correo fue enviado automáticamente
+                Versión 1.0 | Correo automático
             </p>
             <p style="color: #999; font-size: 12px; text-align: center; margin: 16px 0 0 0;">
-                Si no te registraste en nuestro sistema, puedes ignorar este correo de forma segura.
+                Si no te registraste, puedes ignorar este correo.
             </p>
         </div>
     </div>
 </body>
 </html>`;
 
-    // Send email
     await client.send({
       from: `Sistema Maktub <${smtpUser}>`,
       to: email,
       subject: "Confirmación de registro - Sistema Maktub",
-      content: htmlContent,
-      html: htmlContent,
+      content: emailTemplate,
+      html: emailTemplate,
     });
 
     await client.close();
-
     console.log('Email sent successfully to:', email);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Correo de confirmación enviado exitosamente' 
+        message: 'Correo enviado exitosamente' 
       }),
       {
         status: 200,
@@ -149,12 +143,11 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
   } catch (error: any) {
-    console.error('Error sending confirmation email:', error);
+    console.error('Error sending email:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message,
-        details: error.toString()
+        error: error.message 
       }),
       {
         status: 500,
