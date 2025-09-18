@@ -146,7 +146,7 @@ export default function Auth() {
       console.log('Sending custom confirmation email to:', email);
 
       // Llamar a nuestra función edge personalizada
-      const response = await supabase.functions.invoke('send-confirmation-email', {
+      const response = await supabase.functions.invoke('send-email', {
         body: {
           email: email,
           name: name,

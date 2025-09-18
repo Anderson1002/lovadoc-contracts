@@ -1,57 +1,52 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
-const corsHeaders = {
+const headers = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface EmailRequest {
+interface EmailData {
   email: string;
   name: string;
   confirmationUrl: string;
 }
 
-const handler = async (req: Request): Promise<Response> => {
-  console.log('Send confirmation email function started');
+serve(async (req: Request): Promise<Response> => {
+  console.log('Email function started');
 
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers });
   }
 
   try {
-    const { email, name, confirmationUrl }: EmailRequest = await req.json();
-    console.log('Processing email for:', email);
+    const { email, name, confirmationUrl }: EmailData = await req.json();
+    console.log('Sending email to:', email);
 
-    const smtpHost = Deno.env.get('SMTP_HOST') || 'smtp.hostinger.com';
-    const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '465');
-    const smtpUser = Deno.env.get('SMTP_USER') || '';
-    const smtpPassword = Deno.env.get('SMTP_PASSWORD') || '';
+    const host = Deno.env.get('SMTP_HOST') || 'smtp.hostinger.com';
+    const port = parseInt(Deno.env.get('SMTP_PORT') || '465');
+    const user = Deno.env.get('SMTP_USER') || '';
+    const pass = Deno.env.get('SMTP_PASSWORD') || '';
 
-    console.log('SMTP Configuration:', { 
-      host: smtpHost, 
-      port: smtpPort, 
-      user: smtpUser,
-      hasPassword: !!smtpPassword 
-    });
+    console.log('SMTP Settings:', { host, port, user, hasPass: !!pass });
 
-    if (!smtpUser || !smtpPassword) {
-      throw new Error('SMTP credentials not configured');
+    if (!user || !pass) {
+      throw new Error('SMTP credentials missing');
     }
 
     const client = new SMTPClient({
       connection: {
-        hostname: smtpHost,
-        port: smtpPort,
+        hostname: host,
+        port: port,
         tls: true,
         auth: {
-          username: smtpUser,
-          password: smtpPassword,
+          username: user,
+          password: pass,
         },
       },
     });
 
-    const emailTemplate = `
+    const htmlEmail = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -118,46 +113,32 @@ const handler = async (req: Request): Promise<Response> => {
 </html>`;
 
     await client.send({
-      from: `Sistema Maktub <${smtpUser}>`,
+      from: `Sistema Maktub <${user}>`,
       to: email,
       subject: "Confirmación de registro - Sistema Maktub",
-      content: emailTemplate,
-      html: emailTemplate,
+      content: htmlEmail,
+      html: htmlEmail,
     });
 
     await client.close();
-    console.log('Email sent successfully to:', email);
+    console.log('Email sent successfully');
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Correo enviado exitosamente' 
-      }),
+      JSON.stringify({ success: true, message: 'Email enviado' }),
       {
         status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
+        headers: { 'Content-Type': 'application/json', ...headers },
       }
     );
 
   } catch (error: any) {
-    console.error('Error sending email:', error);
+    console.error('Email error:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }),
+      JSON.stringify({ success: false, error: error.message }),
       {
         status: 500,
-        headers: { 
-          'Content-Type': 'application/json', 
-          ...corsHeaders 
-        },
+        headers: { 'Content-Type': 'application/json', ...headers },
       }
     );
   }
-};
-
-serve(handler);
+});
