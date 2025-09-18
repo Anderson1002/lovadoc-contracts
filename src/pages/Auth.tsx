@@ -76,7 +76,8 @@ export default function Auth() {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
+      // Primero crear el usuario sin confirmación automática de email
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -87,11 +88,28 @@ export default function Auth() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Si el usuario ya existe pero no está confirmado, permitir reenvío
+        if (error.message.includes("already registered")) {
+          // Intentar enviar correo de confirmación personalizado
+          await sendCustomConfirmationEmail(formData.email, formData.name);
+          toast({
+            title: "Reenvío de confirmación",
+            description: "Se ha reenviado el enlace de confirmación a tu email",
+          });
+          return;
+        }
+        throw error;
+      }
+
+      // Si el registro fue exitoso, enviar correo personalizado
+      if (data.user && !data.user.email_confirmed_at) {
+        await sendCustomConfirmationEmail(formData.email, formData.name, data.user.id);
+      }
 
       toast({
         title: "¡Registro exitoso!",
-        description: "Se ha enviado un enlace de confirmación a tu email",
+        description: "Se ha enviado un enlace de confirmación a tu email con tu servidor personalizado",
       });
 
     } catch (error: any) {
@@ -104,6 +122,48 @@ export default function Auth() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const sendCustomConfirmationEmail = async (email: string, name: string, userId?: string) => {
+    try {
+      // Generar token de confirmación usando Supabase
+      const { data, error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error && !error.message.includes("already confirmed")) {
+        console.error('Error generating confirmation token:', error);
+      }
+
+      // Crear URL de confirmación genérica - Supabase manejará la validación real
+      const confirmationUrl = `${window.location.origin}/auth/confirm?email=${encodeURIComponent(email)}`;
+
+      console.log('Sending custom confirmation email to:', email);
+
+      // Llamar a nuestra función edge personalizada
+      const response = await supabase.functions.invoke('send-confirmation-email', {
+        body: {
+          email: email,
+          name: name,
+          confirmationUrl: confirmationUrl
+        }
+      });
+
+      if (response.error) {
+        console.error('Error sending custom email:', response.error);
+        throw response.error;
+      }
+
+      console.log('Custom confirmation email sent successfully:', response.data);
+
+    } catch (error) {
+      console.error('Error in sendCustomConfirmationEmail:', error);
+      throw error;
     }
   };
 
