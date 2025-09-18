@@ -44,6 +44,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { UserForm } from "@/components/users/UserForm";
+import { Layout } from "@/components/Layout";
 
 interface User {
   id: string;
@@ -281,7 +282,8 @@ export default function Users() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
+    <Layout>
+      <div className="container mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -551,6 +553,7 @@ export default function Users() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </Layout>
   );
 }
