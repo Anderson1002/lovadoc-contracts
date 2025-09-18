@@ -17,19 +17,27 @@ interface Role {
   display_name: string;
 }
 
+interface Proceso {
+  id: number;
+  nombre_proceso: string;
+}
+
 export function UserForm({ user, onSuccess }: UserFormProps) {
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    role: user?.roles?.name || "employee"
+    role: user?.roles?.name || "employee",
+    proceso_id: user?.proceso_id || ""
   });
   const [roles, setRoles] = useState<Role[]>([]);
+  const [procesos, setProcesos] = useState<Proceso[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
     loadRoles();
+    loadProcesos();
     getCurrentUserRole();
   }, []);
 
@@ -68,6 +76,20 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
     }
   };
 
+  const loadProcesos = async () => {
+    try {
+      const { data: procesosData, error } = await supabase
+        .from('procesos')
+        .select('id, nombre_proceso')
+        .order('nombre_proceso');
+
+      if (error) throw error;
+      setProcesos(procesosData || []);
+    } catch (error) {
+      console.error('Error loading procesos:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -80,13 +102,20 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
 
       if (user) {
         // Update existing user
+        const updateData: any = {
+          name: formData.name,
+          email: formData.email,
+          role_id: roleData.id
+        };
+
+        // Only include proceso_id if a role is supervisor
+        if (formData.role === 'supervisor' && formData.proceso_id) {
+          updateData.proceso_id = parseInt(formData.proceso_id);
+        }
+
         const { error } = await supabase
           .from('profiles')
-          .update({
-            name: formData.name,
-            email: formData.email,
-            role_id: roleData.id
-          })
+          .update(updateData)
           .eq('id', user.id);
 
         if (error) throw error;
@@ -111,7 +140,8 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
           body: JSON.stringify({
             name: formData.name,
             email: formData.email,
-            roleId: roleData.id
+            roleId: roleData.id,
+            procesoId: formData.role === 'supervisor' && formData.proceso_id ? parseInt(formData.proceso_id) : null
           })
         });
 
@@ -198,6 +228,27 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
           </p>
         )}
       </div>
+
+      {formData.role === 'supervisor' && (
+        <div className="space-y-2">
+          <Label htmlFor="proceso">Proceso</Label>
+          <Select 
+            value={formData.proceso_id} 
+            onValueChange={(value) => setFormData({...formData, proceso_id: value})}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar proceso" />
+            </SelectTrigger>
+            <SelectContent>
+              {procesos.map((proceso) => (
+                <SelectItem key={proceso.id} value={proceso.id.toString()}>
+                  {proceso.nombre_proceso}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div className="flex justify-end gap-2">
         <Button 

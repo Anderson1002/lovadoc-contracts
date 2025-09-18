@@ -63,7 +63,7 @@ serve(async (req) => {
       )
     }
 
-    const { name, email, roleId } = await req.json()
+    const { name, email, roleId, procesoId } = await req.json()
 
     if (!name || !email || !roleId) {
       return new Response(
@@ -89,13 +89,19 @@ serve(async (req) => {
       )
     }
 
-    // Update the profile with the correct role
+    // Update the profile with the correct role and proceso if provided
+    const updateData: any = {
+      name,
+      role_id: roleId
+    }
+
+    if (procesoId) {
+      updateData.proceso_id = procesoId
+    }
+
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .update({
-        name,
-        role_id: roleId
-      })
+      .update(updateData)
       .eq('user_id', newUser.user?.id)
 
     if (profileError) {

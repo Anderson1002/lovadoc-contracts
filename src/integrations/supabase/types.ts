@@ -788,6 +788,7 @@ export type Database = {
           name: string
           nit: string | null
           phone: string | null
+          proceso_id: number | null
           role_id: string
           tax_regime: string | null
           updated_at: string
@@ -806,6 +807,7 @@ export type Database = {
           name: string
           nit?: string | null
           phone?: string | null
+          proceso_id?: number | null
           role_id: string
           tax_regime?: string | null
           updated_at?: string
@@ -824,6 +826,7 @@ export type Database = {
           name?: string
           nit?: string | null
           phone?: string | null
+          proceso_id?: number | null
           role_id?: string
           tax_regime?: string | null
           updated_at?: string
@@ -835,6 +838,13 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_proceso_id_fkey"
+            columns: ["proceso_id"]
+            isOneToOne: false
+            referencedRelation: "procesos"
             referencedColumns: ["id"]
           },
           {
