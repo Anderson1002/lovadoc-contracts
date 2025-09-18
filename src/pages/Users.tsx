@@ -441,15 +441,15 @@ export default function Users() {
                               value={user.roles.name} 
                               onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
                             >
-                              <SelectTrigger className="w-fit">
-                                <Badge 
-                                  variant={getRoleBadgeVariant(user.roles.name)}
-                                  className="flex items-center gap-1 border-0 bg-transparent hover:bg-accent cursor-pointer"
-                                >
-                                  <RoleIcon className="h-3 w-3" />
-                                  {user.roles.display_name}
-                                </Badge>
-                              </SelectTrigger>
+                            <SelectTrigger className="w-fit">
+                              <Badge 
+                                variant={getRoleBadgeVariant(user.roles.name)}
+                                className="flex items-center gap-1 hover:bg-accent cursor-pointer"
+                              >
+                                <RoleIcon className="h-3 w-3" />
+                                {user.roles.display_name}
+                              </Badge>
+                            </SelectTrigger>
                               <SelectContent>
                                 {getAvailableRolesForUser().map((role) => (
                                   <SelectItem key={role.id} value={role.name}>
