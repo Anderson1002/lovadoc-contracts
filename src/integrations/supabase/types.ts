@@ -488,6 +488,8 @@ export type Database = {
       contracts: {
         Row: {
           area_responsable: string | null
+          bank_certification_mime: string | null
+          bank_certification_path: string | null
           client_account_number: string | null
           client_address: string | null
           client_bank_name: string | null
@@ -506,15 +508,20 @@ export type Database = {
           estado: Database["public"]["Enums"]["contract_state"] | null
           hourly_rate: number | null
           id: string
+          signed_contract_mime: string | null
+          signed_contract_path: string | null
           start_date: string
           state_code: string | null
           status: Database["public"]["Enums"]["contract_status"]
           supervisor_asignado: string | null
+          supervisor_id: string | null
           total_amount: number
           updated_at: string
         }
         Insert: {
           area_responsable?: string | null
+          bank_certification_mime?: string | null
+          bank_certification_path?: string | null
           client_account_number?: string | null
           client_address?: string | null
           client_bank_name?: string | null
@@ -533,15 +540,20 @@ export type Database = {
           estado?: Database["public"]["Enums"]["contract_state"] | null
           hourly_rate?: number | null
           id?: string
+          signed_contract_mime?: string | null
+          signed_contract_path?: string | null
           start_date: string
           state_code?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           supervisor_asignado?: string | null
+          supervisor_id?: string | null
           total_amount: number
           updated_at?: string
         }
         Update: {
           area_responsable?: string | null
+          bank_certification_mime?: string | null
+          bank_certification_path?: string | null
           client_account_number?: string | null
           client_address?: string | null
           client_bank_name?: string | null
@@ -560,10 +572,13 @@ export type Database = {
           estado?: Database["public"]["Enums"]["contract_state"] | null
           hourly_rate?: number | null
           id?: string
+          signed_contract_mime?: string | null
+          signed_contract_path?: string | null
           start_date?: string
           state_code?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           supervisor_asignado?: string | null
+          supervisor_id?: string | null
           total_amount?: number
           updated_at?: string
         }
@@ -574,6 +589,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "fk_contracts_created_by"
