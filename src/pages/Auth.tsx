@@ -127,10 +127,10 @@ export default function Auth() {
 
   const sendCustomConfirmationEmail = async (email: string, name: string, userId?: string) => {
     try {
-      // Generar token de confirmación usando Supabase
+      // Generar enlace real de confirmación usando Supabase
       const { data, error } = await supabase.auth.resend({
         type: 'signup',
-        email: email,
+        email,
         options: {
           emailRedirectTo: `${window.location.origin}/`
         }
@@ -138,19 +138,25 @@ export default function Auth() {
 
       if (error && !error.message.includes("already confirmed")) {
         console.error('Error generating confirmation token:', error);
+        throw error;
       }
 
-      // Crear URL de confirmación genérica - Supabase manejará la validación real
-      const confirmationUrl = `${window.location.origin}/auth/confirm?email=${encodeURIComponent(email)}`;
+      // Usar el action_link devuelto por Supabase (enlace válido hacia /auth/v1/verify)
+      const actionLink = (data as any)?.properties?.action_link || (data as any)?.action_link || null;
+
+      if (!actionLink) {
+        console.warn('No action_link returned; user might already be confirmed.');
+        return;
+      }
 
       console.log('Sending custom confirmation email to:', email);
 
-      // Llamar a nuestra función edge personalizada
+      // Enviar nuestro correo personalizado con el enlace REAL de confirmación
       const response = await supabase.functions.invoke('send-email', {
         body: {
-          email: email,
-          name: name,
-          confirmationUrl: confirmationUrl
+          email,
+          name,
+          confirmationUrl: actionLink
         }
       });
 
