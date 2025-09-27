@@ -10,7 +10,9 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -64,6 +66,43 @@ export default function Auth() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.email) {
+      toast({
+        title: "Email requerido",
+        description: "Ingresa tu email para recuperar tu contraseña",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResettingPassword(true);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: 'https://contratos.teamdev.com.co/set-password'
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Email enviado",
+        description: "Revisa tu email y sigue las instrucciones para restablecer tu contraseña",
+      });
+
+      setShowForgotPassword(false);
+    } catch (error: any) {
+      toast({
+        title: "Error al enviar email",
+        description: error.message || "No se pudo enviar el email de recuperación",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -142,11 +181,45 @@ export default function Auth() {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isLoading}
+                disabled={isLoading || isResettingPassword}
               >
                 {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
               </Button>
             </form>
+
+            {/* Forgot Password Link */}
+            <div className="mt-4 text-center">
+              <Button
+                type="button"
+                variant="link"
+                className="text-sm text-muted-foreground hover:text-primary p-0 h-auto"
+                onClick={() => setShowForgotPassword(!showForgotPassword)}
+              >
+                ¿Olvidaste tu contraseña?
+              </Button>
+            </div>
+
+            {/* Forgot Password Form */}
+            {showForgotPassword && (
+              <div className="mt-4 p-4 bg-muted/30 rounded-lg border">
+                <form onSubmit={handleForgotPassword} className="space-y-3">
+                  <div className="text-center">
+                    <h3 className="font-medium text-sm mb-2">Recuperar Contraseña</h3>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña
+                    </p>
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isResettingPassword || !formData.email}
+                    variant="outline"
+                  >
+                    {isResettingPassword ? "Enviando..." : "Enviar Email de Recuperación"}
+                  </Button>
+                </form>
+              </div>
+            )}
             
             {/* Access Request Information */}
             <div className="mt-6 p-4 bg-muted/50 rounded-lg border">
