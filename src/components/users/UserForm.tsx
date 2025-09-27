@@ -41,9 +41,9 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
     getCurrentUserRole();
   }, []);
 
-  // Clean proceso_id when role changes from supervisor to another role
+  // Clean proceso_id when role changes to admin or super_admin
   useEffect(() => {
-    if (formData.role !== 'supervisor') {
+    if (!['supervisor', 'employee'].includes(formData.role)) {
       setFormData(prev => ({ ...prev, proceso_id: "" }));
     }
   }, [formData.role]);
@@ -107,9 +107,9 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
         throw new Error('Rol no encontrado');
       }
 
-      // Validar que supervisores tengan proceso asignado
-      if (formData.role === 'supervisor' && !formData.proceso_id) {
-        throw new Error('Los supervisores deben tener un proceso asignado');
+      // Validar que supervisores y empleados tengan proceso asignado
+      if ((formData.role === 'supervisor' || formData.role === 'employee') && !formData.proceso_id) {
+        throw new Error('Los supervisores y empleados deben tener un proceso asignado');
       }
 
       if (user) {
@@ -120,8 +120,8 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
           role_id: roleData.id
         };
 
-        // Include proceso_id for supervisors, set to null for other roles
-        if (formData.role === 'supervisor') {
+        // Include proceso_id for supervisors and employees, set to null for other roles
+        if (['supervisor', 'employee'].includes(formData.role) && formData.proceso_id) {
           updateData.proceso_id = parseInt(formData.proceso_id);
         } else {
           updateData.proceso_id = null;
@@ -155,7 +155,7 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
             name: formData.name,
             email: formData.email,
             roleId: roleData.id,
-            procesoId: formData.role === 'supervisor' ? parseInt(formData.proceso_id) : null
+            procesoId: ['supervisor', 'employee'].includes(formData.role) && formData.proceso_id ? parseInt(formData.proceso_id) : null
           })
         });
 
@@ -243,27 +243,33 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
         )}
       </div>
 
-      {formData.role === 'supervisor' && (
-        <div className="space-y-2">
-          <Label htmlFor="proceso">Proceso (Obligatorio)</Label>
-          <Select 
-            value={formData.proceso_id} 
-            onValueChange={(value) => setFormData({...formData, proceso_id: value})}
-            required
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar proceso" />
-            </SelectTrigger>
-            <SelectContent>
-              {procesos.map((proceso) => (
-                <SelectItem key={proceso.id} value={proceso.id.toString()}>
-                  {proceso.nombre_proceso}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      <div className="space-y-2">
+        <Label htmlFor="proceso">
+          Proceso {['supervisor', 'employee'].includes(formData.role) && '(Obligatorio)'}
+        </Label>
+        <Select 
+          value={formData.proceso_id} 
+          onValueChange={(value) => setFormData({...formData, proceso_id: value})}
+          required={['supervisor', 'employee'].includes(formData.role)}
+          disabled={!['supervisor', 'employee', 'admin', 'super_admin'].includes(formData.role)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Seleccionar proceso" />
+          </SelectTrigger>
+          <SelectContent>
+            {procesos.map((proceso) => (
+              <SelectItem key={proceso.id} value={proceso.id.toString()}>
+                {proceso.nombre_proceso}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {!['supervisor', 'employee', 'admin', 'super_admin'].includes(formData.role) && (
+          <p className="text-sm text-muted-foreground">
+            Este rol no requiere proceso asignado
+          </p>
+        )}
+      </div>
 
       <div className="flex justify-end gap-2">
         <Button 
