@@ -76,7 +76,7 @@ export default function Auth() {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      // Primero crear el usuario sin confirmación automática de email
+      // Intentar crear el usuario
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -89,35 +89,49 @@ export default function Auth() {
       });
 
       if (error) {
-        // Si el usuario ya existe pero no está confirmado, permitir reenvío
-        if (error.message.includes("already registered")) {
-          // Intentar enviar correo de confirmación personalizado
-          await sendCustomConfirmationEmail(formData.email, formData.name);
+        // Si el usuario ya existe
+        if (error.message.includes("already registered") || error.message.includes("already been registered")) {
           toast({
-            title: "Reenvío de confirmación",
-            description: "Se ha reenviado el enlace de confirmación a tu email",
+            title: "Usuario existente",
+            description: "Este email ya está registrado. Si no has confirmado tu cuenta, revisa tu correo.",
+            variant: "destructive",
           });
           return;
         }
         throw error;
       }
 
-      // Si el registro fue exitoso, enviar correo personalizado
-      if (data.user && !data.user.email_confirmed_at) {
-        await sendCustomConfirmationEmail(formData.email, formData.name, data.user.id);
+      // Si el registro fue exitoso y el usuario no está confirmado
+      if (data.user) {
+        if (data.user.email_confirmed_at) {
+          // Usuario ya confirmado (caso raro pero posible)
+          toast({
+            title: "Usuario ya confirmado",
+            description: "Este usuario ya está confirmado. Puedes iniciar sesión.",
+          });
+        } else {
+          // Usuario nuevo no confirmado - enviar correo personalizado
+          try {
+            await sendCustomConfirmationEmail(formData.email, formData.name);
+            toast({
+              title: "¡Registro exitoso!",
+              description: "Se ha enviado un enlace de confirmación a tu email",
+            });
+          } catch (emailError) {
+            console.error('Error sending confirmation email:', emailError);
+            toast({
+              title: "Usuario creado",
+              description: "Usuario registrado correctamente. Revisa tu email para confirmar la cuenta.",
+            });
+          }
+        }
       }
 
-      toast({
-        title: "¡Registro exitoso!",
-        description: "Se ha enviado un enlace de confirmación a tu email con tu servidor personalizado",
-      });
-
     } catch (error: any) {
+      console.error('Registration error:', error);
       toast({
         title: "Error en el registro",
-        description: error.message === "User already registered" 
-          ? "Ya existe un usuario con este email" 
-          : error.message,
+        description: error.message || "Error desconocido al registrar usuario",
         variant: "destructive",
       });
     } finally {
@@ -127,6 +141,8 @@ export default function Auth() {
 
   const sendCustomConfirmationEmail = async (email: string, name: string, userId?: string) => {
     try {
+      console.log('Attempting to send confirmation email to:', email);
+      
       // Generar enlace real de confirmación usando Supabase
       const { data, error } = await supabase.auth.resend({
         type: 'signup',
@@ -136,20 +152,31 @@ export default function Auth() {
         }
       });
 
-      if (error && !error.message.includes("already confirmed")) {
-        console.error('Error generating confirmation token:', error);
+      if (error) {
+        console.error('Error in resend operation:', error);
+        // Si el usuario ya está confirmado, no es realmente un error
+        if (error.message.includes("already confirmed") || error.message.includes("confirmed")) {
+          console.log('User is already confirmed, skipping email send');
+          return;
+        }
         throw error;
       }
 
-      // Usar el action_link devuelto por Supabase (enlace válido hacia /auth/v1/verify)
-      const actionLink = (data as any)?.properties?.action_link || (data as any)?.action_link || null;
+      console.log('Resend response data:', data);
+
+      // Intentar obtener el action_link de diferentes formas
+      const actionLink = (data as any)?.properties?.action_link || 
+                        (data as any)?.action_link || 
+                        (data as any)?.confirmation_url ||
+                        null;
 
       if (!actionLink) {
-        console.warn('No action_link returned; user might already be confirmed.');
-        return;
+        console.warn('No action_link returned; user might already be confirmed or link not generated.');
+        // Intentar con un enlace genérico de confirmación
+        throw new Error('No se pudo generar el enlace de confirmación. El usuario podría ya estar confirmado.');
       }
 
-      console.log('Sending custom confirmation email to:', email);
+      console.log('Got action link, sending custom email to:', email);
 
       // Enviar nuestro correo personalizado con el enlace REAL de confirmación
       const response = await supabase.functions.invoke('send-email', {
@@ -162,7 +189,7 @@ export default function Auth() {
 
       if (response.error) {
         console.error('Error sending custom email:', response.error);
-        throw response.error;
+        throw new Error(`Error enviando correo: ${response.error.message || 'Error desconocido'}`);
       }
 
       console.log('Custom confirmation email sent successfully:', response.data);
