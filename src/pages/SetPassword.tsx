@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,26 +10,64 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function SetPassword() {
   const [isLoading, setIsLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     password: "",
     confirmPassword: ""
   });
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/");
+    const initFromEmailLink = async () => {
+      try {
+        const url = new URL(window.location.href);
+        const search = url.searchParams;
+        const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+
+        const code = search.get("code");
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+          setInitializing(false);
+          return;
+        }
+
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (error) throw error;
+          setInitializing(false);
+          return;
+        }
+
+        const token_hash = hashParams.get("token_hash") || search.get("token_hash");
+        const type = (hashParams.get("type") || search.get("type") || "invite") as
+          | "invite" | "recovery" | "email_change" | "magiclink" | "signup";
+        if (token_hash) {
+          const { error } = await supabase.auth.verifyOtp({ token_hash, type });
+          if (error) throw error;
+        }
+      } catch (error: any) {
+        console.error("Init from email link error:", error);
+        toast({
+          title: "Enlace inválido o expirado",
+          description: "Solicita una nueva invitación desde el área de usuarios.",
+          variant: "destructive",
+        });
+      } finally {
+        setInitializing(false);
       }
     };
-    checkUser();
-  }, [navigate]);
+
+    initFromEmailLink();
+  }, [toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -53,24 +91,11 @@ export default function SetPassword() {
         throw new Error("La contraseña debe tener al menos 6 caracteres");
       }
 
-      // Get token from URL parameters
-      const token_hash = searchParams.get('token_hash');
-      const type = searchParams.get('type');
-
-      if (!token_hash || type !== 'invite') {
-        throw new Error("Link de invitación inválido o expirado");
+      // Ensure we have a session from the invitation link
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Sesión no encontrada. El enlace puede haber expirado. Pide una nueva invitación.');
       }
-
-      // Verify and accept the invitation
-      const { data, error } = await supabase.auth.verifyOtp({
-        token_hash,
-        type: 'invite',
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
-
-      if (error) throw error;
 
       // Update the user's password
       const { error: updateError } = await supabase.auth.updateUser({
@@ -193,10 +218,14 @@ export default function SetPassword() {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isLoading}
+                disabled={isLoading || initializing}
               >
                 {isLoading ? "Configurando..." : "Configurar Contraseña"}
               </Button>
+
+              {initializing && (
+                <p className="text-xs text-center text-muted-foreground">Validando invitación...</p>
+              )}
             </form>
 
             <div className="mt-6 p-4 bg-muted/50 rounded-lg border">
