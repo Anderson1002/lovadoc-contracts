@@ -77,7 +77,7 @@ serve(async (req) => {
       data: {
         name
       },
-      redirectTo: 'https://3921a400-f82a-4e71-8d23-0b303023b2b9.lovableproject.com/set-password'
+      redirectTo: 'https://contratos.teamdev.com.co/set-password'
     })
 
     if (createError) {
