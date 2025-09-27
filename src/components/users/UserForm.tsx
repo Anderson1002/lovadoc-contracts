@@ -41,6 +41,13 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
     getCurrentUserRole();
   }, []);
 
+  // Clean proceso_id when role changes from supervisor to another role
+  useEffect(() => {
+    if (formData.role !== 'supervisor') {
+      setFormData(prev => ({ ...prev, proceso_id: "" }));
+    }
+  }, [formData.role]);
+
   const getCurrentUserRole = async () => {
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -100,6 +107,11 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
         throw new Error('Rol no encontrado');
       }
 
+      // Validar que supervisores tengan proceso asignado
+      if (formData.role === 'supervisor' && !formData.proceso_id) {
+        throw new Error('Los supervisores deben tener un proceso asignado');
+      }
+
       if (user) {
         // Update existing user
         const updateData: any = {
@@ -108,9 +120,11 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
           role_id: roleData.id
         };
 
-        // Only include proceso_id if a role is supervisor
-        if (formData.role === 'supervisor' && formData.proceso_id) {
+        // Include proceso_id for supervisors, set to null for other roles
+        if (formData.role === 'supervisor') {
           updateData.proceso_id = parseInt(formData.proceso_id);
+        } else {
+          updateData.proceso_id = null;
         }
 
         const { error } = await supabase
@@ -141,7 +155,7 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
             name: formData.name,
             email: formData.email,
             roleId: roleData.id,
-            procesoId: formData.role === 'supervisor' && formData.proceso_id ? parseInt(formData.proceso_id) : null
+            procesoId: formData.role === 'supervisor' ? parseInt(formData.proceso_id) : null
           })
         });
 
@@ -231,10 +245,11 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
 
       {formData.role === 'supervisor' && (
         <div className="space-y-2">
-          <Label htmlFor="proceso">Proceso</Label>
+          <Label htmlFor="proceso">Proceso (Obligatorio)</Label>
           <Select 
             value={formData.proceso_id} 
             onValueChange={(value) => setFormData({...formData, proceso_id: value})}
+            required
           >
             <SelectTrigger>
               <SelectValue placeholder="Seleccionar proceso" />
