@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Building2, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,8 +13,7 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
-    password: "",
-    name: ""
+    password: ""
   });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -69,67 +67,6 @@ export default function Auth() {
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      // Crear el usuario con el sistema de correos por defecto de Supabase
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            name: formData.name
-          }
-        }
-      });
-
-      if (error) {
-        // Si el usuario ya existe
-        if (error.message.includes("already registered") || error.message.includes("already been registered")) {
-          toast({
-            title: "Usuario existente",
-            description: "Este email ya está registrado. Si no has confirmado tu cuenta, revisa tu correo.",
-            variant: "destructive",
-          });
-          return;
-        }
-        throw error;
-      }
-
-      // Mostrar mensaje de éxito
-      if (data.user) {
-        if (data.user.email_confirmed_at) {
-          // Usuario ya confirmado
-          toast({
-            title: "Usuario ya confirmado",
-            description: "Este usuario ya está confirmado. Puedes iniciar sesión.",
-          });
-        } else {
-          // Usuario creado exitosamente
-          toast({
-            title: "¡Registro exitoso!",
-            description: "Se ha enviado un enlace de confirmación a tu email. Revisa tu bandeja de entrada.",
-          });
-        }
-      }
-
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      toast({
-        title: "Error en el registro",
-        description: error.message || "Error desconocido al registrar usuario",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-soft to-background flex items-center justify-center p-4">
@@ -145,7 +82,7 @@ export default function Auth() {
           <p className="text-muted-foreground">Gestión Digital de Contratos</p>
         </div>
 
-        {/* Auth Forms */}
+        {/* Auth Form */}
         <Card className="shadow-xl border-0">
           <CardHeader className="text-center">
             <CardTitle>Acceso al Sistema</CardTitle>
@@ -154,148 +91,77 @@ export default function Auth() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Iniciar Sesión</TabsTrigger>
-                <TabsTrigger value="signup">Registrarse</TabsTrigger>
-              </TabsList>
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="signin-email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="signin-email"
+                    name="email"
+                    type="email"
+                    placeholder="tu@hospital.com"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
               
-              <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signin-email"
-                        name="email"
-                        type="email"
-                        placeholder="tu@hospital.com"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">Contraseña</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signin-password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Tu contraseña"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className="pl-10 pr-10"
-                        required
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                          <Eye className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={isLoading}
+              <div className="space-y-2">
+                <Label htmlFor="signin-password">Contraseña</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="signin-password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Tu contraseña"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="pl-10 pr-10"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
                   >
-                    {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
                   </Button>
-                </form>
-              </TabsContent>
-              
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Nombre completo</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-name"
-                        name="name"
-                        type="text"
-                        placeholder="Tu nombre completo"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-email"
-                        name="email"
-                        type="email"
-                        placeholder="tu@hospital.com"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Contraseña</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Mínimo 6 caracteres"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className="pl-10 pr-10"
-                        minLength={6}
-                        required
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                          <Eye className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
+                </div>
+              </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isLoading}
+              >
+                {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
+              </Button>
+            </form>
+            
+            {/* Access Request Information */}
+            <div className="mt-6 p-4 bg-muted/50 rounded-lg border">
+              <div className="text-center space-y-2">
+                <h3 className="font-medium text-sm">¿No tienes acceso?</h3>
+                <p className="text-xs text-muted-foreground">
+                  Para obtener acceso al sistema, contacta a tu administrador o supervisor.
+                  Los usuarios son creados únicamente por el personal autorizado.
+                </p>
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mt-2">
+                  <Building2 className="h-3 w-3" />
+                  Sistema seguro - Acceso controlado
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
