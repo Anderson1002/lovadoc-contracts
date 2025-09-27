@@ -72,13 +72,12 @@ serve(async (req) => {
       )
     }
 
-    // Create the user in auth
-    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      email_confirm: true,
-      user_metadata: {
+    // Send invitation to user - they will set their own password
+    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+      data: {
         name
-      }
+      },
+      redirectTo: `${Deno.env.get('SUPABASE_URL')?.replace('/supabase', '')}/auth`
     })
 
     if (createError) {

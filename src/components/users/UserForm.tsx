@@ -166,8 +166,8 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
         }
 
         toast({
-          title: "Usuario creado",
-          description: "El usuario ha sido creado exitosamente",
+          title: "¡Invitación enviada!",
+          description: "Se ha enviado una invitación por email al usuario para configurar su contraseña",
         });
       }
 
