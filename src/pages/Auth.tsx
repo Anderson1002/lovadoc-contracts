@@ -76,7 +76,7 @@ export default function Auth() {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      // Intentar crear el usuario
+      // Crear el usuario con el sistema de correos por defecto de Supabase
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -101,29 +101,20 @@ export default function Auth() {
         throw error;
       }
 
-      // Si el registro fue exitoso y el usuario no está confirmado
+      // Mostrar mensaje de éxito
       if (data.user) {
         if (data.user.email_confirmed_at) {
-          // Usuario ya confirmado (caso raro pero posible)
+          // Usuario ya confirmado
           toast({
             title: "Usuario ya confirmado",
             description: "Este usuario ya está confirmado. Puedes iniciar sesión.",
           });
         } else {
-          // Usuario nuevo no confirmado - enviar correo personalizado
-          try {
-            await sendCustomConfirmationEmail(formData.email, formData.name);
-            toast({
-              title: "¡Registro exitoso!",
-              description: "Se ha enviado un enlace de confirmación a tu email",
-            });
-          } catch (emailError) {
-            console.error('Error sending confirmation email:', emailError);
-            toast({
-              title: "Usuario creado",
-              description: "Usuario registrado correctamente. Revisa tu email para confirmar la cuenta.",
-            });
-          }
+          // Usuario creado exitosamente
+          toast({
+            title: "¡Registro exitoso!",
+            description: "Se ha enviado un enlace de confirmación a tu email. Revisa tu bandeja de entrada.",
+          });
         }
       }
 
@@ -139,66 +130,6 @@ export default function Auth() {
     }
   };
 
-  const sendCustomConfirmationEmail = async (email: string, name: string, userId?: string) => {
-    try {
-      console.log('Attempting to send confirmation email to:', email);
-      
-      // Generar enlace real de confirmación usando Supabase
-      const { data, error } = await supabase.auth.resend({
-        type: 'signup',
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`
-        }
-      });
-
-      if (error) {
-        console.error('Error in resend operation:', error);
-        // Si el usuario ya está confirmado, no es realmente un error
-        if (error.message.includes("already confirmed") || error.message.includes("confirmed")) {
-          console.log('User is already confirmed, skipping email send');
-          return;
-        }
-        throw error;
-      }
-
-      console.log('Resend response data:', data);
-
-      // Intentar obtener el action_link de diferentes formas
-      const actionLink = (data as any)?.properties?.action_link || 
-                        (data as any)?.action_link || 
-                        (data as any)?.confirmation_url ||
-                        null;
-
-      if (!actionLink) {
-        console.warn('No action_link returned; user might already be confirmed or link not generated.');
-        // Intentar con un enlace genérico de confirmación
-        throw new Error('No se pudo generar el enlace de confirmación. El usuario podría ya estar confirmado.');
-      }
-
-      console.log('Got action link, sending custom email to:', email);
-
-      // Enviar nuestro correo personalizado con el enlace REAL de confirmación
-      const response = await supabase.functions.invoke('send-email', {
-        body: {
-          email,
-          name,
-          confirmationUrl: actionLink
-        }
-      });
-
-      if (response.error) {
-        console.error('Error sending custom email:', response.error);
-        throw new Error(`Error enviando correo: ${response.error.message || 'Error desconocido'}`);
-      }
-
-      console.log('Custom confirmation email sent successfully:', response.data);
-
-    } catch (error) {
-      console.error('Error in sendCustomConfirmationEmail:', error);
-      throw error;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-soft to-background flex items-center justify-center p-4">
