@@ -77,7 +77,7 @@ serve(async (req) => {
       data: {
         name
       },
-      redirectTo: `${Deno.env.get('SUPABASE_URL')?.replace('/supabase', '')}/auth`
+      redirectTo: 'https://3921a400-f82a-4e71-8d23-0b303023b2b9.lovableproject.com/auth'
     })
 
     if (createError) {
