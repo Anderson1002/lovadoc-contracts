@@ -427,30 +427,54 @@ export default function CreateContract() {
                     </div>
 
                     {selectedActiveContract && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-                        <div className="space-y-2">
-                          <Label className="text-muted-foreground">Número de Contrato</Label>
-                          <Input 
-                            value={selectedActiveContract.CONTRATO} 
-                            disabled 
-                            className="bg-muted"
-                          />
+                      <div className="space-y-4 pt-4 border-t">
+                        {/* FILA 1: Número de Contrato, RP, CDP */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-muted-foreground">Número de Contrato</Label>
+                            <Input 
+                              value={selectedActiveContract.CONTRATO} 
+                              disabled 
+                              className="bg-muted"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-muted-foreground">RP</Label>
+                            <Input 
+                              value={selectedActiveContract.RP || 'N/A'} 
+                              disabled 
+                              className="bg-muted"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-muted-foreground">CDP</Label>
+                            <Input 
+                              value={selectedActiveContract.CDP || 'N/A'} 
+                              disabled 
+                              className="bg-muted"
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-muted-foreground">RP</Label>
-                          <Input 
-                            value={selectedActiveContract.RP || 'N/A'} 
-                            disabled 
-                            className="bg-muted"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-muted-foreground">CDP</Label>
-                          <Input 
-                            value={selectedActiveContract.CDP || 'N/A'} 
-                            disabled 
-                            className="bg-muted"
-                          />
+
+                        {/* FILA 2: Objeto del Contrato, Valor Total */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-muted-foreground">Objeto del Contrato</Label>
+                            <Textarea 
+                              value={selectedActiveContract["OBSERVACION RP"] || 'N/A'} 
+                              disabled 
+                              className="bg-muted resize-none"
+                              rows={3}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-muted-foreground">Valor Total del Contrato</Label>
+                            <Input 
+                              value={`$${Number(selectedActiveContract.VALOR_INICIAL || 0).toLocaleString('es-CO')}`}
+                              disabled 
+                              className="bg-muted text-lg font-semibold"
+                            />
+                          </div>
                         </div>
                       </div>
                     )}
