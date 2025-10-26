@@ -352,6 +352,54 @@ export type Database = {
           },
         ]
       }
+      contract: {
+        Row: {
+          CDP: string | null
+          CONTRATO: string | null
+          DESCRIP_TERCERO: string | null
+          "FECHA CDP": string | null
+          "FECHA RP": string | null
+          MODIFIC_CREDITO: string | null
+          MODIFIC_DEBITO: string | null
+          "OBSERVACION RP": string | null
+          RP: number | null
+          "SALDO RP": string | null
+          TERCERO: string | null
+          "VALOR EJECUTADO": string | null
+          VALOR_INICIAL: string | null
+        }
+        Insert: {
+          CDP?: string | null
+          CONTRATO?: string | null
+          DESCRIP_TERCERO?: string | null
+          "FECHA CDP"?: string | null
+          "FECHA RP"?: string | null
+          MODIFIC_CREDITO?: string | null
+          MODIFIC_DEBITO?: string | null
+          "OBSERVACION RP"?: string | null
+          RP?: number | null
+          "SALDO RP"?: string | null
+          TERCERO?: string | null
+          "VALOR EJECUTADO"?: string | null
+          VALOR_INICIAL?: string | null
+        }
+        Update: {
+          CDP?: string | null
+          CONTRATO?: string | null
+          DESCRIP_TERCERO?: string | null
+          "FECHA CDP"?: string | null
+          "FECHA RP"?: string | null
+          MODIFIC_CREDITO?: string | null
+          MODIFIC_DEBITO?: string | null
+          "OBSERVACION RP"?: string | null
+          RP?: number | null
+          "SALDO RP"?: string | null
+          TERCERO?: string | null
+          "VALOR EJECUTADO"?: string | null
+          VALOR_INICIAL?: string | null
+        }
+        Relationships: []
+      }
       contract_payments: {
         Row: {
           amount: number
@@ -907,18 +955,9 @@ export type Database = {
       }
     }
     Functions: {
-      generate_billing_account_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_billing_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_contract_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_billing_account_number: { Args: never; Returns: string }
+      generate_billing_number: { Args: never; Returns: string }
+      generate_contract_number: { Args: never; Returns: string }
       get_billing_account_state: {
         Args: { state_code: string }
         Returns: {
@@ -937,18 +976,12 @@ export type Database = {
           name: string
         }[]
       }
-      get_current_user_proceso_id: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      get_current_user_proceso_id: { Args: never; Returns: number }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["user_role_type"]
       }
-      update_contract_statuses: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      update_contract_statuses: { Args: never; Returns: undefined }
     }
     Enums: {
       contract_state:
