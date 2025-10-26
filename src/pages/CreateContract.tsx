@@ -373,7 +373,7 @@ export default function CreateContract() {
                   <div>
                     <CardTitle>Contrato a Radicar</CardTitle>
                     <CardDescription>
-                      Selecciona un contrato activo para pre-cargar sus datos
+                      Selecciona un contrato existente para pre-cargar toda su información
                     </CardDescription>
                   </div>
                   <Button
@@ -419,7 +419,17 @@ export default function CreateContract() {
                               key={`${contract.CONTRATO}-${index}`} 
                               value={contract.CONTRATO}
                             >
-                              {contract.CONTRATO}
+                              <div className="flex flex-col gap-1 py-1">
+                                <div className="font-semibold">{contract.CONTRATO}</div>
+                                <div className="text-xs text-muted-foreground truncate">
+                                  {contract["OBSERVACION RP"] || "Sin descripción"}
+                                </div>
+                                <div className="flex gap-3 text-xs">
+                                  <span>RP: <strong>{contract.RP || "N/A"}</strong></span>
+                                  <span>CDP: <strong>{contract.CDP || "N/A"}</strong></span>
+                                  <span>Valor: <strong>${Number(contract.VALOR_INICIAL || 0).toLocaleString('es-CO')}</strong></span>
+                                </div>
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -427,30 +437,53 @@ export default function CreateContract() {
                     </div>
 
                     {selectedActiveContract && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-                        <div className="space-y-2">
-                          <Label className="text-muted-foreground">Número de Contrato</Label>
-                          <Input 
-                            value={selectedActiveContract.CONTRATO} 
-                            disabled 
-                            className="bg-muted"
-                          />
+                      <div className="space-y-4 pt-4 border-t">
+                        {/* Información principal - 2 columnas */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-muted-foreground">Objeto del Contrato</Label>
+                            <Textarea 
+                              value={selectedActiveContract["OBSERVACION RP"] || 'N/A'} 
+                              disabled 
+                              className="bg-muted min-h-[80px]"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-muted-foreground">Valor Total del Contrato</Label>
+                            <Input 
+                              value={`$${Number(selectedActiveContract.VALOR_INICIAL || 0).toLocaleString('es-CO')}`}
+                              disabled 
+                              className="bg-muted text-lg font-semibold"
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-muted-foreground">RP</Label>
-                          <Input 
-                            value={selectedActiveContract.RP || 'N/A'} 
-                            disabled 
-                            className="bg-muted"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-muted-foreground">CDP</Label>
-                          <Input 
-                            value={selectedActiveContract.CDP || 'N/A'} 
-                            disabled 
-                            className="bg-muted"
-                          />
+
+                        {/* Referencias - 3 columnas */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-muted-foreground">Número de Contrato</Label>
+                            <Input 
+                              value={selectedActiveContract.CONTRATO} 
+                              disabled 
+                              className="bg-muted"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-muted-foreground">RP</Label>
+                            <Input 
+                              value={selectedActiveContract.RP || 'N/A'} 
+                              disabled 
+                              className="bg-muted"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-muted-foreground">CDP</Label>
+                            <Input 
+                              value={selectedActiveContract.CDP || 'N/A'} 
+                              disabled 
+                              className="bg-muted"
+                            />
+                          </div>
                         </div>
                       </div>
                     )}
