@@ -27,7 +27,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, CalendarIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertCircle, CalendarIcon, RefreshCw, Info } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -181,9 +182,13 @@ export default function CreateContract() {
   const loadActiveContracts = async () => {
     try {
       setLoadingActiveContracts(true);
+      console.log('🔄 Iniciando carga de contratos activos...');
       
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('❌ Usuario no autenticado');
+        return;
+      }
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -192,9 +197,11 @@ export default function CreateContract() {
         .maybeSingle();
 
       if (!profile?.document_number) {
-        console.log('No se encontró document_number en el perfil');
+        console.log('❌ No se encontró document_number en el perfil');
         return;
       }
+
+      console.log('📋 Buscando contratos para document_number:', profile.document_number);
 
       const { data: contracts, error } = await (supabase as any)
         .from('contract')
@@ -202,16 +209,18 @@ export default function CreateContract() {
         .eq('TERCERO', profile.document_number);
 
       if (error) {
-        console.error('Error loading active contracts:', error);
+        console.error('❌ Error loading active contracts:', error);
         return;
       }
 
-      console.log('Contratos activos encontrados:', contracts?.length || 0);
+      console.log('✅ Contratos activos encontrados:', contracts?.length || 0);
+      console.log('📊 Datos de contratos:', contracts);
       setActiveContracts(contracts || []);
     } catch (error) {
-      console.error('Error loading active contracts:', error);
+      console.error('❌ Error loading active contracts:', error);
     } finally {
       setLoadingActiveContracts(false);
+      console.log('✅ Carga de contratos finalizada');
     }
   };
 
@@ -356,62 +365,96 @@ export default function CreateContract() {
             </Alert>
           )}
 
-          {/* Selección de Contrato Activo */}
-          {isProfileComplete && activeContracts.length > 0 && (
-            <Card>
+          {/* Selección de Contrato Activo - Siempre visible si perfil completo */}
+          {isProfileComplete && (
+            <Card className="border-primary/20 shadow-md">
               <CardHeader>
-                <CardTitle>Contratos Activos</CardTitle>
-                <CardDescription>
-                  Selecciona uno de tus contratos activos para pre-cargar sus datos
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Contrato a Radicar</CardTitle>
+                    <CardDescription>
+                      Selecciona un contrato activo para pre-cargar sus datos
+                    </CardDescription>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={loadActiveContracts}
+                    disabled={loadingActiveContracts}
+                  >
+                    <RefreshCw className={cn("h-4 w-4 mr-2", loadingActiveContracts && "animate-spin")} />
+                    Actualizar
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Contrato</Label>
-                  <Select onValueChange={handleSelectActiveContract}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un contrato" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activeContracts.map((contract, index) => (
-                        <SelectItem 
-                          key={`${contract.CONTRATO}-${index}`} 
-                          value={contract.CONTRATO}
-                        >
-                          {contract.CONTRATO}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {selectedActiveContract && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground">Número de Contrato</Label>
-                      <Input 
-                        value={selectedActiveContract.CONTRATO} 
-                        disabled 
-                        className="bg-muted"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground">RP</Label>
-                      <Input 
-                        value={selectedActiveContract.RP || 'N/A'} 
-                        disabled 
-                        className="bg-muted"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground">CDP</Label>
-                      <Input 
-                        value={selectedActiveContract.CDP || 'N/A'} 
-                        disabled 
-                        className="bg-muted"
-                      />
-                    </div>
+                {loadingActiveContracts ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-20 w-full" />
                   </div>
+                ) : activeContracts.length === 0 ? (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      No se encontraron contratos activos asociados a tu número de documento.
+                      <br />
+                      <span className="text-sm text-muted-foreground">
+                        Completa el formulario manualmente a continuación.
+                      </span>
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Contrato</Label>
+                      <Select onValueChange={handleSelectActiveContract}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un contrato" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {activeContracts.map((contract, index) => (
+                            <SelectItem 
+                              key={`${contract.CONTRATO}-${index}`} 
+                              value={contract.CONTRATO}
+                            >
+                              {contract.CONTRATO}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {selectedActiveContract && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">Número de Contrato</Label>
+                          <Input 
+                            value={selectedActiveContract.CONTRATO} 
+                            disabled 
+                            className="bg-muted"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">RP</Label>
+                          <Input 
+                            value={selectedActiveContract.RP || 'N/A'} 
+                            disabled 
+                            className="bg-muted"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">CDP</Label>
+                          <Input 
+                            value={selectedActiveContract.CDP || 'N/A'} 
+                            disabled 
+                            className="bg-muted"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
