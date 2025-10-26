@@ -456,25 +456,25 @@ export default function CreateContract() {
                           </div>
                         </div>
 
-                        {/* FILA 2: Objeto del Contrato, Valor Total */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label className="text-muted-foreground">Objeto del Contrato</Label>
-                            <Textarea 
-                              value={selectedActiveContract["OBSERVACION RP"] || 'N/A'} 
-                              disabled 
-                              className="bg-muted resize-none"
-                              rows={3}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-muted-foreground">Valor Total del Contrato</Label>
-                            <Input 
-                              value={`$${Number(selectedActiveContract.VALOR_INICIAL || 0).toLocaleString('es-CO')}`}
-                              disabled 
-                              className="bg-muted text-lg font-semibold"
-                            />
-                          </div>
+                        {/* FILA 2: Objeto del Contrato (ancho completo) */}
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">Objeto del Contrato</Label>
+                          <Textarea 
+                            value={selectedActiveContract["OBSERVACION RP"] || 'N/A'} 
+                            disabled 
+                            className="bg-muted resize-none"
+                            rows={4}
+                          />
+                        </div>
+
+                        {/* FILA 3: Valor Total del Contrato (ancho completo) */}
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">Valor Total del Contrato</Label>
+                          <Input 
+                            value={`$${Number(selectedActiveContract.VALOR_INICIAL || 0).toLocaleString('es-CO')}`}
+                            disabled 
+                            className="bg-muted text-xl font-bold"
+                          />
                         </div>
                       </div>
                     )}
@@ -556,78 +556,31 @@ export default function CreateContract() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="description">Objeto del Contrato *</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describa el objeto del contrato, servicios a prestar, etc."
-                  rows={4}
-                  {...register("description")}
-                />
-                {errors.description && (
-                  <p className="text-sm text-destructive">
-                    {errors.description.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {selectedContractType === "variable_amount" && (
                 <div className="space-y-2">
-                  <Label htmlFor="totalAmount">
-                    {selectedContractType === "variable_amount" 
-                      ? "Valor Estimado Total *" 
-                      : "Valor Total del Contrato *"}
-                  </Label>
+                  <Label htmlFor="hourlyRate">Tarifa por Hora</Label>
                   <Input
-                    id="totalAmount"
+                    id="hourlyRate"
                     type="text"
-                    placeholder="$0"
-                    {...register("totalAmount")}
+                    placeholder="$0.00"
+                    {...register("hourlyRate")}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^\d]/g, '');
-                      const formatted = value ? `$${parseInt(value).toLocaleString('es-CO')}` : '';
-                      e.target.value = formatted;
-                      setValue("totalAmount", value);
+                      const value = e.target.value.replace(/[^\d.]/g, '');
+                      const parts = value.split('.');
+                      const formatted = parts[0] ? `$${parseInt(parts[0]).toLocaleString('es-CO')}` : '$0';
+                      const finalFormatted = parts[1] !== undefined ? `${formatted}.${parts[1].slice(0, 2)}` : formatted + '.00';
+                      e.target.value = finalFormatted;
+                      setValue("hourlyRate", value);
                     }}
                     onBlur={(e) => {
-                      const value = e.target.value.replace(/[^\d]/g, '');
-                      const formatted = value ? `$${parseInt(value).toLocaleString('es-CO')}` : '';
+                      const value = e.target.value.replace(/[^\d.]/g, '');
+                      const number = parseFloat(value) || 0;
+                      const formatted = `$${number.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                       e.target.value = formatted;
                     }}
                   />
-                  {errors.totalAmount && (
-                    <p className="text-sm text-destructive">
-                      {errors.totalAmount.message}
-                    </p>
-                  )}
                 </div>
-
-                {selectedContractType === "variable_amount" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="hourlyRate">Tarifa por Hora</Label>
-                    <Input
-                      id="hourlyRate"
-                      type="text"
-                      placeholder="$0.00"
-                      {...register("hourlyRate")}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^\d.]/g, '');
-                        const parts = value.split('.');
-                        const formatted = parts[0] ? `$${parseInt(parts[0]).toLocaleString('es-CO')}` : '$0';
-                        const finalFormatted = parts[1] !== undefined ? `${formatted}.${parts[1].slice(0, 2)}` : formatted + '.00';
-                        e.target.value = finalFormatted;
-                        setValue("hourlyRate", value);
-                      }}
-                      onBlur={(e) => {
-                        const value = e.target.value.replace(/[^\d.]/g, '');
-                        const number = parseFloat(value) || 0;
-                        const formatted = `$${number.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                        e.target.value = formatted;
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
