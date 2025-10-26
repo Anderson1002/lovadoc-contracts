@@ -26,7 +26,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
+import { useProfileValidation } from "@/hooks/useProfileValidation";
 
 const contractFormSchema = z.object({
   contractType: z.enum(["fixed_amount", "variable_amount", "contractor"]),
@@ -90,6 +92,10 @@ export default function CreateContract() {
   const [supervisors, setSupervisors] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [userRole, setUserRole] = useState<string>("");
+  const [activeContracts, setActiveContracts] = useState<any[]>([]);
+  const [selectedActiveContract, setSelectedActiveContract] = useState<any>(null);
+  const [loadingActiveContracts, setLoadingActiveContracts] = useState(false);
+  const { isProfileComplete, missingFields, loading: profileLoading } = useProfileValidation();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -97,6 +103,7 @@ export default function CreateContract() {
   useEffect(() => {
     loadSupervisors();
     loadUserProfile();
+    loadActiveContracts();
   }, []);
 
   const loadSupervisors = async () => {
@@ -169,6 +176,58 @@ export default function CreateContract() {
     } catch (error) {
       console.error('Error loading user profile:', error);
     }
+  };
+
+  const loadActiveContracts = async () => {
+    try {
+      setLoadingActiveContracts(true);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('document_number')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile?.document_number) {
+        console.log('No se encontró document_number en el perfil');
+        return;
+      }
+
+      const { data: contracts, error } = await (supabase as any)
+        .from('contract')
+        .select('*')
+        .eq('TERCERO', profile.document_number);
+
+      if (error) {
+        console.error('Error loading active contracts:', error);
+        return;
+      }
+
+      console.log('Contratos activos encontrados:', contracts?.length || 0);
+      setActiveContracts(contracts || []);
+    } catch (error) {
+      console.error('Error loading active contracts:', error);
+    } finally {
+      setLoadingActiveContracts(false);
+    }
+  };
+
+  const handleSelectActiveContract = (contractNumber: string) => {
+    const contract = activeContracts.find(c => c.CONTRATO === contractNumber);
+    if (!contract) return;
+
+    setValue("totalAmount", contract.VALOR_INICIAL || '');
+    setValue("description", contract["OBSERVACION RP"] || '');
+    
+    setSelectedActiveContract(contract);
+
+    toast({
+      title: "Contrato seleccionado",
+      description: `Datos pre-cargados del contrato ${contractNumber}`,
+    });
   };
 
   const {
@@ -273,6 +332,91 @@ export default function CreateContract() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          {/* Validación de Perfil Incompleto */}
+          {!profileLoading && !isProfileComplete && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Perfil Incompleto</AlertTitle>
+              <AlertDescription>
+                <p className="mb-2">
+                  Debes completar tu perfil antes de crear contratos.
+                </p>
+                <p className="text-sm mb-3">
+                  <strong>Campos faltantes:</strong> {missingFields.join(", ")}
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate("/profile")}
+                  type="button"
+                >
+                  Ir a Mi Perfil
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Selección de Contrato Activo */}
+          {isProfileComplete && activeContracts.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Contratos Activos</CardTitle>
+                <CardDescription>
+                  Selecciona uno de tus contratos activos para pre-cargar sus datos
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Contrato</Label>
+                  <Select onValueChange={handleSelectActiveContract}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un contrato" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeContracts.map((contract, index) => (
+                        <SelectItem 
+                          key={`${contract.CONTRATO}-${index}`} 
+                          value={contract.CONTRATO}
+                        >
+                          {contract.CONTRATO}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedActiveContract && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground">Número de Contrato</Label>
+                      <Input 
+                        value={selectedActiveContract.CONTRATO} 
+                        disabled 
+                        className="bg-muted"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground">RP</Label>
+                      <Input 
+                        value={selectedActiveContract.RP || 'N/A'} 
+                        disabled 
+                        className="bg-muted"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground">CDP</Label>
+                      <Input 
+                        value={selectedActiveContract.CDP || 'N/A'} 
+                        disabled 
+                        className="bg-muted"
+                      />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Tipo de Contrato */}
           <Card>
             <CardHeader>
@@ -613,7 +757,7 @@ export default function CreateContract() {
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading || !isProfileComplete}>
               {isLoading ? "Creando..." : "Crear Contrato"}
             </Button>
           </div>
