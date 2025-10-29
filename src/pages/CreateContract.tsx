@@ -224,8 +224,8 @@ export default function CreateContract() {
     }
   };
 
-  const handleSelectActiveContract = (contractNumber: string) => {
-    const contract = activeContracts.find(c => c.CONTRATO === contractNumber);
+  const handleSelectActiveContract = (selectedIndex: string) => {
+    const contract = activeContracts[parseInt(selectedIndex)];
     if (!contract) return;
 
     setValue("totalAmount", contract.VALOR_INICIAL || '');
@@ -235,7 +235,7 @@ export default function CreateContract() {
 
     toast({
       title: "Contrato seleccionado",
-      description: `Datos pre-cargados del contrato ${contractNumber}`,
+      description: `Datos pre-cargados del contrato ${contract.CONTRATO}`,
     });
   };
 
@@ -417,9 +417,11 @@ export default function CreateContract() {
                           {activeContracts.map((contract, index) => (
                             <SelectItem 
                               key={`${contract.CONTRATO}-${index}`} 
-                              value={contract.CONTRATO}
+                              value={index.toString()}
                             >
                               {contract.CONTRATO}
+                              {contract.RP && ` | RP: ${contract.RP}`}
+                              {contract.CDP && ` | CDP: ${contract.CDP}`}
                             </SelectItem>
                           ))}
                         </SelectContent>
