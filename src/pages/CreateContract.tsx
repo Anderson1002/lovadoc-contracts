@@ -54,24 +54,13 @@ const contractFormSchema = z.object({
     required_error: "La fecha de inicio es requerida",
   }),
   endDate: z.date().optional(),
-  area_responsable: z.string().min(1, "El área responsable es requerida"),
-  supervisor_asignado: z.string().min(1, "El supervisor asignado es requerido"),
+  area_responsable: z.string().optional(),
+  supervisor_asignado: z.string().optional(),
   bankCertification: z.any().optional(),
   signedContract: z.any().optional(),
 });
 
 type ContractFormData = z.infer<typeof contractFormSchema>;
-
-const areaOptions = [
-  { value: "cirugia_salas_partos", label: "Cirugía y Salas de Partos" },
-  { value: "servicios_conexos_salud", label: "Servicios Conexos a la Salud" },
-  { value: "talento_humano", label: "Talento Humano" },
-  { value: "administracion", label: "Administración" },
-  { value: "sistemas_informaticos", label: "Sistemas Informáticos" },
-  { value: "mantenimiento", label: "Mantenimiento" },
-  { value: "seguridad", label: "Seguridad" },
-  { value: "servicios_generales", label: "Servicios Generales" },
-];
 
 const bankOptions = [
   { value: "bancolombia", label: "Bancolombia" },
@@ -90,7 +79,6 @@ const bankOptions = [
 
 export default function CreateContract() {
   const [isLoading, setIsLoading] = useState(false);
-  const [supervisors, setSupervisors] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [userRole, setUserRole] = useState<string>("");
   const [activeContracts, setActiveContracts] = useState<any[]>([]);
@@ -100,50 +88,11 @@ export default function CreateContract() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Load supervisors and user profile for the dropdown
+  // Load user profile and active contracts
   useEffect(() => {
-    loadSupervisors();
     loadUserProfile();
     loadActiveContracts();
   }, []);
-
-  const loadSupervisors = async () => {
-    try {
-      console.log('Loading supervisors...');
-      
-      // Primero obtenemos el ID del rol de supervisor
-      const { data: roleData, error: roleError } = await supabase
-        .from('roles')
-        .select('id')
-        .eq('name', 'supervisor')
-        .single();
-
-      if (roleError) {
-        console.error('Error loading supervisor role:', roleError);
-        return;
-      }
-
-      console.log('Supervisor role ID:', roleData.id);
-
-      // Luego obtenemos los perfiles con ese rol
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name, email')
-        .eq('role_id', roleData.id);
-
-      if (error) {
-        console.error('Error loading supervisors:', error);
-        console.error('Error details:', error.message, error.details, error.hint);
-        return;
-      }
-      
-      console.log('Supervisors loaded:', data);
-      console.log('Number of supervisors found:', data?.length || 0);
-      setSupervisors(data || []);
-    } catch (error) {
-      console.error('Error loading supervisors:', error);
-    }
-  };
 
   const loadUserProfile = async () => {
     try {
@@ -285,8 +234,8 @@ export default function CreateContract() {
         hourly_rate: data.hourlyRate ? parseFloat(data.hourlyRate) : null,
         start_date: data.startDate.toISOString().split('T')[0],
         end_date: data.endDate ? data.endDate.toISOString().split('T')[0] : null,
-        area_responsable: data.area_responsable,
-        supervisor_asignado: data.supervisor_asignado,
+        area_responsable: data.area_responsable || null,
+        supervisor_asignado: data.supervisor_asignado || null,
         status: 'draft' as const, // Estado inicial: Registrado
         created_by: profile.id
       };
@@ -684,75 +633,8 @@ export default function CreateContract() {
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
 
-          {/* Campos Adicionales */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuración Adicional</CardTitle>
-              <CardDescription>
-                Área responsable y supervisor asignado
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-
-              {/* Nuevos campos obligatorios */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="area_responsable">
-                    Área o Proceso Institucional Responsable del Contrato *
-                  </Label>
-                  <Select
-                    value={watch("area_responsable")}
-                    onValueChange={(value) => setValue("area_responsable", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar área responsable" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border shadow-lg">
-                      {areaOptions.map((area) => (
-                        <SelectItem key={area.value} value={area.value}>
-                          {area.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.area_responsable && (
-                    <p className="text-sm text-destructive">
-                      {errors.area_responsable.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="supervisor_asignado">
-                    Supervisor Responsable *
-                  </Label>
-                  <Select
-                    value={watch("supervisor_asignado")}
-                    onValueChange={(value) => setValue("supervisor_asignado", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar supervisor" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border shadow-lg z-50">
-                      {supervisors.map((supervisor) => (
-                        <SelectItem key={supervisor.id} value={supervisor.name}>
-                          Supervisor ({supervisor.name})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.supervisor_asignado && (
-                    <p className="text-sm text-destructive">
-                      {errors.supervisor_asignado.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-              
-              {/* Campo para contrato firmado - aplicable a todos los tipos */}
+              {/* Campo para contrato firmado */}
               <div className="space-y-2 mt-6">
                 <Label htmlFor="signedContract">Contrato Firmado</Label>
                 <Input
