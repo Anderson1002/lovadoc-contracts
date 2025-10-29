@@ -32,6 +32,7 @@ import { formatCurrency } from "@/lib/utils";
 
 interface Contract {
   id: string;
+  oid: number;
   contract_number: string;
   client_name: string;
   contract_type: string;
@@ -116,6 +117,7 @@ export function ContractTable({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>OID</TableHead>
               <TableHead>Número</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Tipo</TableHead>
@@ -142,7 +144,7 @@ export function ContractTable({
             {filteredContracts.length === 0 ? (
               <TableRow>
                 <TableCell 
-                  colSpan={9} 
+                  colSpan={10} 
                   className="text-center py-8 text-muted-foreground"
                 >
                   No se encontraron contratos
@@ -151,7 +153,10 @@ export function ContractTable({
             ) : (
               filteredContracts.map((contract) => (
                 <TableRow key={contract.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">
+                  <TableCell className="font-bold text-primary">
+                    #{contract.oid}
+                  </TableCell>
+                  <TableCell className="font-medium font-mono text-xs">
                     {contract.contract_number}
                   </TableCell>
                   <TableCell>{contract.client_name}</TableCell>

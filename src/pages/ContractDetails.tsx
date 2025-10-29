@@ -109,8 +109,13 @@ export default function ContractDetails() {
               Volver
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">Detalle del Contrato</h1>
-              <p className="text-muted-foreground">{contract.contract_number}</p>
+              <h1 className="text-3xl font-bold">Contrato #{contract.oid}</h1>
+              <p className="text-muted-foreground font-mono text-sm">{contract.contract_number}</p>
+              {contract.contract_number_original && (
+                <p className="text-xs text-muted-foreground">
+                  Original: {contract.contract_number_original}
+                </p>
+              )}
             </div>
           </div>
           <Button 
@@ -134,9 +139,35 @@ export default function ContractDetails() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Identificador (OID)
+                </label>
+                <p className="text-2xl font-bold text-primary">#{contract.oid}</p>
+              </div>
+              <div>
                 <label className="text-sm font-medium text-muted-foreground">Número de Contrato</label>
                 <p className="text-lg font-mono">{contract.contract_number}</p>
               </div>
+              {contract.contract_number_original && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Número Original (Pre-cargado)
+                  </label>
+                  <p className="text-lg font-mono">{contract.contract_number_original}</p>
+                </div>
+              )}
+              {contract.rp && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">RP</label>
+                  <p className="text-lg">{contract.rp}</p>
+                </div>
+              )}
+              {contract.cdp && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">CDP</label>
+                  <p className="text-lg">{contract.cdp}</p>
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Tipo de Contrato</label>
                 <div className="mt-1">

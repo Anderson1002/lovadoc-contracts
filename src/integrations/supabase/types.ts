@@ -352,6 +352,54 @@ export type Database = {
           },
         ]
       }
+      contract: {
+        Row: {
+          CDP: string | null
+          CONTRATO: string | null
+          DESCRIP_TERCERO: string | null
+          "FECHA CDP": string | null
+          "FECHA RP": string | null
+          MODIFIC_CREDITO: string | null
+          MODIFIC_DEBITO: string | null
+          "OBSERVACION RP": string | null
+          RP: number | null
+          "SALDO RP": string | null
+          TERCERO: string | null
+          "VALOR EJECUTADO": string | null
+          VALOR_INICIAL: string | null
+        }
+        Insert: {
+          CDP?: string | null
+          CONTRATO?: string | null
+          DESCRIP_TERCERO?: string | null
+          "FECHA CDP"?: string | null
+          "FECHA RP"?: string | null
+          MODIFIC_CREDITO?: string | null
+          MODIFIC_DEBITO?: string | null
+          "OBSERVACION RP"?: string | null
+          RP?: number | null
+          "SALDO RP"?: string | null
+          TERCERO?: string | null
+          "VALOR EJECUTADO"?: string | null
+          VALOR_INICIAL?: string | null
+        }
+        Update: {
+          CDP?: string | null
+          CONTRATO?: string | null
+          DESCRIP_TERCERO?: string | null
+          "FECHA CDP"?: string | null
+          "FECHA RP"?: string | null
+          MODIFIC_CREDITO?: string | null
+          MODIFIC_DEBITO?: string | null
+          "OBSERVACION RP"?: string | null
+          RP?: number | null
+          "SALDO RP"?: string | null
+          TERCERO?: string | null
+          "VALOR EJECUTADO"?: string | null
+          VALOR_INICIAL?: string | null
+        }
+        Relationships: []
+      }
       contract_payments: {
         Row: {
           amount: number
@@ -490,6 +538,7 @@ export type Database = {
           area_responsable: string | null
           bank_certification_mime: string | null
           bank_certification_path: string | null
+          cdp: string | null
           client_account_number: string | null
           client_address: string | null
           client_bank_name: string | null
@@ -500,14 +549,19 @@ export type Database = {
           comentarios_devolucion: string | null
           consecutivo_numero: number | null
           contract_number: string
+          contract_number_original: string | null
           contract_type: Database["public"]["Enums"]["contract_type"]
           created_at: string
           created_by: string
           description: string | null
           end_date: string | null
           estado: Database["public"]["Enums"]["contract_state"] | null
+          fecha_cdp: string | null
+          fecha_rp: string | null
           hourly_rate: number | null
           id: string
+          oid: number
+          rp: string | null
           signed_contract_mime: string | null
           signed_contract_path: string | null
           start_date: string
@@ -522,6 +576,7 @@ export type Database = {
           area_responsable?: string | null
           bank_certification_mime?: string | null
           bank_certification_path?: string | null
+          cdp?: string | null
           client_account_number?: string | null
           client_address?: string | null
           client_bank_name?: string | null
@@ -532,14 +587,19 @@ export type Database = {
           comentarios_devolucion?: string | null
           consecutivo_numero?: number | null
           contract_number: string
+          contract_number_original?: string | null
           contract_type: Database["public"]["Enums"]["contract_type"]
           created_at?: string
           created_by: string
           description?: string | null
           end_date?: string | null
           estado?: Database["public"]["Enums"]["contract_state"] | null
+          fecha_cdp?: string | null
+          fecha_rp?: string | null
           hourly_rate?: number | null
           id?: string
+          oid?: number
+          rp?: string | null
           signed_contract_mime?: string | null
           signed_contract_path?: string | null
           start_date: string
@@ -554,6 +614,7 @@ export type Database = {
           area_responsable?: string | null
           bank_certification_mime?: string | null
           bank_certification_path?: string | null
+          cdp?: string | null
           client_account_number?: string | null
           client_address?: string | null
           client_bank_name?: string | null
@@ -564,14 +625,19 @@ export type Database = {
           comentarios_devolucion?: string | null
           consecutivo_numero?: number | null
           contract_number?: string
+          contract_number_original?: string | null
           contract_type?: Database["public"]["Enums"]["contract_type"]
           created_at?: string
           created_by?: string
           description?: string | null
           end_date?: string | null
           estado?: Database["public"]["Enums"]["contract_state"] | null
+          fecha_cdp?: string | null
+          fecha_rp?: string | null
           hourly_rate?: number | null
           id?: string
+          oid?: number
+          rp?: string | null
           signed_contract_mime?: string | null
           signed_contract_path?: string | null
           start_date?: string
@@ -907,18 +973,9 @@ export type Database = {
       }
     }
     Functions: {
-      generate_billing_account_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_billing_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_contract_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_billing_account_number: { Args: never; Returns: string }
+      generate_billing_number: { Args: never; Returns: string }
+      generate_contract_number: { Args: never; Returns: string }
       get_billing_account_state: {
         Args: { state_code: string }
         Returns: {
@@ -937,18 +994,12 @@ export type Database = {
           name: string
         }[]
       }
-      get_current_user_proceso_id: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      get_current_user_proceso_id: { Args: never; Returns: number }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["user_role_type"]
       }
-      update_contract_statuses: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      update_contract_statuses: { Args: never; Returns: undefined }
     }
     Enums: {
       contract_state:

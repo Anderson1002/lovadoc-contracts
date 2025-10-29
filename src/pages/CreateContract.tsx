@@ -58,6 +58,13 @@ const contractFormSchema = z.object({
   supervisor_asignado: z.string().optional(),
   bankCertification: z.any().optional(),
   signedContract: z.any().optional(),
+  
+  // NUEVOS CAMPOS
+  contractNumberOriginal: z.string().optional(),
+  rp: z.string().optional(),
+  cdp: z.string().optional(),
+  fecha_rp: z.date().optional(),
+  fecha_cdp: z.date().optional(),
 });
 
 type ContractFormData = z.infer<typeof contractFormSchema>;
@@ -177,8 +184,35 @@ export default function CreateContract() {
     const contract = activeContracts[parseInt(selectedIndex)];
     if (!contract) return;
 
+    // Pre-cargar campos de texto/números
+    setValue("contractNumberOriginal", contract.CONTRATO || '');
+    setValue("rp", contract.RP?.toString() || '');
+    setValue("cdp", contract.CDP || '');
     setValue("totalAmount", contract.VALOR_INICIAL || '');
     setValue("description", contract["OBSERVACION RP"] || '');
+    
+    // Pre-cargar fechas si existen y son válidas
+    if (contract["FECHA RP"]) {
+      try {
+        const fechaRP = new Date(contract["FECHA RP"]);
+        if (!isNaN(fechaRP.getTime())) {
+          setValue("fecha_rp", fechaRP);
+        }
+      } catch (e) {
+        console.warn("Fecha RP inválida:", contract["FECHA RP"]);
+      }
+    }
+    
+    if (contract["FECHA CDP"]) {
+      try {
+        const fechaCDP = new Date(contract["FECHA CDP"]);
+        if (!isNaN(fechaCDP.getTime())) {
+          setValue("fecha_cdp", fechaCDP);
+        }
+      } catch (e) {
+        console.warn("Fecha CDP inválida:", contract["FECHA CDP"]);
+      }
+    }
     
     setSelectedActiveContract(contract);
 
@@ -219,6 +253,33 @@ export default function CreateContract() {
 
       if (!profile) throw new Error("Perfil de usuario no encontrado");
 
+      // SUBIR PDF DEL CONTRATO FIRMADO (si existe)
+      let signedContractPath = null;
+      let signedContractMime = null;
+
+      if (data.signedContract && data.signedContract.length > 0) {
+        const file = data.signedContract[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${profile.id}-${Date.now()}.${fileExt}`;
+        const filePath = `${profile.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('contracts')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          throw new Error(`Error al subir el contrato: ${uploadError.message}`);
+        }
+
+        signedContractPath = filePath;
+        signedContractMime = file.type;
+
+        toast({
+          title: "PDF subido exitosamente",
+          description: "El contrato firmado se guardó correctamente.",
+        });
+      }
+
       const contractData = {
         contract_number: '', // Se generará automáticamente por trigger
         contract_type: data.contractType,
@@ -236,8 +297,19 @@ export default function CreateContract() {
         end_date: data.endDate ? data.endDate.toISOString().split('T')[0] : null,
         area_responsable: data.area_responsable || null,
         supervisor_asignado: data.supervisor_asignado || null,
-        status: 'draft' as const, // Estado inicial: Registrado
-        created_by: profile.id
+        status: 'draft' as const,
+        created_by: profile.id,
+        
+        // NUEVOS CAMPOS PRE-CARGADOS
+        contract_number_original: data.contractNumberOriginal || null,
+        rp: data.rp || null,
+        cdp: data.cdp || null,
+        fecha_rp: data.fecha_rp ? data.fecha_rp.toISOString().split('T')[0] : null,
+        fecha_cdp: data.fecha_cdp ? data.fecha_cdp.toISOString().split('T')[0] : null,
+        
+        // PDF DEL CONTRATO FIRMADO
+        signed_contract_path: signedContractPath,
+        signed_contract_mime: signedContractMime,
       };
 
       const { data: contract, error } = await supabase
@@ -256,6 +328,7 @@ export default function CreateContract() {
         action: 'contract_created',
         details: {
           contract_number: contract.contract_number,
+          oid: contract.oid,
           client_name: data.clientName,
           total_amount: parseFloat(data.totalAmount)
         }
@@ -263,7 +336,7 @@ export default function CreateContract() {
 
       toast({
         title: "Contrato creado exitosamente",
-        description: `El contrato ${contract.contract_number} ha sido registrado.`,
+        description: `Contrato #${contract.oid} - ${contract.contract_number} registrado.`,
       });
 
       navigate(`/contracts/${contract.id}`);
