@@ -27,7 +27,18 @@ export default function ContractDetails() {
     try {
       const { data, error } = await supabase
         .from('contracts')
-        .select('*')
+        .select(`
+          *,
+          client:profiles!client_profile_id(
+            name,
+            email,
+            phone,
+            address,
+            document_number,
+            bank_name,
+            bank_account
+          )
+        `)
         .eq('id', contractId)
         .maybeSingle();
 
@@ -200,23 +211,45 @@ export default function ContractDetails() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Nombre del Cliente</label>
-                <p className="text-lg">{contract.client_name}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Email</label>
-                <p>{contract.client_email}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Teléfono</label>
-                <p>{contract.client_phone}</p>
-              </div>
-              {contract.client_address && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Dirección</label>
-                  <p>{contract.client_address}</p>
-                </div>
+              {contract.client ? (
+                <>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Nombre del Cliente</label>
+                    <p className="text-lg">{contract.client.name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Documento</label>
+                    <p className="font-mono">{contract.client.document_number}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Email</label>
+                    <p>{contract.client.email}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Teléfono</label>
+                    <p>{contract.client.phone || 'No especificado'}</p>
+                  </div>
+                  {contract.client.address && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Dirección</label>
+                      <p>{contract.client.address}</p>
+                    </div>
+                  )}
+                  {contract.client.bank_name && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Banco</label>
+                      <p>{contract.client.bank_name}</p>
+                    </div>
+                  )}
+                  {contract.client.bank_account && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Cuenta Bancaria</label>
+                      <p className="font-mono">{contract.client.bank_account}</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No hay información del cliente disponible</p>
               )}
             </CardContent>
           </Card>

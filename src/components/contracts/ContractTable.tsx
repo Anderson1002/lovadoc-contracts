@@ -34,7 +34,11 @@ interface Contract {
   id: string;
   oid: number;
   contract_number: string;
-  client_name: string;
+  client?: {
+    name: string;
+    email: string;
+    document_number: string;
+  };
   contract_type: string;
   status: string;
   estado?: string;
@@ -65,7 +69,7 @@ export function ContractTable({
 
   const filteredContracts = contracts.filter(contract =>
     contract.contract_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contract.client_name.toLowerCase().includes(searchTerm.toLowerCase())
+    (contract.client?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const canEdit = ["super_admin", "admin", "supervisor"].includes(userRole);
@@ -159,7 +163,7 @@ export function ContractTable({
                   <TableCell className="font-medium font-mono text-xs">
                     {contract.contract_number}
                   </TableCell>
-                  <TableCell>{contract.client_name}</TableCell>
+                  <TableCell>{contract.client?.name || 'Sin cliente'}</TableCell>
                   <TableCell>
                     <Badge variant="outline">
                       {getContractTypeLabel(contract.contract_type)}

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Save } from "lucide-react";
 import { Layout } from "@/components/Layout";
+import { ClientSelector } from "@/components/contracts/ClientSelector";
 
 export default function EditContract() {
   const { id } = useParams();
@@ -19,10 +20,7 @@ export default function EditContract() {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     contract_number: '',
-    client_name: '',
-    client_email: '',
-    client_phone: '',
-    client_address: '',
+    client_profile_id: '',
     contract_type: '',
     status: '',
     total_amount: '',
@@ -32,6 +30,7 @@ export default function EditContract() {
     area_responsable: '',
     supervisor_asignado: ''
   });
+  const [clientData, setClientData] = useState<any>(null);
   const [calculatedPeriod, setCalculatedPeriod] = useState({ months: 0, days: 0 });
 
   useEffect(() => {
@@ -44,7 +43,18 @@ export default function EditContract() {
     try {
       const { data, error } = await supabase
         .from('contracts')
-        .select('*')
+        .select(`
+          *,
+          client:profiles!client_profile_id(
+            name,
+            email,
+            phone,
+            address,
+            document_number,
+            bank_name,
+            bank_account
+          )
+        `)
         .eq('id', contractId)
         .maybeSingle();
 
@@ -62,10 +72,7 @@ export default function EditContract() {
 
       setFormData({
         contract_number: data.contract_number || '',
-        client_name: data.client_name || '',
-        client_email: data.client_email || '',
-        client_phone: data.client_phone || '',
-        client_address: data.client_address || '',
+        client_profile_id: (data as any).client_profile_id || '',
         contract_type: data.contract_type || '',
         status: data.status || '',
         total_amount: data.total_amount?.toString() || '',
@@ -75,6 +82,8 @@ export default function EditContract() {
         area_responsable: (data as any).area_responsable || '',
         supervisor_asignado: (data as any).supervisor_asignado || ''
       });
+      
+      setClientData(data.client);
     } catch (error: any) {
       console.error('Error loading contract:', error);
       toast({
@@ -144,10 +153,7 @@ export default function EditContract() {
         .from('contracts')
         .update({
           contract_number: formData.contract_number,
-          client_name: formData.client_name,
-          client_email: formData.client_email,
-          client_phone: formData.client_phone,
-          client_address: formData.client_address || null,
+          client_profile_id: formData.client_profile_id,
           contract_type: formData.contract_type as any,
           status: formData.status as any,
           total_amount: parseFloat(formData.total_amount),
@@ -277,42 +283,10 @@ export default function EditContract() {
                 <CardTitle>Información del Cliente</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="client_name">Nombre del Cliente</Label>
-                  <Input
-                    id="client_name"
-                    value={formData.client_name}
-                    onChange={(e) => handleChange('client_name', e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="client_email">Email</Label>
-                  <Input
-                    id="client_email"
-                    type="email"
-                    value={formData.client_email}
-                    onChange={(e) => handleChange('client_email', e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="client_phone">Teléfono</Label>
-                  <Input
-                    id="client_phone"
-                    value={formData.client_phone}
-                    onChange={(e) => handleChange('client_phone', e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="client_address">Dirección</Label>
-                  <Input
-                    id="client_address"
-                    value={formData.client_address}
-                    onChange={(e) => handleChange('client_address', e.target.value)}
-                  />
-                </div>
+                <ClientSelector
+                  value={formData.client_profile_id}
+                  onChange={(value) => handleChange('client_profile_id', value)}
+                />
               </CardContent>
             </Card>
 

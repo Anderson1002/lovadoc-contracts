@@ -99,7 +99,16 @@ export default function Contracts() {
         setUserRole((profile.roles as any).name);
       }
 
-      let contractsQuery = supabase.from('contracts').select('*');
+      let contractsQuery = supabase
+        .from('contracts')
+        .select(`
+          *,
+          client:profiles!client_profile_id(
+            name,
+            email,
+            document_number
+          )
+        `);
 
       // Only employees see their own contracts, others see all
       if (profile && profile.roles && (profile.roles as any).name === 'employee') {

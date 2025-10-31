@@ -37,16 +37,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { useProfileValidation } from "@/hooks/useProfileValidation";
+import { ClientSelector } from "@/components/contracts/ClientSelector";
 
 const contractFormSchema = z.object({
   contractType: z.enum(["fixed_amount", "variable_amount", "contractor"]),
-  clientName: z.string().min(1, "El nombre del cliente es requerido"),
-  clientDocumentNumber: z.string().min(1, "El número de documento es requerido"),
-  clientEmail: z.string().email("Email inválido").optional().or(z.literal("")),
-  clientPhone: z.string().optional(),
-  clientAddress: z.string().optional(),
-  clientAccountNumber: z.string().optional(),
-  clientBankName: z.string().min(1, "El banco es requerido"),
+  clientProfileId: z.string().uuid("Debe seleccionar un cliente"),
   description: z.string().min(1, "La descripción es requerida"),
   totalAmount: z.string().min(1, "El valor total es requerido"),
   hourlyRate: z.string().optional(),
@@ -119,43 +114,8 @@ export default function CreateContract() {
 
   // Load user profile and active contracts
   useEffect(() => {
-    loadUserProfile();
     loadActiveContracts();
   }, []);
-
-  const loadUserProfile = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*, roles!profiles_role_id_fkey(name, display_name)')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error loading user profile:', error);
-        return;
-      }
-
-      setUserProfile(profile);
-      setUserRole((profile.roles as any)?.name || '');
-
-      // Auto-populate client fields for employees
-      if ((profile.roles as any)?.name === 'employee') {
-        setValue("clientName", profile.name || '');
-        setValue("clientDocumentNumber", profile.document_number || '');
-        setValue("clientEmail", profile.email || '');
-        setValue("clientPhone", profile.phone || '');
-        setValue("clientAddress", profile.address || '');
-        setValue("clientAccountNumber", profile.bank_account || '');
-        setValue("clientBankName", profile.bank_name || '');
-      }
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-    }
-  };
 
   const loadActiveContracts = async () => {
     try {
@@ -311,13 +271,7 @@ export default function CreateContract() {
       const contractData = {
         contract_number: '', // Se generará automáticamente por trigger
         contract_type: data.contractType,
-        client_name: data.clientName,
-        client_document_number: data.clientDocumentNumber,
-        client_email: data.clientEmail || null,
-        client_phone: data.clientPhone || null,
-        client_address: data.clientAddress || null,
-        client_account_number: data.clientAccountNumber || null,
-        client_bank_name: data.clientBankName || null,
+        client_profile_id: data.clientProfileId,
         description: data.description,
         total_amount: parseFloat(data.totalAmount),
         hourly_rate: data.hourlyRate ? parseFloat(data.hourlyRate) : null,
@@ -344,7 +298,7 @@ export default function CreateContract() {
 
       const { data: contract, error } = await supabase
         .from('contracts')
-        .insert(contractData)
+        .insert(contractData as any)
         .select()
         .single();
 
@@ -359,7 +313,6 @@ export default function CreateContract() {
         details: {
           contract_number: contract.contract_number,
           oid: contract.oid,
-          client_name: data.clientName,
           total_amount: parseFloat(data.totalAmount)
         }
       });
@@ -596,6 +549,70 @@ export default function CreateContract() {
                   {errors.contractType.message}
                 </p>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Cliente */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Información del Cliente</CardTitle>
+              <CardDescription>
+                Seleccione el cliente o contratista para este contrato
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ClientSelector
+                value={watch("clientProfileId")}
+                onChange={(value) => setValue("clientProfileId", value)}
+                error={errors.clientProfileId?.message}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Descripción */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Descripción del Contrato</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="description">Descripción / Objeto del Contrato</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Descripción detallada del contrato..."
+                  rows={4}
+                  {...register("description")}
+                />
+                {errors.description && (
+                  <p className="text-sm text-destructive">
+                    {errors.description.message}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Monto Total */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Información Financiera</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="totalAmount">Valor Total del Contrato</Label>
+                <Input
+                  id="totalAmount"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...register("totalAmount")}
+                />
+                {errors.totalAmount && (
+                  <p className="text-sm text-destructive">
+                    {errors.totalAmount.message}
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
 
