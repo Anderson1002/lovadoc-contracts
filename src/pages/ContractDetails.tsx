@@ -57,7 +57,9 @@ export default function ContractDetails() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    // Crear fecha sin zona horaria para evitar desfases
+    const date = new Date(dateString + 'T00:00:00');
+    return date.toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'

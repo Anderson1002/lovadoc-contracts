@@ -91,10 +91,11 @@ export default function EditContract() {
   const calculateExecutionPeriod = (startDate: string, endDate: string) => {
     if (!startDate || !endDate) return { months: 0, days: 0 };
     
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // Crear fechas evitando problemas de zona horaria
+    const start = new Date(startDate + 'T00:00:00');
+    const end = new Date(endDate + 'T00:00:00');
     
-    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffTime = end.getTime() - start.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     const diffMonths = Math.floor(diffDays / 30);
     
@@ -117,8 +118,8 @@ export default function EditContract() {
     
     // Validar que end_date sea posterior a start_date
     if (formData.start_date && formData.end_date) {
-      const start = new Date(formData.start_date);
-      const end = new Date(formData.end_date);
+      const start = new Date(formData.start_date + 'T00:00:00');
+      const end = new Date(formData.end_date + 'T00:00:00');
       
       if (end <= start) {
         toast({
