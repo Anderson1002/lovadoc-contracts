@@ -79,10 +79,12 @@ export default function ContractDetails() {
 
   const formatDateTime = (timestamp: string) => {
     const date = new Date(timestamp);
-    return date.toLocaleDateString('es-ES', {
+    return date.toLocaleString('es-CO', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
