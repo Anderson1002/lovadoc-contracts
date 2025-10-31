@@ -251,11 +251,20 @@ export default function ContractDetails() {
                 <p className="text-lg">{formatDate(contract.start_date)}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Fecha de Fin</label>
+                <label className="text-sm font-medium text-muted-foreground">Fecha de Finalización</label>
                 <p className="text-lg">
-                  {contract.end_date ? formatDate(contract.end_date) : 'Sin fecha de fin'}
+                  {contract.end_date ? formatDate(contract.end_date) : 'No definida'}
                 </p>
               </div>
+
+              {contract.execution_period_days && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Plazo de Ejecución</label>
+                  <p className="text-lg font-semibold">
+                    {contract.execution_period_months} {contract.execution_period_months === 1 ? 'mes' : 'meses'} ({contract.execution_period_days} {contract.execution_period_days === 1 ? 'día' : 'días'})
+                  </p>
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Fecha de Creación</label>
                 <p>{formatDate(contract.created_at)}</p>

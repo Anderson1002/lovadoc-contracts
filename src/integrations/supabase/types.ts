@@ -554,8 +554,10 @@ export type Database = {
           created_at: string
           created_by: string
           description: string | null
-          end_date: string | null
+          end_date: string
           estado: Database["public"]["Enums"]["contract_state"] | null
+          execution_period_days: number | null
+          execution_period_months: number | null
           fecha_cdp: string | null
           fecha_rp: string | null
           hourly_rate: number | null
@@ -592,8 +594,10 @@ export type Database = {
           created_at?: string
           created_by: string
           description?: string | null
-          end_date?: string | null
+          end_date: string
           estado?: Database["public"]["Enums"]["contract_state"] | null
+          execution_period_days?: number | null
+          execution_period_months?: number | null
           fecha_cdp?: string | null
           fecha_rp?: string | null
           hourly_rate?: number | null
@@ -630,8 +634,10 @@ export type Database = {
           created_at?: string
           created_by?: string
           description?: string | null
-          end_date?: string | null
+          end_date?: string
           estado?: Database["public"]["Enums"]["contract_state"] | null
+          execution_period_days?: number | null
+          execution_period_months?: number | null
           fecha_cdp?: string | null
           fecha_rp?: string | null
           hourly_rate?: number | null

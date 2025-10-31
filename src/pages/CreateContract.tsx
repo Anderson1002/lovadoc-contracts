@@ -53,7 +53,9 @@ const contractFormSchema = z.object({
   startDate: z.date({
     required_error: "La fecha de inicio es requerida",
   }),
-  endDate: z.date().optional(),
+  endDate: z.date({
+    required_error: "La fecha de finalización es requerida",
+  }),
   area_responsable: z.string().optional(),
   supervisor_asignado: z.string().optional(),
   bankCertification: z.any().optional(),
@@ -65,9 +67,29 @@ const contractFormSchema = z.object({
   cdp: z.string().optional(),
   fecha_rp: z.date().optional(),
   fecha_cdp: z.date().optional(),
+}).refine((data) => {
+  if (data.endDate && data.startDate) {
+    return data.endDate > data.startDate;
+  }
+  return true;
+}, {
+  message: "La fecha de finalización debe ser posterior a la fecha de inicio",
+  path: ["endDate"],
 });
 
 type ContractFormData = z.infer<typeof contractFormSchema>;
+
+// Función para calcular plazo de ejecución
+const calculateExecutionPeriod = (startDate: Date, endDate: Date) => {
+  const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffMonths = Math.floor(diffDays / 30); // Aproximación de meses
+  
+  return {
+    months: diffMonths,
+    days: diffDays
+  };
+};
 
 const bankOptions = [
   { value: "bancolombia", label: "Bancolombia" },
@@ -241,6 +263,12 @@ export default function CreateContract() {
     try {
       setIsLoading(true);
 
+      // Calcular plazo de ejecución
+      const executionPeriod = calculateExecutionPeriod(
+        data.startDate, 
+        data.endDate
+      );
+
       // Get user profile
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuario no autenticado");
@@ -294,7 +322,9 @@ export default function CreateContract() {
         total_amount: parseFloat(data.totalAmount),
         hourly_rate: data.hourlyRate ? parseFloat(data.hourlyRate) : null,
         start_date: data.startDate.toISOString().split('T')[0],
-        end_date: data.endDate ? data.endDate.toISOString().split('T')[0] : null,
+        end_date: data.endDate.toISOString().split('T')[0],
+        execution_period_months: executionPeriod.months,
+        execution_period_days: executionPeriod.days,
         area_responsable: data.area_responsable || null,
         supervisor_asignado: data.supervisor_asignado || null,
         status: 'draft' as const,
