@@ -77,6 +77,15 @@ export default function ContractDetails() {
     });
   };
 
+  const formatDateTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   const getContractTypeLabel = (type: string) => {
     switch (type) {
       case 'fixed_amount': return 'Monto Fijo';
@@ -302,7 +311,7 @@ export default function ContractDetails() {
               )}
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Fecha de Creación</label>
-                <p>{formatDate(contract.created_at)}</p>
+                <p>{formatDateTime(contract.created_at)}</p>
               </div>
             </CardContent>
           </Card>
