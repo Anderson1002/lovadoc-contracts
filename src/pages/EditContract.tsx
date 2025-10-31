@@ -32,6 +32,7 @@ export default function EditContract() {
     area_responsable: '',
     supervisor_asignado: ''
   });
+  const [calculatedPeriod, setCalculatedPeriod] = useState({ months: 0, days: 0 });
 
   useEffect(() => {
     if (id) {
@@ -86,11 +87,58 @@ export default function EditContract() {
     }
   };
 
+  // Función para calcular plazo de ejecución
+  const calculateExecutionPeriod = (startDate: string, endDate: string) => {
+    if (!startDate || !endDate) return { months: 0, days: 0 };
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffMonths = Math.floor(diffDays / 30);
+    
+    return {
+      months: diffMonths,
+      days: diffDays
+    };
+  };
+
+  // Recalcular plazo en tiempo real cuando cambien las fechas
+  useEffect(() => {
+    if (formData.start_date && formData.end_date) {
+      const period = calculateExecutionPeriod(formData.start_date, formData.end_date);
+      setCalculatedPeriod(period);
+    }
+  }, [formData.start_date, formData.end_date]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validar que end_date sea posterior a start_date
+    if (formData.start_date && formData.end_date) {
+      const start = new Date(formData.start_date);
+      const end = new Date(formData.end_date);
+      
+      if (end <= start) {
+        toast({
+          title: "Error de validación",
+          description: "La fecha de finalización debe ser posterior a la fecha de inicio",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
     setSaving(true);
 
     try {
+      // Calcular plazo de ejecución antes de actualizar
+      const executionPeriod = calculateExecutionPeriod(
+        formData.start_date, 
+        formData.end_date
+      );
+
       const { error } = await supabase
         .from('contracts')
         .update({
@@ -105,6 +153,8 @@ export default function EditContract() {
           start_date: formData.start_date,
           end_date: formData.end_date || null,
           description: formData.description || null,
+          execution_period_months: executionPeriod.months,
+          execution_period_days: executionPeriod.days,
           updated_at: new Date().toISOString()
         })
         .eq('id', id);
@@ -300,8 +350,22 @@ export default function EditContract() {
                       type="date"
                       value={formData.end_date}
                       onChange={(e) => handleChange('end_date', e.target.value)}
+                      required
                     />
                   </div>
+                  
+                  {formData.start_date && formData.end_date && (
+                    <div className="md:col-span-3">
+                      <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                        <p className="text-sm font-medium">
+                          📅 Plazo de Ejecución Calculado: 
+                          <span className="ml-2 font-bold text-primary">
+                            {calculatedPeriod.months} meses ({calculatedPeriod.days} días)
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
