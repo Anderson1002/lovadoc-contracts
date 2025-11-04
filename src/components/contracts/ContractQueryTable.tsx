@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { DocumentViewerDialog } from "./DocumentViewerDialog";
 import {
   Table,
   TableBody,
@@ -80,6 +81,10 @@ export function ContractQueryTable({
   const [documentsDialog, setDocumentsDialog] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState<string>("");
   const [documents, setDocuments] = useState<any[]>([]);
+  const [viewerDialog, setViewerDialog] = useState(false);
+  const [viewerDocumentUrl, setViewerDocumentUrl] = useState<string | null>(null);
+  const [viewerDocumentName, setViewerDocumentName] = useState("");
+  const [viewerDocumentMimeType, setViewerDocumentMimeType] = useState("");
   const { toast } = useToast();
 
   const formatCurrency = (amount: number) => {
@@ -235,17 +240,21 @@ export function ContractQueryTable({
       const url = URL.createObjectURL(data);
       const mimeType = doc.mime_type || 'application/octet-stream';
       
-      if (canPreviewInBrowser(mimeType)) {
-        // Abrir en nueva pestaña para visualización
-        window.open(url, '_blank');
+      // Verificar si es PDF o imagen para mostrar en modal
+      const isPdf = mimeType === 'application/pdf';
+      const isImage = mimeType.startsWith('image/');
+      
+      if (isPdf || isImage) {
+        // Mostrar en modal con iframe
+        setViewerDocumentUrl(url);
+        setViewerDocumentName(doc.file_name);
+        setViewerDocumentMimeType(mimeType);
+        setViewerDialog(true);
         
         toast({
-          title: "Documento abierto",
-          description: "El documento se abrió en una nueva pestaña"
+          title: "Documento cargado",
+          description: "Visualizando documento en el visor"
         });
-        
-        // Limpiar URL después de un tiempo
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
       } else {
         // Descargar archivos que no pueden visualizarse
         const link = window.document.createElement('a');
@@ -270,6 +279,14 @@ export function ContractQueryTable({
       });
     }
   };
+
+  // Limpiar URL cuando se cierra el modal
+  useEffect(() => {
+    if (!viewerDialog && viewerDocumentUrl) {
+      URL.revokeObjectURL(viewerDocumentUrl);
+      setViewerDocumentUrl(null);
+    }
+  }, [viewerDialog, viewerDocumentUrl]);
 
   if (isLoading) {
     return (

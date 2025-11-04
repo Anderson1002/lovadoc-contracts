@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { ContractStatusBadge } from "./ContractStatusBadge";
 import { formatCurrency } from "@/lib/utils";
+import { DocumentViewerDialog } from "./DocumentViewerDialog";
 
 interface ContractDetailPanelProps {
   contractId: string | null;
@@ -38,6 +39,10 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
   const [documents, setDocuments] = useState<any[]>([]);
   const [billingAccounts, setBillingAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewerDialog, setViewerDialog] = useState(false);
+  const [viewerDocumentUrl, setViewerDocumentUrl] = useState<string | null>(null);
+  const [viewerDocumentName, setViewerDocumentName] = useState("");
+  const [viewerDocumentMimeType, setViewerDocumentMimeType] = useState("");
 
   useEffect(() => {
     if (contractId && isOpen) {
@@ -206,13 +211,19 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
       const url = URL.createObjectURL(data);
       const mimeType = doc.mime_type || 'application/octet-stream';
       
-      if (canPreviewInBrowser(mimeType)) {
-        window.open(url, '_blank');
+      const isPdf = mimeType === 'application/pdf';
+      const isImage = mimeType.startsWith('image/');
+      
+      if (isPdf || isImage) {
+        setViewerDocumentUrl(url);
+        setViewerDocumentName(doc.file_name);
+        setViewerDocumentMimeType(mimeType);
+        setViewerDialog(true);
+        
         toast({
-          title: "Documento abierto",
+          title: "Documento cargado",
           description: `Visualizando ${doc.file_name}`,
         });
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
       } else {
         const a = window.document.createElement('a');
         a.href = url;
@@ -236,6 +247,14 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
       });
     }
   };
+
+  // Limpiar URL cuando se cierra el modal
+  useEffect(() => {
+    if (!viewerDialog && viewerDocumentUrl) {
+      URL.revokeObjectURL(viewerDocumentUrl);
+      setViewerDocumentUrl(null);
+    }
+  }, [viewerDialog, viewerDocumentUrl]);
 
   if (loading) {
     return (
@@ -539,6 +558,15 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
           </div>
         </ScrollArea>
       </SheetContent>
+
+      {/* Dialog de visualización de documentos */}
+      <DocumentViewerDialog
+        open={viewerDialog}
+        onOpenChange={setViewerDialog}
+        documentUrl={viewerDocumentUrl}
+        documentName={viewerDocumentName}
+        mimeType={viewerDocumentMimeType}
+      />
     </Sheet>
   );
 }
