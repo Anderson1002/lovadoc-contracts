@@ -98,7 +98,7 @@ export default function ContractQuery() {
       setIsLoadingContracts(true);
       
       // Actualizar estados de contratos basándose en fechas antes de cargarlos
-      await supabase.rpc('update_contract_statuses');
+      // Estados se actualizan automáticamente por triggers
       
       const { data: contracts, error } = await supabase
         .from('contracts')
@@ -147,16 +147,7 @@ export default function ContractQuery() {
     }
 
     if (filters.status && filters.status !== "all") {
-      // Mapear los nuevos valores de estado a los existentes
-      const statusMapping: { [key: string]: string } = {
-        'registrado': 'draft',
-        'en_ejecucion': 'active',
-        'completado': 'completed',
-        'cancelado': 'cancelled'
-      };
-      
-      const mappedStatus = statusMapping[filters.status] || filters.status;
-      filtered = filtered.filter(contract => contract.status === mappedStatus);
+      filtered = filtered.filter(contract => contract.estado === filters.status);
     }
 
     if (filters.clientName) {
@@ -265,7 +256,7 @@ export default function ContractQuery() {
           contract.creator?.name || '',
           contract.creator?.email || '',
           contract.contract_type || '',
-          contract.status || '',
+          contract.estado || 'registrado',
           contract.total_amount || 0,
           contract.start_date || '',
           contract.end_date || '',

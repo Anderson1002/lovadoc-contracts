@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
 import {
   MoreHorizontal,
   Eye,
@@ -63,7 +64,7 @@ interface ContractQueryTableProps {
   sortDirection?: 'asc' | 'desc';
 }
 
-type SortableColumn = 'contract_number' | 'creator_name' | 'total_amount' | 'start_date' | 'end_date' | 'status' | 'contract_type';
+type SortableColumn = 'contract_number' | 'creator_name' | 'total_amount' | 'start_date' | 'end_date' | 'estado' | 'contract_type';
 
 export function ContractQueryTable({ 
   contracts, 
@@ -90,23 +91,6 @@ export function ContractQueryTable({
     }).format(amount);
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      active: { label: "Activo", variant: "default" as const },
-      completed: { label: "Completado", variant: "outline" as const },
-      cancelled: { label: "Cancelado", variant: "destructive" as const },
-      draft: { label: "Activo", variant: "default" as const } // Draft se muestra como Activo
-    };
-
-    const config = statusConfig[status as keyof typeof statusConfig] || 
-                   { label: "Activo", variant: "default" as const };
-
-    return (
-      <Badge variant={config.variant}>
-        {config.label}
-      </Badge>
-    );
-  };
 
   const getTypeBadge = (type: string) => {
     const typeConfig = {
@@ -316,11 +300,11 @@ export function ContractQueryTable({
                 </TableHead>
                 <TableHead 
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort('status')}
+                  onClick={() => handleSort('estado')}
                 >
                   <div className="flex items-center gap-2">
                     Estado
-                    {getSortIcon('status')}
+                    {getSortIcon('estado')}
                   </div>
                 </TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
@@ -369,7 +353,7 @@ export function ContractQueryTable({
                     )}
                   </TableCell>
                   <TableCell>
-                    {getStatusBadge(contract.status)}
+                    <ContractStatusBadge status={contract.estado || 'registrado'} />
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -414,7 +398,7 @@ export function ContractQueryTable({
                                 </div>
                                 <div className="space-y-2">
                                   <Label className="text-sm font-semibold">Estado</Label>
-                                  {getStatusBadge(selectedContract.status)}
+                                  <ContractStatusBadge status={selectedContract.estado || 'registrado'} />
                                 </div>
                               </div>
                               

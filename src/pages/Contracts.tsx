@@ -36,8 +36,8 @@ export default function Contracts() {
     const averageValue = total > 0 ? totalValue / total : 0;
     
     const statusCounts = contractsData.reduce((acc, contract) => {
-      const status = contract.status || 'draft';
-      acc[status] = (acc[status] || 0) + 1;
+      const estado = contract.estado || 'registrado';
+      acc[estado] = (acc[estado] || 0) + 1;
       return acc;
     }, {});
 
@@ -45,11 +45,11 @@ export default function Contracts() {
       total,
       totalValue,
       averageValue,
-      active: statusCounts.active || 0,
-      completed: statusCounts.completed || 0,
-      cancelled: statusCounts.cancelled || 0,
-      registered: statusCounts.draft || statusCounts.registered || 0,
-      returned: statusCounts.returned || 0
+      active: statusCounts.en_ejecucion || 0,
+      completed: statusCounts.completado || 0,
+      cancelled: statusCounts.cancelado || 0,
+      registered: statusCounts.registrado || 0,
+      returned: statusCounts.devuelto || 0
     });
   };
 
@@ -86,8 +86,7 @@ export default function Contracts() {
 
   const loadContracts = async (userId: string) => {
     try {
-      // Actualizar estados de contratos basándose en fechas antes de cargarlos
-      await supabase.rpc('update_contract_statuses');
+      // Estados se actualizan automáticamente por triggers de base de datos
       
       const { data: profile } = await supabase
         .from('profiles')

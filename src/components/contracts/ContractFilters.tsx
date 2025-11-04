@@ -67,11 +67,11 @@ const contractTypes = [
 
 const contractStatuses = [
   { value: "all", label: "Todos los estados", icon: Clock },
-  { value: "draft", label: "Registrado", icon: Clock },
-  { value: "returned", label: "Devuelto", icon: XCircle },
-  { value: "active", label: "En Ejecución", icon: CheckCircle2 },
-  { value: "completed", label: "Completado", icon: CheckCircle2 },
-  { value: "cancelled", label: "Cancelado", icon: XCircle }
+  { value: "registrado", label: "Registrado", icon: Clock },
+  { value: "devuelto", label: "Devuelto", icon: XCircle },
+  { value: "en_ejecucion", label: "En Ejecución", icon: CheckCircle2 },
+  { value: "completado", label: "Completado", icon: CheckCircle2 },
+  { value: "cancelado", label: "Cancelado", icon: XCircle }
 ];
 
 export function ContractFilters({ 

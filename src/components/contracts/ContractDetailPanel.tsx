@@ -208,7 +208,7 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
             {contract.contract_number}
           </SheetDescription>
           <div className="flex items-center gap-2">
-            <ContractStatusBadge status={contract.status} />
+            <ContractStatusBadge status={contract.estado || 'registrado'} />
             <Badge variant="outline">
               {getContractTypeLabel(contract.contract_type)}
             </Badge>

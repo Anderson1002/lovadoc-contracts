@@ -46,8 +46,8 @@ export function ContractStats({ contracts, isLoading = false }: ContractStatsPro
 
   // Contar por estado
   const statusCounts = contracts.reduce((acc, contract) => {
-    const status = contract.status || 'draft';
-    acc[status] = (acc[status] || 0) + 1;
+    const estado = contract.estado || 'registrado';
+    acc[estado] = (acc[estado] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -58,10 +58,11 @@ export function ContractStats({ contracts, isLoading = false }: ContractStatsPro
     return acc;
   }, {} as Record<string, number>);
 
-  // Tratamos "draft" como "active" para las estadísticas
-  const activeContracts = (statusCounts.active || 0) + (statusCounts.draft || 0);
-  const completedContracts = statusCounts.completed || 0;
-  const cancelledContracts = statusCounts.cancelled || 0;
+  const activeContracts = statusCounts.en_ejecucion || 0;
+  const completedContracts = statusCounts.completado || 0;
+  const cancelledContracts = statusCounts.cancelado || 0;
+  const registeredContracts = statusCounts.registrado || 0;
+  const returnedContracts = statusCounts.devuelto || 0;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {

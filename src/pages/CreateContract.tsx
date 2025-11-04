@@ -281,7 +281,6 @@ export default function CreateContract() {
         execution_period_days: executionPeriod.days,
         area_responsable: data.area_responsable || null,
         supervisor_asignado: data.supervisor_asignado || null,
-        status: 'draft' as const,
         estado: 'registrado' as const,
         state_code: 'REG',
         created_by: profile.id,

@@ -69,8 +69,7 @@ export default function Dashboard() {
         setUserRole((profile.roles as any).name);
       }
 
-      // Actualizar estados de contratos basándose en fechas antes de cargarlos
-      await supabase.rpc('update_contract_statuses');
+      // Estados se actualizan automáticamente por triggers de base de datos
 
       // Load contracts
       const { data: contracts, error: contractsError } = await supabase
@@ -87,12 +86,12 @@ export default function Dashboard() {
 
       if (paymentsError) throw paymentsError;
 
-      // Calculate stats usando el campo status existente
+      // Calculate stats usando el campo estado
       const totalContracts = contracts?.length || 0;
-      const registeredContracts = contracts?.filter(c => c.status === 'draft').length || 0;
-      const activeContracts = contracts?.filter(c => c.status === 'active').length || 0;
-      const completedContracts = contracts?.filter(c => c.status === 'completed').length || 0;
-      const cancelledContracts = contracts?.filter(c => c.status === 'cancelled').length || 0;
+      const registeredContracts = contracts?.filter(c => c.estado === 'registrado').length || 0;
+      const activeContracts = contracts?.filter(c => c.estado === 'en_ejecucion').length || 0;
+      const completedContracts = contracts?.filter(c => c.estado === 'completado').length || 0;
+      const cancelledContracts = contracts?.filter(c => c.estado === 'cancelado').length || 0;
       const totalAmount = contracts?.reduce((sum, c) => sum + Number(c.total_amount), 0) || 0;
       const completedPayments = payments?.length || 0;
 
@@ -112,16 +111,16 @@ export default function Dashboard() {
 
       // Chart data con los 5 estados correctos
       const statusCounts = contracts?.reduce((acc: any, contract: any) => {
-        acc[contract.status] = (acc[contract.status] || 0) + 1;
+        acc[contract.estado] = (acc[contract.estado] || 0) + 1;
         return acc;
       }, {}) || {};
 
       const chartDataFormatted = [
-        { name: 'Registrado', value: statusCounts.draft || 0, color: 'hsl(var(--state-registered))' },
-        { name: 'Devuelto', value: statusCounts.returned || 0, color: 'hsl(var(--state-returned))' },
-        { name: 'En Ejecución', value: statusCounts.active || 0, color: 'hsl(var(--state-executing))' },
-        { name: 'Completado', value: statusCounts.completed || 0, color: 'hsl(var(--state-completed))' },
-        { name: 'Cancelado', value: statusCounts.cancelled || 0, color: 'hsl(var(--state-cancelled))' }
+        { name: 'Registrado', value: statusCounts.registrado || 0, color: 'hsl(var(--state-registered))' },
+        { name: 'Devuelto', value: statusCounts.devuelto || 0, color: 'hsl(var(--state-returned))' },
+        { name: 'En Ejecución', value: statusCounts.en_ejecucion || 0, color: 'hsl(var(--state-executing))' },
+        { name: 'Completado', value: statusCounts.completado || 0, color: 'hsl(var(--state-completed))' },
+        { name: 'Cancelado', value: statusCounts.cancelado || 0, color: 'hsl(var(--state-cancelled))' }
       ].filter(item => item.value > 0); // Solo mostrar categorías con datos
 
       setChartData(chartDataFormatted);
@@ -198,7 +197,7 @@ export default function Dashboard() {
         />
         <StatsCard
           title="Completados"
-          value={contracts?.filter(c => c.status === 'completed').length || 0}
+          value={contracts?.filter(c => c.estado === 'completado').length || 0}
           icon={CheckCircle}
           description="Contratos finalizados"
         />
@@ -241,7 +240,7 @@ export default function Dashboard() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{contract.contract_number}</p>
-                        <ContractStatusBadge status={contract.status} />
+                        <ContractStatusBadge status={contract.estado || 'registrado'} />
                       </div>
                       <p className="text-sm text-muted-foreground">{contract.client_name}</p>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -293,7 +292,7 @@ export default function Dashboard() {
                 </Link>
               </Button>
               <Button variant="outline" asChild className="justify-start h-auto p-4">
-                <Link to="/contracts?status=draft" className="flex flex-col items-start gap-2">
+                <Link to="/contracts?estado=registrado" className="flex flex-col items-start gap-2">
                   <Clock className="h-5 w-5" />
                   <div className="text-left">
                     <div className="font-medium">Revisar Pendientes</div>
