@@ -224,31 +224,28 @@ export function ContractQueryTable({
   const handleViewDocument = async (doc: any, docIndex?: number) => {
     try {
       const bucket = doc.bucket || 'contracts';
-      
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .download(doc.file_path);
-
-      if (error) {
-        console.error('Error loading document:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo cargar el documento",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const url = URL.createObjectURL(data);
       const mimeType = doc.mime_type || 'application/octet-stream';
       
-      // Verificar si es PDF o imagen para mostrar en modal
       const isPdf = mimeType === 'application/pdf';
       const isImage = mimeType.startsWith('image/');
       
-      if (isPdf || isImage) {
-        // Mostrar en modal con iframe/lightbox
-        setViewerDocumentUrl(url);
+      if (isPdf) {
+        // Para PDFs, usar URL pública firmada en lugar de blob
+        const { data: signedUrlData, error: urlError } = await supabase.storage
+          .from(bucket)
+          .createSignedUrl(doc.file_path, 3600); // URL válida por 1 hora
+
+        if (urlError || !signedUrlData) {
+          console.error('Error getting signed URL:', urlError);
+          toast({
+            title: "Error",
+            description: "No se pudo cargar el documento",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        setViewerDocumentUrl(signedUrlData.signedUrl);
         setViewerDocumentName(doc.file_name);
         setViewerDocumentMimeType(mimeType);
         setViewerDocumentIndex(docIndex ?? 0);
@@ -257,10 +254,53 @@ export function ContractQueryTable({
         
         toast({
           title: "Documento cargado",
-          description: "Visualizando documento en el visor"
+          description: "Visualizando PDF en el visor"
+        });
+      } else if (isImage) {
+        // Para imágenes, descargar como blob (funciona mejor con zoom/pan)
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .download(doc.file_path);
+
+        if (error) {
+          console.error('Error loading image:', error);
+          toast({
+            title: "Error",
+            description: "No se pudo cargar la imagen",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const url = URL.createObjectURL(data);
+        setViewerDocumentUrl(url);
+        setViewerDocumentName(doc.file_name);
+        setViewerDocumentMimeType(mimeType);
+        setViewerDocumentIndex(docIndex ?? 0);
+        setViewerDocuments(documents);
+        setViewerDialog(true);
+        
+        toast({
+          title: "Imagen cargada",
+          description: "Visualizando imagen en el visor"
         });
       } else {
         // Descargar archivos que no pueden visualizarse
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .download(doc.file_path);
+
+        if (error) {
+          console.error('Error downloading file:', error);
+          toast({
+            title: "Error",
+            description: "No se pudo descargar el archivo",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const url = URL.createObjectURL(data);
         const link = window.document.createElement('a');
         link.href = url;
         link.download = doc.file_name;
@@ -289,17 +329,17 @@ export function ContractQueryTable({
     
     const doc = documents[newIndex];
     
-    // Limpiar URL anterior
-    if (viewerDocumentUrl) {
+    // Limpiar URL anterior solo si es blob (imágenes)
+    if (viewerDocumentUrl && viewerDocumentUrl.startsWith('blob:')) {
       URL.revokeObjectURL(viewerDocumentUrl);
     }
     
     await handleViewDocument(doc, newIndex);
   };
 
-  // Limpiar URL cuando se cierra el modal
+  // Limpiar URL cuando se cierra el modal (solo blobs)
   useEffect(() => {
-    if (!viewerDialog && viewerDocumentUrl) {
+    if (!viewerDialog && viewerDocumentUrl && viewerDocumentUrl.startsWith('blob:')) {
       URL.revokeObjectURL(viewerDocumentUrl);
       setViewerDocumentUrl(null);
     }

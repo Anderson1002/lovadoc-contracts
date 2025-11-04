@@ -202,20 +202,46 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
   const handleViewDocument = async (doc: any, docIndex?: number) => {
     try {
       const bucket = doc.bucket || 'contracts';
-      
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .download(doc.file_path);
-
-      if (error) throw error;
-
-      const url = URL.createObjectURL(data);
       const mimeType = doc.mime_type || 'application/octet-stream';
       
       const isPdf = mimeType === 'application/pdf';
       const isImage = mimeType.startsWith('image/');
       
-      if (isPdf || isImage) {
+      if (isPdf) {
+        // Para PDFs, usar URL pública firmada
+        const { data: signedUrlData, error: urlError } = await supabase.storage
+          .from(bucket)
+          .createSignedUrl(doc.file_path, 3600);
+
+        if (urlError || !signedUrlData) {
+          console.error('Error getting signed URL:', urlError);
+          toast({
+            title: "Error",
+            description: "No se pudo cargar el PDF",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        setViewerDocumentUrl(signedUrlData.signedUrl);
+        setViewerDocumentName(doc.file_name);
+        setViewerDocumentMimeType(mimeType);
+        setViewerDocumentIndex(docIndex ?? 0);
+        setViewerDialog(true);
+        
+        toast({
+          title: "PDF cargado",
+          description: `Visualizando ${doc.file_name}`,
+        });
+      } else if (isImage) {
+        // Para imágenes, descargar como blob
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .download(doc.file_path);
+
+        if (error) throw error;
+
+        const url = URL.createObjectURL(data);
         setViewerDocumentUrl(url);
         setViewerDocumentName(doc.file_name);
         setViewerDocumentMimeType(mimeType);
@@ -223,10 +249,18 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
         setViewerDialog(true);
         
         toast({
-          title: "Documento cargado",
+          title: "Imagen cargada",
           description: `Visualizando ${doc.file_name}`,
         });
       } else {
+        // Descargar otros archivos
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .download(doc.file_path);
+
+        if (error) throw error;
+
+        const url = URL.createObjectURL(data);
         const a = window.document.createElement('a');
         a.href = url;
         a.download = doc.file_name;
@@ -255,17 +289,17 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
     
     const doc = documents[newIndex];
     
-    // Limpiar URL anterior
-    if (viewerDocumentUrl) {
+    // Limpiar URL anterior solo si es blob
+    if (viewerDocumentUrl && viewerDocumentUrl.startsWith('blob:')) {
       URL.revokeObjectURL(viewerDocumentUrl);
     }
     
     await handleViewDocument(doc, newIndex);
   };
 
-  // Limpiar URL cuando se cierra el modal
+  // Limpiar URL cuando se cierra el modal (solo blobs)
   useEffect(() => {
-    if (!viewerDialog && viewerDocumentUrl) {
+    if (!viewerDialog && viewerDocumentUrl && viewerDocumentUrl.startsWith('blob:')) {
       URL.revokeObjectURL(viewerDocumentUrl);
       setViewerDocumentUrl(null);
     }

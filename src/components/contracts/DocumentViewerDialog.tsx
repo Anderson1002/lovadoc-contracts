@@ -72,15 +72,27 @@ export function DocumentViewerDialog({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open, currentIndex, documents.length, onNavigate, zoom, rotation]);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!documentUrl) return;
     
-    const link = window.document.createElement('a');
-    link.href = documentUrl;
-    link.download = documentName;
-    window.document.body.appendChild(link);
-    link.click();
-    window.document.body.removeChild(link);
+    // Si es una URL firmada de Supabase (para PDFs), descargar directamente
+    if (documentUrl.includes('supabase.co')) {
+      const link = window.document.createElement('a');
+      link.href = documentUrl;
+      link.download = documentName;
+      link.target = '_blank';
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+    } else {
+      // Para blobs (imágenes), usar el blob URL directamente
+      const link = window.document.createElement('a');
+      link.href = documentUrl;
+      link.download = documentName;
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+    }
   };
 
   const handleZoomIn = () => {
