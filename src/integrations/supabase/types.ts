@@ -539,13 +539,7 @@ export type Database = {
           bank_certification_mime: string | null
           bank_certification_path: string | null
           cdp: string | null
-          client_account_number: string | null
-          client_address: string | null
-          client_bank_name: string | null
-          client_document_number: string | null
-          client_email: string | null
-          client_name: string
-          client_phone: string | null
+          client_profile_id: string | null
           comentarios_devolucion: string | null
           consecutivo_numero: number | null
           contract_number: string
@@ -579,13 +573,7 @@ export type Database = {
           bank_certification_mime?: string | null
           bank_certification_path?: string | null
           cdp?: string | null
-          client_account_number?: string | null
-          client_address?: string | null
-          client_bank_name?: string | null
-          client_document_number?: string | null
-          client_email?: string | null
-          client_name: string
-          client_phone?: string | null
+          client_profile_id?: string | null
           comentarios_devolucion?: string | null
           consecutivo_numero?: number | null
           contract_number: string
@@ -619,13 +607,7 @@ export type Database = {
           bank_certification_mime?: string | null
           bank_certification_path?: string | null
           cdp?: string | null
-          client_account_number?: string | null
-          client_address?: string | null
-          client_bank_name?: string | null
-          client_document_number?: string | null
-          client_email?: string | null
-          client_name?: string
-          client_phone?: string | null
+          client_profile_id?: string | null
           comentarios_devolucion?: string | null
           consecutivo_numero?: number | null
           contract_number?: string
@@ -655,6 +637,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contracts_client_profile_id_fkey"
+            columns: ["client_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contracts_created_by_fkey"
             columns: ["created_by"]
@@ -1005,7 +994,6 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["user_role_type"]
       }
-      update_contract_statuses: { Args: never; Returns: undefined }
     }
     Enums: {
       contract_state:
