@@ -152,6 +152,7 @@ export function ContractQueryTable({
 
       // 3. Combinar todos los documentos
       const allDocuments = [];
+      const now = new Date().toISOString();
 
       // Agregar contrato firmado si existe
       if (contractData?.signed_contract_path) {
@@ -161,7 +162,8 @@ export function ContractQueryTable({
           file_path: contractData.signed_contract_path,
           mime_type: contractData.signed_contract_mime || 'application/pdf',
           file_size: 0,
-          bucket: 'contracts'
+          bucket: 'contracts',
+          created_at: now
         });
       }
 
@@ -173,7 +175,8 @@ export function ContractQueryTable({
           file_path: contractData.bank_certification_path,
           mime_type: contractData.bank_certification_mime || 'application/pdf',
           file_size: 0,
-          bucket: 'contracts'
+          bucket: 'contracts',
+          created_at: now
         });
       }
 
@@ -547,8 +550,10 @@ export function ContractQueryTable({
                         <div>
                           <p className="font-medium">{doc.file_name}</p>
                           <p className="text-sm text-muted-foreground">
-                            Tamaño: {doc.file_size ? `${(doc.file_size / 1024 / 1024).toFixed(2)} MB` : 'N/A'} • 
-                            Subido: {format(new Date(doc.created_at), "dd/MM/yyyy", { locale: es })}
+                            Tamaño: {doc.file_size ? `${(doc.file_size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}
+                            {doc.created_at && (
+                              <> • Subido: {format(new Date(doc.created_at), "dd/MM/yyyy", { locale: es })}</>
+                            )}
                           </p>
                         </div>
                       </div>

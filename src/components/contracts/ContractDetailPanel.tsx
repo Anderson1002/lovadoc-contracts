@@ -68,6 +68,7 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
 
       // Combinar todos los documentos
       const allDocuments = [];
+      const now = new Date().toISOString();
 
       // Agregar contrato firmado si existe
       if (contractData?.signed_contract_path) {
@@ -77,7 +78,8 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
           file_path: contractData.signed_contract_path,
           mime_type: contractData.signed_contract_mime || 'application/pdf',
           file_size: 0,
-          bucket: 'contracts'
+          bucket: 'contracts',
+          created_at: now
         });
       }
 
@@ -89,7 +91,8 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
           file_path: contractData.bank_certification_path,
           mime_type: contractData.bank_certification_mime || 'application/pdf',
           file_size: 0,
-          bucket: 'contracts'
+          bucket: 'contracts',
+          created_at: now
         });
       }
 
