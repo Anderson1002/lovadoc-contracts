@@ -18,7 +18,8 @@ import {
   FileText,
   MoreVertical,
   Calendar,
-  DollarSign
+  DollarSign,
+  Download
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,9 +27,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ContractStatusBadge } from "./ContractStatusBadge";
 import { ContractStateActions } from "./ContractStateActions";
 import { formatCurrency } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface Contract {
   id: string;
@@ -66,6 +76,10 @@ export function ContractTable({
   onRefresh 
 }: ContractTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [documentsDialog, setDocumentsDialog] = useState(false);
+  const [selectedContractId, setSelectedContractId] = useState<string>("");
+  const [documents, setDocuments] = useState<any[]>([]);
+  const { toast } = useToast();
 
   const filteredContracts = contracts.filter(contract =>
     contract.contract_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -92,6 +106,119 @@ export function ContractTable({
       case 'company_contract': return 'Empresarial';
       case 'contrator': return 'Empresarial';
       default: return type;
+    }
+  };
+
+  const handleDocuments = async (contractId: string) => {
+    setSelectedContractId(contractId);
+    setDocumentsDialog(true);
+    
+    try {
+      // 1. Obtener el contrato para acceder a signed_contract_path y bank_certification_path
+      const { data: contractData, error: contractError } = await supabase
+        .from('contracts')
+        .select('signed_contract_path, signed_contract_mime, bank_certification_path, bank_certification_mime')
+        .eq('id', contractId)
+        .single();
+
+      if (contractError) throw contractError;
+
+      // 2. Obtener documentos adicionales de la tabla documents
+      const { data: additionalDocs, error: docsError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('contract_id', contractId);
+      
+      if (docsError) throw docsError;
+
+      // 3. Combinar todos los documentos
+      const allDocuments = [];
+      const now = new Date().toISOString();
+
+      // Agregar contrato firmado si existe
+      if (contractData?.signed_contract_path) {
+        allDocuments.push({
+          id: 'signed-contract',
+          file_name: 'Contrato Firmado',
+          file_path: contractData.signed_contract_path,
+          mime_type: contractData.signed_contract_mime || 'application/pdf',
+          file_size: 0,
+          bucket: 'contracts',
+          created_at: now
+        });
+      }
+
+      // Agregar certificación bancaria si existe
+      if (contractData?.bank_certification_path) {
+        allDocuments.push({
+          id: 'bank-certification',
+          file_name: 'Certificación Bancaria',
+          file_path: contractData.bank_certification_path,
+          mime_type: contractData.bank_certification_mime || 'application/pdf',
+          file_size: 0,
+          bucket: 'contracts',
+          created_at: now
+        });
+      }
+
+      // Agregar documentos adicionales
+      if (additionalDocs && additionalDocs.length > 0) {
+        allDocuments.push(...additionalDocs.map(doc => ({
+          ...doc,
+          bucket: 'contracts'
+        })));
+      }
+
+      setDocuments(allDocuments);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los documentos",
+        variant: "destructive"
+      });
+      setDocuments([]);
+    }
+  };
+
+  const handleDownloadDocument = async (doc: any) => {
+    try {
+      const bucket = doc.bucket || 'contracts';
+      
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .download(doc.file_path);
+
+      if (error) {
+        console.error('Error downloading file:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo descargar el archivo",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const url = URL.createObjectURL(data);
+      const link = window.document.createElement('a');
+      link.href = url;
+      link.download = doc.file_name;
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Descarga iniciada",
+        description: `Descargando ${doc.file_name}`
+      });
+    } catch (error) {
+      console.error('Error handling document:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo procesar el documento",
+        variant: "destructive"
+      });
     }
   };
 
@@ -125,8 +252,6 @@ export function ContractTable({
               <TableHead>Número</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Tipo</TableHead>
-              <TableHead>Área</TableHead>
-              <TableHead>Supervisor</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>
                 <div className="flex items-center gap-1">
@@ -148,7 +273,7 @@ export function ContractTable({
             {filteredContracts.length === 0 ? (
               <TableRow>
                 <TableCell 
-                  colSpan={10} 
+                  colSpan={8} 
                   className="text-center py-8 text-muted-foreground"
                 >
                   No se encontraron contratos
@@ -168,16 +293,6 @@ export function ContractTable({
                     <Badge variant="outline">
                       {getContractTypeLabel(contract.contract_type)}
                     </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {contract.area_responsable ? contract.area_responsable.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">
-                      {contract.supervisor_asignado || '-'}
-                    </span>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -221,7 +336,7 @@ export function ContractTable({
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem 
-                          onClick={() => console.log('Documentos clicked for:', contract.id)}
+                          onClick={() => handleDocuments(contract.id)}
                           className="flex items-center gap-2"
                         >
                           <FileText className="h-4 w-4" />
@@ -236,6 +351,54 @@ export function ContractTable({
           </TableBody>
         </Table>
       </div>
+
+      {/* Documents Dialog */}
+      <Dialog open={documentsDialog} onOpenChange={setDocumentsDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Documentos del Contrato</DialogTitle>
+            <DialogDescription>
+              Documentos asociados al contrato
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {documents.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No hay documentos disponibles</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {documents.map((doc) => (
+                  <div 
+                    key={doc.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-primary" />
+                      <div>
+                        <p className="font-medium">{doc.file_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.mime_type || 'application/pdf'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadDocument(doc)}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      Descargar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
