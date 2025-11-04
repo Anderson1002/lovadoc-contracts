@@ -152,6 +152,9 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
         if (item.url === "/contracts/new" && !["super_admin", "admin", "employee"].includes(userRole)) {
           return false;
         }
+        if (item.url === "/contracts/query" && !["super_admin", "admin", "employee"].includes(userRole)) {
+          return false;
+        }
         return true;
       })
     }));

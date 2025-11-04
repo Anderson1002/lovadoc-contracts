@@ -68,7 +68,7 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
           title: "Nuevo Contrato",
           url: "/contracts/new",
           icon: FileText,
-          roles: ["super_admin", "admin", "supervisor", "employee"]
+          roles: ["super_admin", "admin", "employee"]
         },
         {
           title: "Gestionar Contratos",
@@ -80,7 +80,7 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
           title: "Consulta Avanzada",
           url: "/contracts/query",
           icon: FileCheck,
-          roles: ["super_admin", "admin", "supervisor", "employee"]
+          roles: ["super_admin", "admin", "employee"]
         },
         {
           title: "Pendientes Aprobación",
