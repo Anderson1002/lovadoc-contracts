@@ -43,6 +43,7 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
   const [viewerDocumentUrl, setViewerDocumentUrl] = useState<string | null>(null);
   const [viewerDocumentName, setViewerDocumentName] = useState("");
   const [viewerDocumentMimeType, setViewerDocumentMimeType] = useState("");
+  const [viewerDocumentIndex, setViewerDocumentIndex] = useState(0);
 
   useEffect(() => {
     if (contractId && isOpen) {
@@ -198,7 +199,7 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
     return previewableTypes.includes(mimeType.toLowerCase());
   };
 
-  const handleViewDocument = async (doc: any) => {
+  const handleViewDocument = async (doc: any, docIndex?: number) => {
     try {
       const bucket = doc.bucket || 'contracts';
       
@@ -218,6 +219,7 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
         setViewerDocumentUrl(url);
         setViewerDocumentName(doc.file_name);
         setViewerDocumentMimeType(mimeType);
+        setViewerDocumentIndex(docIndex ?? 0);
         setViewerDialog(true);
         
         toast({
@@ -246,6 +248,19 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
         variant: "destructive"
       });
     }
+  };
+
+  const handleNavigateDocument = async (newIndex: number) => {
+    if (newIndex < 0 || newIndex >= documents.length) return;
+    
+    const doc = documents[newIndex];
+    
+    // Limpiar URL anterior
+    if (viewerDocumentUrl) {
+      URL.revokeObjectURL(viewerDocumentUrl);
+    }
+    
+    await handleViewDocument(doc, newIndex);
   };
 
   // Limpiar URL cuando se cierra el modal
@@ -503,7 +518,7 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {documents.map((doc) => (
+                    {documents.map((doc, index) => (
                       <div key={doc.id} className="flex items-center justify-between p-2 border rounded">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -517,7 +532,7 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleViewDocument(doc)}
+                          onClick={() => handleViewDocument(doc, index)}
                           className="flex-shrink-0"
                         >
                           {canPreviewInBrowser(doc.mime_type || '') ? (
@@ -559,13 +574,16 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
         </ScrollArea>
       </SheetContent>
 
-      {/* Dialog de visualización de documentos */}
+      {/* Dialog de visualización de documentos con lightbox */}
       <DocumentViewerDialog
         open={viewerDialog}
         onOpenChange={setViewerDialog}
         documentUrl={viewerDocumentUrl}
         documentName={viewerDocumentName}
         mimeType={viewerDocumentMimeType}
+        documents={documents}
+        currentIndex={viewerDocumentIndex}
+        onNavigate={handleNavigateDocument}
       />
     </Sheet>
   );

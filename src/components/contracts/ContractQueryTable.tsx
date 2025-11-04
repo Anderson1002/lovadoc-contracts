@@ -85,6 +85,8 @@ export function ContractQueryTable({
   const [viewerDocumentUrl, setViewerDocumentUrl] = useState<string | null>(null);
   const [viewerDocumentName, setViewerDocumentName] = useState("");
   const [viewerDocumentMimeType, setViewerDocumentMimeType] = useState("");
+  const [viewerDocumentIndex, setViewerDocumentIndex] = useState(0);
+  const [viewerDocuments, setViewerDocuments] = useState<any[]>([]);
   const { toast } = useToast();
 
   const formatCurrency = (amount: number) => {
@@ -219,7 +221,7 @@ export function ContractQueryTable({
     }
   };
 
-  const handleViewDocument = async (doc: any) => {
+  const handleViewDocument = async (doc: any, docIndex?: number) => {
     try {
       const bucket = doc.bucket || 'contracts';
       
@@ -245,10 +247,12 @@ export function ContractQueryTable({
       const isImage = mimeType.startsWith('image/');
       
       if (isPdf || isImage) {
-        // Mostrar en modal con iframe
+        // Mostrar en modal con iframe/lightbox
         setViewerDocumentUrl(url);
         setViewerDocumentName(doc.file_name);
         setViewerDocumentMimeType(mimeType);
+        setViewerDocumentIndex(docIndex ?? 0);
+        setViewerDocuments(documents);
         setViewerDialog(true);
         
         toast({
@@ -278,6 +282,19 @@ export function ContractQueryTable({
         variant: "destructive"
       });
     }
+  };
+
+  const handleNavigateDocument = async (newIndex: number) => {
+    if (newIndex < 0 || newIndex >= documents.length) return;
+    
+    const doc = documents[newIndex];
+    
+    // Limpiar URL anterior
+    if (viewerDocumentUrl) {
+      URL.revokeObjectURL(viewerDocumentUrl);
+    }
+    
+    await handleViewDocument(doc, newIndex);
   };
 
   // Limpiar URL cuando se cierra el modal
@@ -327,6 +344,7 @@ export function ContractQueryTable({
   }
 
   return (
+    <>
     <Card className="border-2 shadow-lg">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -588,7 +606,7 @@ export function ContractQueryTable({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {documents.map((doc) => (
+                  {documents.map((doc, index) => (
                     <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <FileText className="w-5 h-5 text-blue-500" />
@@ -605,7 +623,7 @@ export function ContractQueryTable({
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleViewDocument(doc)}
+                        onClick={() => handleViewDocument(doc, index)}
                       >
                         {canPreviewInBrowser(doc.mime_type || '') ? 'Ver archivo' : 'Descargar'}
                       </Button>
@@ -661,6 +679,19 @@ export function ContractQueryTable({
         )}
       </CardContent>
     </Card>
+
+    {/* Dialog de visualización de documentos con lightbox */}
+    <DocumentViewerDialog
+      open={viewerDialog}
+      onOpenChange={setViewerDialog}
+      documentUrl={viewerDocumentUrl}
+      documentName={viewerDocumentName}
+      mimeType={viewerDocumentMimeType}
+      documents={viewerDocuments}
+      currentIndex={viewerDocumentIndex}
+      onNavigate={handleNavigateDocument}
+    />
+    </>
   );
 }
 
