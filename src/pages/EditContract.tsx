@@ -77,7 +77,7 @@ export default function EditContract() {
         contract_number: data.contract_number || '',
         client_profile_id: (data as any).client_profile_id || '',
         contract_type: data.contract_type || '',
-        status: data.status || '',
+        status: data.estado || '',
         total_amount: data.total_amount?.toString() || '',
         start_date: data.start_date || '',
         end_date: data.end_date || '',

@@ -115,8 +115,8 @@ export default function Notifications() {
       
       const { data: expiringContracts, error: contractsError } = await supabase
         .from('contracts')
-        .select('id, contract_number, client_name, end_date, created_at')
-        .eq('status', 'active')
+        .select('id, contract_number, end_date, created_at, client_profile_id, profiles!contracts_client_profile_id_fkey(name)')
+        .eq('estado', 'en_ejecucion')
         .lte('end_date', thirtyDaysFromNow.toISOString().split('T')[0])
         .order('end_date', { ascending: true });
 
@@ -125,10 +125,11 @@ export default function Notifications() {
       } else {
         expiringContracts?.forEach(contract => {
           const daysUntilExpiry = Math.ceil((new Date(contract.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          const clientName = (contract.profiles as any)?.name || 'Cliente';
           realNotifications.push({
             id: `contract-expiry-${contract.id}`,
             title: 'Contrato próximo a vencer',
-            message: `El contrato ${contract.contract_number} (${contract.client_name}) vence en ${daysUntilExpiry} días`,
+            message: `El contrato ${contract.contract_number} (${clientName}) vence en ${daysUntilExpiry} días`,
             type: daysUntilExpiry <= 7 ? 'error' : 'warning',
             read: false,
             created_at: contract.created_at,
@@ -172,7 +173,7 @@ export default function Notifications() {
 
       const { data: newContracts, error: newContractsError } = await supabase
         .from('contracts')
-        .select('id, contract_number, client_name, created_at, total_amount, created_by, profiles!contracts_created_by_fkey(name)')
+        .select('id, contract_number, created_at, total_amount, created_by, client_profile_id, profiles!contracts_created_by_fkey(name), client:profiles!contracts_client_profile_id_fkey(name)')
         .gte('created_at', sevenDaysAgo.toISOString())
         .order('created_at', { ascending: false })
         .limit(5);
@@ -181,10 +182,11 @@ export default function Notifications() {
         console.error('Error loading new contracts:', newContractsError);
       } else {
         newContracts?.forEach(contract => {
+          const clientName = (contract.client as any)?.name || 'Cliente';
           realNotifications.push({
             id: `contract-new-${contract.id}`,
             title: 'Nuevo contrato creado',
-            message: `Se ha creado el contrato ${contract.contract_number} para ${contract.client_name} por $${parseFloat(contract.total_amount.toString()).toLocaleString('es-CO')}`,
+            message: `Se ha creado el contrato ${contract.contract_number} para ${clientName} por $${parseFloat(contract.total_amount.toString()).toLocaleString('es-CO')}`,
             type: 'success',
             read: false,
             created_at: contract.created_at,

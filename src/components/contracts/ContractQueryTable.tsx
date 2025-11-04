@@ -133,27 +133,77 @@ export function ContractQueryTable({
     setDocumentsDialog(true);
     
     try {
-      const { data, error } = await supabase
+      // 1. Obtener el contrato para acceder a signed_contract_path y bank_certification_path
+      const { data: contractData, error: contractError } = await supabase
+        .from('contracts')
+        .select('signed_contract_path, signed_contract_mime, bank_certification_path, bank_certification_mime')
+        .eq('id', contractId)
+        .single();
+
+      if (contractError) throw contractError;
+
+      // 2. Obtener documentos adicionales de la tabla documents
+      const { data: additionalDocs, error: docsError } = await supabase
         .from('documents')
         .select('*')
         .eq('contract_id', contractId);
       
-      if (error) {
-        console.error('Error fetching documents:', error);
-        setDocuments([]);
-      } else {
-        setDocuments(data || []);
+      if (docsError) throw docsError;
+
+      // 3. Combinar todos los documentos
+      const allDocuments = [];
+
+      // Agregar contrato firmado si existe
+      if (contractData?.signed_contract_path) {
+        allDocuments.push({
+          id: 'signed-contract',
+          file_name: 'Contrato Firmado',
+          file_path: contractData.signed_contract_path,
+          mime_type: contractData.signed_contract_mime || 'application/pdf',
+          file_size: 0,
+          bucket: 'contracts'
+        });
       }
+
+      // Agregar certificación bancaria si existe
+      if (contractData?.bank_certification_path) {
+        allDocuments.push({
+          id: 'bank-certification',
+          file_name: 'Certificación Bancaria',
+          file_path: contractData.bank_certification_path,
+          mime_type: contractData.bank_certification_mime || 'application/pdf',
+          file_size: 0,
+          bucket: 'contracts'
+        });
+      }
+
+      // Agregar documentos adicionales
+      if (additionalDocs && additionalDocs.length > 0) {
+        allDocuments.push(...additionalDocs.map(doc => ({
+          ...doc,
+          bucket: 'contracts'
+        })));
+      }
+
+      setDocuments(allDocuments);
     } catch (error) {
       console.error('Error fetching documents:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los documentos",
+        variant: "destructive"
+      });
       setDocuments([]);
     }
   };
 
   const handleDownloadDocument = async (document: any) => {
     try {
+      // Usar el bucket correcto según el tipo de documento
+      const bucket = document.bucket || 'contracts';
+      
       const { data, error } = await supabase.storage
-        .from('contract-documents')
+        .from(bucket)
         .download(document.file_path);
 
       if (error) {

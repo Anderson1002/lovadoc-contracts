@@ -217,7 +217,7 @@ export function EditBillingAccountDialog({
       let query = supabase
         .from('contracts')
         .select('*')
-        .in('status', ['active']);
+        .in('estado', ['en_ejecucion']);
 
       if (!['super_admin', 'admin', 'supervisor'].includes(userProfile?.roles?.name)) {
         query = query.eq('created_by', userProfile?.id);

@@ -58,14 +58,50 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
       if (contractError) throw contractError;
       setContract(contractData);
 
-      // Load associated documents
-      const { data: documentsData, error: documentsError } = await supabase
+      // Load associated documents - combinar documentos principales con adicionales
+      const { data: additionalDocs, error: documentsError } = await supabase
         .from('documents')
         .select('*')
         .eq('contract_id', id);
 
       if (documentsError) throw documentsError;
-      setDocuments(documentsData || []);
+
+      // Combinar todos los documentos
+      const allDocuments = [];
+
+      // Agregar contrato firmado si existe
+      if (contractData?.signed_contract_path) {
+        allDocuments.push({
+          id: 'signed-contract',
+          file_name: 'Contrato Firmado',
+          file_path: contractData.signed_contract_path,
+          mime_type: contractData.signed_contract_mime || 'application/pdf',
+          file_size: 0,
+          bucket: 'contracts'
+        });
+      }
+
+      // Agregar certificación bancaria si existe
+      if (contractData?.bank_certification_path) {
+        allDocuments.push({
+          id: 'bank-certification',
+          file_name: 'Certificación Bancaria',
+          file_path: contractData.bank_certification_path,
+          mime_type: contractData.bank_certification_mime || 'application/pdf',
+          file_size: 0,
+          bucket: 'contracts'
+        });
+      }
+
+      // Agregar documentos adicionales
+      if (additionalDocs && additionalDocs.length > 0) {
+        allDocuments.push(...additionalDocs.map(doc => ({
+          ...doc,
+          bucket: 'contracts'
+        })));
+      }
+
+      setDocuments(allDocuments);
 
       // Load billing accounts
       const { data: billingData, error: billingError } = await supabase
@@ -141,8 +177,11 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
 
   const downloadDocument = async (document: any) => {
     try {
+      // Usar el bucket correcto según el tipo de documento
+      const bucket = document.bucket || 'contracts';
+      
       const { data, error } = await supabase.storage
-        .from('contract-documents')
+        .from(bucket)
         .download(document.file_path);
 
       if (error) throw error;
