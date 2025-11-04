@@ -8,6 +8,15 @@ interface ContractStatusBadgeProps {
 
 export function ContractStatusBadge({ status, className }: ContractStatusBadgeProps) {
   const getStatusConfig = (status: string) => {
+    // Manejar casos donde status es undefined, null o vacío
+    if (!status) {
+      return {
+        label: 'Registrado',
+        variant: 'secondary' as const,
+        className: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30'
+      };
+    }
+    
     switch (status.toLowerCase()) {
       case 'registrado':
         return {
