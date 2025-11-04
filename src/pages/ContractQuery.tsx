@@ -102,7 +102,14 @@ export default function ContractQuery() {
       
       const { data: contracts, error } = await supabase
         .from('contracts')
-        .select('*')
+        .select(`
+          *,
+          creator:profiles!contracts_created_by_fkey(
+            id,
+            name,
+            email
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -190,11 +197,16 @@ export default function ContractQuery() {
       let aValue = a[sortColumn];
       let bValue = b[sortColumn];
 
+      // Manejar ordenamiento por nombre de usuario creador
+      if (sortColumn === 'creator_name') {
+        aValue = a.creator?.name?.toLowerCase() || '';
+        bValue = b.creator?.name?.toLowerCase() || '';
+      }
       // Handle different data types
-      if (sortColumn === 'total_amount') {
+      else if (sortColumn === 'total_amount') {
         aValue = parseFloat(aValue) || 0;
         bValue = parseFloat(bValue) || 0;
-      } else if (sortColumn === 'start_date' || sortColumn === 'created_at') {
+      } else if (sortColumn === 'start_date' || sortColumn === 'end_date' || sortColumn === 'created_at') {
         aValue = new Date(aValue).getTime();
         bValue = new Date(bValue).getTime();
       } else if (typeof aValue === 'string') {
@@ -236,9 +248,8 @@ export default function ContractQuery() {
       // Create CSV content
       const headers = [
         'Número de Contrato',
-        'Cliente',
-        'Email',
-        'Teléfono',
+        'Usuario Creador',
+        'Email Usuario',
         'Tipo',
         'Estado',
         'Valor Total',
@@ -251,9 +262,8 @@ export default function ContractQuery() {
         headers.join(','),
         ...processedContracts.map(contract => [
           contract.contract_number || '',
-          contract.client_name || '',
-          contract.client_email || '',
-          contract.client_phone || '',
+          contract.creator?.name || '',
+          contract.creator?.email || '',
           contract.contract_type || '',
           contract.status || '',
           contract.total_amount || 0,

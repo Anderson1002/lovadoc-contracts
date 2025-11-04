@@ -63,7 +63,7 @@ interface ContractQueryTableProps {
   sortDirection?: 'asc' | 'desc';
 }
 
-type SortableColumn = 'contract_number' | 'client_name' | 'total_amount' | 'start_date' | 'status' | 'contract_type';
+type SortableColumn = 'contract_number' | 'creator_name' | 'total_amount' | 'start_date' | 'end_date' | 'status' | 'contract_type';
 
 export function ContractQueryTable({ 
   contracts, 
@@ -271,11 +271,11 @@ export function ContractQueryTable({
                 </TableHead>
                 <TableHead 
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort('client_name')}
+                  onClick={() => handleSort('creator_name')}
                 >
                   <div className="flex items-center gap-2">
-                    Cliente
-                    {getSortIcon('client_name')}
+                    Usuario
+                    {getSortIcon('creator_name')}
                   </div>
                 </TableHead>
                 <TableHead 
@@ -307,6 +307,15 @@ export function ContractQueryTable({
                 </TableHead>
                 <TableHead 
                   className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('end_date')}
+                >
+                  <div className="flex items-center gap-2">
+                    Fecha Fin
+                    {getSortIcon('end_date')}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort('status')}
                 >
                   <div className="flex items-center gap-2">
@@ -325,10 +334,12 @@ export function ContractQueryTable({
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
-                      <span className="font-medium">{contract.client_name}</span>
-                      {contract.client_email && (
+                      <span className="font-medium">
+                        {contract.creator?.name || 'Sin asignar'}
+                      </span>
+                      {contract.creator?.email && (
                         <span className="text-xs text-muted-foreground">
-                          {contract.client_email}
+                          {contract.creator.email}
                         </span>
                       )}
                     </div>
@@ -345,6 +356,16 @@ export function ContractQueryTable({
                         <Calendar className="w-3 h-3" />
                         {format(new Date(contract.start_date), "dd/MM/yyyy", { locale: es })}
                       </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {contract.end_date ? (
+                      <div className="flex items-center gap-1 text-sm">
+                        <Calendar className="w-3 h-3" />
+                        {format(new Date(contract.end_date), "dd/MM/yyyy", { locale: es })}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Sin definir</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -373,11 +394,11 @@ export function ContractQueryTable({
                             <div className="space-y-6">
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                  <Label className="text-sm font-semibold">Cliente</Label>
-                                  <p className="text-sm">{selectedContract.client_name}</p>
-                                  {selectedContract.client_email && (
+                                  <Label className="text-sm font-semibold">Creado por</Label>
+                                  <p className="text-sm">{selectedContract.creator?.name || 'Sin asignar'}</p>
+                                  {selectedContract.creator?.email && (
                                     <p className="text-xs text-muted-foreground">
-                                      {selectedContract.client_email}
+                                      {selectedContract.creator.email}
                                     </p>
                                   )}
                                 </div>
