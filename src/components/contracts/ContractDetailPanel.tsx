@@ -20,12 +20,10 @@ import {
   MapPin,
   Phone,
   Mail,
-  X,
-  Eye
+  X
 } from "lucide-react";
 import { ContractStatusBadge } from "./ContractStatusBadge";
 import { formatCurrency } from "@/lib/utils";
-import { DocumentViewerDialog } from "./DocumentViewerDialog";
 
 interface ContractDetailPanelProps {
   contractId: string | null;
@@ -39,11 +37,6 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
   const [documents, setDocuments] = useState<any[]>([]);
   const [billingAccounts, setBillingAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewerDialog, setViewerDialog] = useState(false);
-  const [viewerDocumentUrl, setViewerDocumentUrl] = useState<string | null>(null);
-  const [viewerDocumentName, setViewerDocumentName] = useState("");
-  const [viewerDocumentMimeType, setViewerDocumentMimeType] = useState("");
-  const [viewerDocumentIndex, setViewerDocumentIndex] = useState(0);
 
   useEffect(() => {
     if (contractId && isOpen) {
@@ -185,125 +178,38 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
     return `${diffMonths} meses (${diffDays} días)`;
   };
 
-  const canPreviewInBrowser = (mimeType: string): boolean => {
-    const previewableTypes = [
-      'application/pdf',
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/svg+xml',
-      'text/plain'
-    ];
-    return previewableTypes.includes(mimeType.toLowerCase());
-  };
-
-  const handleViewDocument = async (doc: any, docIndex?: number) => {
+  const handleDownloadDocument = async (doc: any) => {
     try {
       const bucket = doc.bucket || 'contracts';
-      const mimeType = doc.mime_type || 'application/octet-stream';
       
-      const isPdf = mimeType === 'application/pdf';
-      const isImage = mimeType.startsWith('image/');
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .download(doc.file_path);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = doc.file_name;
+      window.document.body.appendChild(a);
+      a.click();
+      window.document.body.removeChild(a);
+      URL.revokeObjectURL(url);
       
-      if (isPdf) {
-        // Para PDFs, usar URL pública firmada
-        const { data: signedUrlData, error: urlError } = await supabase.storage
-          .from(bucket)
-          .createSignedUrl(doc.file_path, 3600);
-
-        if (urlError || !signedUrlData) {
-          console.error('Error getting signed URL:', urlError);
-          toast({
-            title: "Error",
-            description: "No se pudo cargar el PDF",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        setViewerDocumentUrl(signedUrlData.signedUrl);
-        setViewerDocumentName(doc.file_name);
-        setViewerDocumentMimeType(mimeType);
-        setViewerDocumentIndex(docIndex ?? 0);
-        setViewerDialog(true);
-        
-        toast({
-          title: "PDF cargado",
-          description: `Visualizando ${doc.file_name}`,
-        });
-      } else if (isImage) {
-        // Para imágenes, descargar como blob
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .download(doc.file_path);
-
-        if (error) throw error;
-
-        const url = URL.createObjectURL(data);
-        setViewerDocumentUrl(url);
-        setViewerDocumentName(doc.file_name);
-        setViewerDocumentMimeType(mimeType);
-        setViewerDocumentIndex(docIndex ?? 0);
-        setViewerDialog(true);
-        
-        toast({
-          title: "Imagen cargada",
-          description: `Visualizando ${doc.file_name}`,
-        });
-      } else {
-        // Descargar otros archivos
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .download(doc.file_path);
-
-        if (error) throw error;
-
-        const url = URL.createObjectURL(data);
-        const a = window.document.createElement('a');
-        a.href = url;
-        a.download = doc.file_name;
-        window.document.body.appendChild(a);
-        a.click();
-        window.document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        toast({
-          title: "Descarga iniciada",
-          description: `Descargando ${doc.file_name}`,
-        });
-      }
+      toast({
+        title: "Descarga iniciada",
+        description: `Descargando ${doc.file_name}`,
+      });
     } catch (error: any) {
-      console.error('Error handling document:', error);
+      console.error('Error downloading document:', error);
       toast({
         title: "Error",
-        description: "No se pudo procesar el documento",
+        description: "No se pudo descargar el documento",
         variant: "destructive"
       });
     }
   };
-
-  const handleNavigateDocument = async (newIndex: number) => {
-    if (newIndex < 0 || newIndex >= documents.length) return;
-    
-    const doc = documents[newIndex];
-    
-    // Limpiar URL anterior solo si es blob
-    if (viewerDocumentUrl && viewerDocumentUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(viewerDocumentUrl);
-    }
-    
-    await handleViewDocument(doc, newIndex);
-  };
-
-  // Limpiar URL cuando se cierra el modal (solo blobs)
-  useEffect(() => {
-    if (!viewerDialog && viewerDocumentUrl && viewerDocumentUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(viewerDocumentUrl);
-      setViewerDocumentUrl(null);
-    }
-  }, [viewerDialog, viewerDocumentUrl]);
 
   if (loading) {
     return (
@@ -566,14 +472,10 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleViewDocument(doc, index)}
+                          onClick={() => handleDownloadDocument(doc)}
                           className="flex-shrink-0"
                         >
-                          {canPreviewInBrowser(doc.mime_type || '') ? (
-                            <Eye className="h-3 w-3" />
-                          ) : (
-                            <Download className="h-3 w-3" />
-                          )}
+                          <Download className="h-3 w-3" />
                         </Button>
                       </div>
                     ))}
@@ -607,18 +509,6 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
           </div>
         </ScrollArea>
       </SheetContent>
-
-      {/* Dialog de visualización de documentos con lightbox */}
-      <DocumentViewerDialog
-        open={viewerDialog}
-        onOpenChange={setViewerDialog}
-        documentUrl={viewerDocumentUrl}
-        documentName={viewerDocumentName}
-        mimeType={viewerDocumentMimeType}
-        documents={documents}
-        currentIndex={viewerDocumentIndex}
-        onNavigate={handleNavigateDocument}
-      />
     </Sheet>
   );
 }

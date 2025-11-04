@@ -1,7 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { DocumentViewerDialog } from "./DocumentViewerDialog";
 import {
   Table,
   TableBody,
@@ -40,7 +39,7 @@ import { es } from "date-fns/locale";
 import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
 import {
   MoreHorizontal,
-  Eye,
+  Download,
   FileText,
   Calendar,
   DollarSign,
@@ -81,12 +80,6 @@ export function ContractQueryTable({
   const [documentsDialog, setDocumentsDialog] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState<string>("");
   const [documents, setDocuments] = useState<any[]>([]);
-  const [viewerDialog, setViewerDialog] = useState(false);
-  const [viewerDocumentUrl, setViewerDocumentUrl] = useState<string | null>(null);
-  const [viewerDocumentName, setViewerDocumentName] = useState("");
-  const [viewerDocumentMimeType, setViewerDocumentMimeType] = useState("");
-  const [viewerDocumentIndex, setViewerDocumentIndex] = useState(0);
-  const [viewerDocuments, setViewerDocuments] = useState<any[]>([]);
   const { toast } = useToast();
 
   const formatCurrency = (amount: number) => {
@@ -135,19 +128,6 @@ export function ContractQueryTable({
       <ArrowDown className="w-4 h-4" />;
   };
 
-  const canPreviewInBrowser = (mimeType: string): boolean => {
-    const previewableTypes = [
-      'application/pdf',
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/svg+xml',
-      'text/plain'
-    ];
-    return previewableTypes.includes(mimeType.toLowerCase());
-  };
 
   const handleDocuments = async (contractId: string) => {
     setSelectedContractId(contractId);
@@ -221,99 +201,37 @@ export function ContractQueryTable({
     }
   };
 
-  const handleViewDocument = async (doc: any, docIndex?: number) => {
+  const handleDownloadDocument = async (doc: any) => {
     try {
       const bucket = doc.bucket || 'contracts';
-      const mimeType = doc.mime_type || 'application/octet-stream';
       
-      const isPdf = mimeType === 'application/pdf';
-      const isImage = mimeType.startsWith('image/');
-      
-      if (isPdf) {
-        // Para PDFs, usar URL pública firmada en lugar de blob
-        const { data: signedUrlData, error: urlError } = await supabase.storage
-          .from(bucket)
-          .createSignedUrl(doc.file_path, 3600); // URL válida por 1 hora
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .download(doc.file_path);
 
-        if (urlError || !signedUrlData) {
-          console.error('Error getting signed URL:', urlError);
-          toast({
-            title: "Error",
-            description: "No se pudo cargar el documento",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        setViewerDocumentUrl(signedUrlData.signedUrl);
-        setViewerDocumentName(doc.file_name);
-        setViewerDocumentMimeType(mimeType);
-        setViewerDocumentIndex(docIndex ?? 0);
-        setViewerDocuments(documents);
-        setViewerDialog(true);
-        
+      if (error) {
+        console.error('Error downloading file:', error);
         toast({
-          title: "Documento cargado",
-          description: "Visualizando PDF en el visor"
+          title: "Error",
+          description: "No se pudo descargar el archivo",
+          variant: "destructive"
         });
-      } else if (isImage) {
-        // Para imágenes, descargar como blob (funciona mejor con zoom/pan)
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .download(doc.file_path);
-
-        if (error) {
-          console.error('Error loading image:', error);
-          toast({
-            title: "Error",
-            description: "No se pudo cargar la imagen",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        const url = URL.createObjectURL(data);
-        setViewerDocumentUrl(url);
-        setViewerDocumentName(doc.file_name);
-        setViewerDocumentMimeType(mimeType);
-        setViewerDocumentIndex(docIndex ?? 0);
-        setViewerDocuments(documents);
-        setViewerDialog(true);
-        
-        toast({
-          title: "Imagen cargada",
-          description: "Visualizando imagen en el visor"
-        });
-      } else {
-        // Descargar archivos que no pueden visualizarse
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .download(doc.file_path);
-
-        if (error) {
-          console.error('Error downloading file:', error);
-          toast({
-            title: "Error",
-            description: "No se pudo descargar el archivo",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        const url = URL.createObjectURL(data);
-        const link = window.document.createElement('a');
-        link.href = url;
-        link.download = doc.file_name;
-        window.document.body.appendChild(link);
-        link.click();
-        window.document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        toast({
-          title: "Descarga iniciada",
-          description: "El documento se está descargando"
-        });
+        return;
       }
+
+      const url = URL.createObjectURL(data);
+      const link = window.document.createElement('a');
+      link.href = url;
+      link.download = doc.file_name;
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Descarga iniciada",
+        description: `Descargando ${doc.file_name}`
+      });
     } catch (error) {
       console.error('Error handling document:', error);
       toast({
@@ -323,27 +241,6 @@ export function ContractQueryTable({
       });
     }
   };
-
-  const handleNavigateDocument = async (newIndex: number) => {
-    if (newIndex < 0 || newIndex >= documents.length) return;
-    
-    const doc = documents[newIndex];
-    
-    // Limpiar URL anterior solo si es blob (imágenes)
-    if (viewerDocumentUrl && viewerDocumentUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(viewerDocumentUrl);
-    }
-    
-    await handleViewDocument(doc, newIndex);
-  };
-
-  // Limpiar URL cuando se cierra el modal (solo blobs)
-  useEffect(() => {
-    if (!viewerDialog && viewerDocumentUrl && viewerDocumentUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(viewerDocumentUrl);
-      setViewerDocumentUrl(null);
-    }
-  }, [viewerDialog, viewerDocumentUrl]);
 
   if (isLoading) {
     return (
@@ -520,7 +417,7 @@ export function ContractQueryTable({
                             size="sm"
                             onClick={() => setSelectedContract(contract)}
                           >
-                            <Eye className="w-4 h-4" />
+                            <FileText className="w-4 h-4" />
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
@@ -604,7 +501,7 @@ export function ContractQueryTable({
                             className="cursor-pointer hover:bg-muted"
                             onClick={() => setSelectedContract(contract)}
                           >
-                            <Eye className="w-4 h-4 mr-2" />
+                            <FileText className="w-4 h-4 mr-2" />
                             Ver detalles
                           </DropdownMenuItem>
                           <DropdownMenuItem 
@@ -663,9 +560,10 @@ export function ContractQueryTable({
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleViewDocument(doc, index)}
+                        onClick={() => handleDownloadDocument(doc)}
                       >
-                        {canPreviewInBrowser(doc.mime_type || '') ? 'Ver archivo' : 'Descargar'}
+                        <Download className="w-4 h-4 mr-2" />
+                        Descargar
                       </Button>
                     </div>
                   ))}
@@ -719,18 +617,6 @@ export function ContractQueryTable({
         )}
       </CardContent>
     </Card>
-
-    {/* Dialog de visualización de documentos con lightbox */}
-    <DocumentViewerDialog
-      open={viewerDialog}
-      onOpenChange={setViewerDialog}
-      documentUrl={viewerDocumentUrl}
-      documentName={viewerDocumentName}
-      mimeType={viewerDocumentMimeType}
-      documents={viewerDocuments}
-      currentIndex={viewerDocumentIndex}
-      onNavigate={handleNavigateDocument}
-    />
     </>
   );
 }
