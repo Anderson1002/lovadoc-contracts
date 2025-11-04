@@ -562,7 +562,6 @@ export type Database = {
           signed_contract_path: string | null
           start_date: string
           state_code: string | null
-          status: Database["public"]["Enums"]["contract_status"]
           supervisor_asignado: string | null
           supervisor_id: string | null
           total_amount: number
@@ -596,7 +595,6 @@ export type Database = {
           signed_contract_path?: string | null
           start_date: string
           state_code?: string | null
-          status?: Database["public"]["Enums"]["contract_status"]
           supervisor_asignado?: string | null
           supervisor_id?: string | null
           total_amount: number
@@ -630,7 +628,6 @@ export type Database = {
           signed_contract_path?: string | null
           start_date?: string
           state_code?: string | null
-          status?: Database["public"]["Enums"]["contract_status"]
           supervisor_asignado?: string | null
           supervisor_id?: string | null
           total_amount?: number
@@ -1002,12 +999,6 @@ export type Database = {
         | "en_ejecucion"
         | "completado"
         | "cancelado"
-      contract_status:
-        | "draft"
-        | "active"
-        | "completed"
-        | "cancelled"
-        | "returned"
       contract_type: "fixed_amount" | "variable_amount" | "contractor"
       user_role_type:
         | "super_admin"
@@ -1148,13 +1139,6 @@ export const Constants = {
         "en_ejecucion",
         "completado",
         "cancelado",
-      ],
-      contract_status: [
-        "draft",
-        "active",
-        "completed",
-        "cancelled",
-        "returned",
       ],
       contract_type: ["fixed_amount", "variable_amount", "contractor"],
       user_role_type: [
