@@ -126,7 +126,7 @@ export function ContractTable({
               <TableHead>Cliente</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Área</TableHead>
-              <TableHead>Super DAvys</TableHead>
+              <TableHead>Supervisor</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>
                 <div className="flex items-center gap-1">
@@ -175,8 +175,13 @@ export function ContractTable({
                     </span>
                   </TableCell>
                   <TableCell>
+                    <span className="text-sm">
+                      {contract.supervisor_asignado || '-'}
+                    </span>
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-2">
-                      <ContractStatusBadge status={contract.status} />
+                      <ContractStatusBadge status={contract.estado || contract.status} />
                       <ContractStateActions 
                         contract={contract}
                         userRole={userRole}

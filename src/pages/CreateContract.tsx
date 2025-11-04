@@ -282,6 +282,8 @@ export default function CreateContract() {
         area_responsable: data.area_responsable || null,
         supervisor_asignado: data.supervisor_asignado || null,
         status: 'draft' as const,
+        estado: 'registrado' as const,
+        state_code: 'REG',
         created_by: profile.id,
         
         // NUEVOS CAMPOS PRE-CARGADOS

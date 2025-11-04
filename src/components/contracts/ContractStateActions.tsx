@@ -45,7 +45,18 @@ export function ContractStateActions({
   const { toast } = useToast();
 
   const canChangeState = ["super_admin", "admin", "supervisor"].includes(userRole);
-  const currentState = contract.status;
+  const currentState = contract.estado || contract.status;
+
+  const getStateCode = (estado: string): string => {
+    switch (estado) {
+      case 'registrado': return 'REG';
+      case 'devuelto': return 'DEV';
+      case 'en_ejecucion': return 'EJE';
+      case 'completado': return 'COM';
+      case 'cancelado': return 'CAN';
+      default: return 'REG';
+    }
+  };
 
   const handleStateChange = async (newState: string, comments?: string) => {
     if (!canChangeState) return;
@@ -53,11 +64,22 @@ export function ContractStateActions({
     try {
       setIsLoading(true);
 
+      // Mapear estado al campo status para compatibilidad
+      const statusMap: Record<string, 'draft' | 'active' | 'completed' | 'cancelled' | 'returned'> = {
+        'registrado': 'draft',
+        'en_ejecucion': 'active',
+        'devuelto': 'returned',
+        'completado': 'completed',
+        'cancelado': 'cancelled'
+      };
+
       // Actualizar el contrato con el nuevo estado
       const { error: contractError } = await supabase
         .from('contracts')
         .update({ 
-          status: newState as 'draft' | 'active' | 'completed' | 'cancelled' | 'returned',
+          estado: newState as 'registrado' | 'en_ejecucion' | 'devuelto' | 'completado' | 'cancelado',
+          state_code: getStateCode(newState),
+          status: statusMap[newState] || 'draft',
           comentarios_devolucion: comments || null
         })
         .eq('id', contract.id);
@@ -104,11 +126,11 @@ export function ContractStateActions({
 
   const getStateLabel = (state: string) => {
     switch (state) {
-      case 'draft': return 'registrado';
-      case 'returned': return 'devuelto';
-      case 'active': return 'puesto en ejecución';
-      case 'completed': return 'completado';
-      case 'cancelled': return 'cancelado';
+      case 'registrado': case 'draft': return 'registrado';
+      case 'devuelto': case 'returned': return 'devuelto';
+      case 'en_ejecucion': case 'active': return 'aprobado y puesto en ejecución';
+      case 'completado': case 'completed': return 'completado';
+      case 'cancelado': case 'cancelled': return 'cancelado';
       default: return state;
     }
   };
@@ -116,20 +138,23 @@ export function ContractStateActions({
   const getAvailableActions = () => {
     switch (currentState) {
       case 'draft':
+      case 'registrado':
         return [
-          { action: 'active', label: 'Aprobar', icon: CheckCircle, variant: 'default' },
-          { action: 'returned', label: 'Devolver', icon: XCircle, variant: 'destructive' },
-          { action: 'cancelled', label: 'Cancelar', icon: XCircle, variant: 'destructive' }
+          { action: 'en_ejecucion', label: 'Aprobar', icon: CheckCircle, variant: 'default' },
+          { action: 'devuelto', label: 'Devolver', icon: XCircle, variant: 'destructive' },
+          { action: 'cancelado', label: 'Cancelar', icon: XCircle, variant: 'destructive' }
         ];
       case 'returned':
+      case 'devuelto':
         return [
-          { action: 'active', label: 'Aprobar', icon: CheckCircle, variant: 'default' },
-          { action: 'cancelled', label: 'Cancelar', icon: XCircle, variant: 'destructive' }
+          { action: 'en_ejecucion', label: 'Aprobar', icon: CheckCircle, variant: 'default' },
+          { action: 'cancelado', label: 'Cancelar', icon: XCircle, variant: 'destructive' }
         ];
       case 'active':
+      case 'en_ejecucion':
         return [
-          { action: 'completed', label: 'Completar', icon: CheckCircle, variant: 'default' },
-          { action: 'cancelled', label: 'Cancelar', icon: XCircle, variant: 'destructive' }
+          { action: 'completado', label: 'Completar', icon: CheckCircle, variant: 'default' },
+          { action: 'cancelado', label: 'Cancelar', icon: XCircle, variant: 'destructive' }
         ];
       default:
         return [];
@@ -151,7 +176,7 @@ export function ContractStateActions({
         <DropdownMenuContent align="end" className="bg-background border shadow-lg">
           {getAvailableActions().map((action) => {
             const Icon = action.icon;
-            if (action.action === 'returned') {
+            if (action.action === 'returned' || action.action === 'devuelto') {
               return (
                 <DropdownMenuItem 
                   key={action.action}
@@ -187,10 +212,10 @@ export function ContractStateActions({
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="comments">Comentarios de devolución</Label>
+              <Label htmlFor="comments">Comentarios de devolución (obligatorio)</Label>
               <Textarea
                 id="comments"
-                placeholder="Explica las razones de la devolución..."
+                placeholder="Explica las razones de la devolución: ej. Fecha de inicio incorrecta, Fecha de fin incorrecta, Tipo de contrato incorrecto, Documento PDF con errores..."
                 value={rejectionComments}
                 onChange={(e) => setRejectionComments(e.target.value)}
                 rows={4}
@@ -207,7 +232,7 @@ export function ContractStateActions({
             </Button>
             <Button 
               variant="destructive" 
-              onClick={() => handleStateChange('returned', rejectionComments)}
+              onClick={() => handleStateChange('devuelto', rejectionComments)}
               disabled={isLoading || !rejectionComments.trim()}
             >
               {isLoading ? "Devolviendo..." : "Devolver Contrato"}

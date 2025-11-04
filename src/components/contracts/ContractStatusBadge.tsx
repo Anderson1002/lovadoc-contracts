@@ -14,41 +14,41 @@ export function ContractStatusBadge({ status, className }: ContractStatusBadgePr
         return {
           label: 'Registrado',
           variant: 'secondary' as const,
-          className: 'bg-state-registered/20 text-state-registered border-state-registered/30'
+          className: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30'
         };
       case 'returned':
       case 'devuelto':
         return {
           label: 'Devuelto',
-          variant: 'secondary' as const,
-          className: 'bg-state-returned/20 text-state-returned border-state-returned/30'
+          variant: 'destructive' as const,
+          className: 'bg-red-500/20 text-red-700 border-red-500/30'
         };
       case 'active':
       case 'en_ejecucion':
         return {
           label: 'En Ejecución',
-          variant: 'secondary' as const,
-          className: 'bg-state-executing/20 text-state-executing border-state-executing/30'
+          variant: 'default' as const,
+          className: 'bg-green-500/20 text-green-700 border-green-500/30'
         };
       case 'completed':
       case 'completado':
         return {
           label: 'Completado',
           variant: 'secondary' as const,
-          className: 'bg-state-completed/20 text-state-completed border-state-completed/30'
+          className: 'bg-blue-500/20 text-blue-700 border-blue-500/30'
         };
       case 'cancelled':
       case 'cancelado':
         return {
           label: 'Cancelado',
           variant: 'secondary' as const,
-          className: 'bg-state-cancelled/20 text-state-cancelled border-state-cancelled/30'
+          className: 'bg-gray-500/20 text-gray-700 border-gray-500/30'
         };
       default:
         return {
           label: 'Registrado',
           variant: 'secondary' as const,
-          className: 'bg-state-registered/20 text-state-registered border-state-registered/30'
+          className: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30'
         };
     }
   };
