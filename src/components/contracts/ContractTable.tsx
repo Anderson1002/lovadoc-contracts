@@ -86,7 +86,7 @@ export function ContractTable({
     (contract.client?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const canEdit = ["super_admin", "admin", "supervisor"].includes(userRole);
+  const canEdit = ["super_admin", "admin"].includes(userRole);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
