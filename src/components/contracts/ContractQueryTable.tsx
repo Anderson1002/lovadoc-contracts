@@ -128,6 +128,20 @@ export function ContractQueryTable({
       <ArrowDown className="w-4 h-4" />;
   };
 
+  const canPreviewInBrowser = (mimeType: string): boolean => {
+    const previewableTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
+      'text/plain'
+    ];
+    return previewableTypes.includes(mimeType.toLowerCase());
+  };
+
   const handleDocuments = async (contractId: string) => {
     setSelectedContractId(contractId);
     setDocumentsDialog(true);
@@ -200,9 +214,8 @@ export function ContractQueryTable({
     }
   };
 
-  const handleDownloadDocument = async (doc: any) => {
+  const handleViewDocument = async (doc: any) => {
     try {
-      // Usar el bucket correcto según el tipo de documento
       const bucket = doc.bucket || 'contracts';
       
       const { data, error } = await supabase.storage
@@ -210,34 +223,49 @@ export function ContractQueryTable({
         .download(doc.file_path);
 
       if (error) {
-        console.error('Error downloading document:', error);
+        console.error('Error loading document:', error);
         toast({
           title: "Error",
-          description: "No se pudo descargar el documento",
+          description: "No se pudo cargar el documento",
           variant: "destructive"
         });
         return;
       }
 
-      // Create download link
       const url = URL.createObjectURL(data);
-      const link = window.document.createElement('a');
-      link.href = url;
-      link.download = doc.file_name;
-      window.document.body.appendChild(link);
-      link.click();
-      window.document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: "Descarga exitosa",
-        description: "El documento se ha descargado correctamente"
-      });
+      const mimeType = doc.mime_type || 'application/octet-stream';
+      
+      if (canPreviewInBrowser(mimeType)) {
+        // Abrir en nueva pestaña para visualización
+        window.open(url, '_blank');
+        
+        toast({
+          title: "Documento abierto",
+          description: "El documento se abrió en una nueva pestaña"
+        });
+        
+        // Limpiar URL después de un tiempo
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } else {
+        // Descargar archivos que no pueden visualizarse
+        const link = window.document.createElement('a');
+        link.href = url;
+        link.download = doc.file_name;
+        window.document.body.appendChild(link);
+        link.click();
+        window.document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast({
+          title: "Descarga iniciada",
+          description: "El documento se está descargando"
+        });
+      }
     } catch (error) {
-      console.error('Error downloading document:', error);
+      console.error('Error handling document:', error);
       toast({
         title: "Error",
-        description: "No se pudo descargar el documento",
+        description: "No se pudo procesar el documento",
         variant: "destructive"
       });
     }
@@ -560,9 +588,9 @@ export function ContractQueryTable({
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleDownloadDocument(doc)}
+                        onClick={() => handleViewDocument(doc)}
                       >
-                        Ver archivo
+                        {canPreviewInBrowser(doc.mime_type || '') ? 'Ver archivo' : 'Descargar'}
                       </Button>
                     </div>
                   ))}

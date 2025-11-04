@@ -20,7 +20,8 @@ import {
   MapPin,
   Phone,
   Mail,
-  X
+  X,
+  Eye
 } from "lucide-react";
 import { ContractStatusBadge } from "./ContractStatusBadge";
 import { formatCurrency } from "@/lib/utils";
@@ -178,35 +179,59 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
     return `${diffMonths} meses (${diffDays} días)`;
   };
 
-  const downloadDocument = async (document: any) => {
+  const canPreviewInBrowser = (mimeType: string): boolean => {
+    const previewableTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
+      'text/plain'
+    ];
+    return previewableTypes.includes(mimeType.toLowerCase());
+  };
+
+  const handleViewDocument = async (doc: any) => {
     try {
-      // Usar el bucket correcto según el tipo de documento
-      const bucket = document.bucket || 'contracts';
+      const bucket = doc.bucket || 'contracts';
       
       const { data, error } = await supabase.storage
         .from(bucket)
-        .download(document.file_path);
+        .download(doc.file_path);
 
       if (error) throw error;
 
       const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = document.file_name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: "Descarga iniciada",
-        description: `Descargando ${document.file_name}`,
-      });
+      const mimeType = doc.mime_type || 'application/octet-stream';
+      
+      if (canPreviewInBrowser(mimeType)) {
+        window.open(url, '_blank');
+        toast({
+          title: "Documento abierto",
+          description: `Visualizando ${doc.file_name}`,
+        });
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } else {
+        const a = window.document.createElement('a');
+        a.href = url;
+        a.download = doc.file_name;
+        window.document.body.appendChild(a);
+        a.click();
+        window.document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        toast({
+          title: "Descarga iniciada",
+          description: `Descargando ${doc.file_name}`,
+        });
+      }
     } catch (error: any) {
-      console.error('Error downloading document:', error);
+      console.error('Error handling document:', error);
       toast({
         title: "Error",
-        description: "No se pudo descargar el documento",
+        description: "No se pudo procesar el documento",
         variant: "destructive"
       });
     }
@@ -473,10 +498,14 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => downloadDocument(doc)}
+                          onClick={() => handleViewDocument(doc)}
                           className="flex-shrink-0"
                         >
-                          <Download className="h-3 w-3" />
+                          {canPreviewInBrowser(doc.mime_type || '') ? (
+                            <Eye className="h-3 w-3" />
+                          ) : (
+                            <Download className="h-3 w-3" />
+                          )}
                         </Button>
                       </div>
                     ))}
