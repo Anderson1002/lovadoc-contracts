@@ -200,14 +200,14 @@ export function ContractQueryTable({
     }
   };
 
-  const handleDownloadDocument = async (document: any) => {
+  const handleDownloadDocument = async (doc: any) => {
     try {
       // Usar el bucket correcto según el tipo de documento
-      const bucket = document.bucket || 'contracts';
+      const bucket = doc.bucket || 'contracts';
       
       const { data, error } = await supabase.storage
         .from(bucket)
-        .download(document.file_path);
+        .download(doc.file_path);
 
       if (error) {
         console.error('Error downloading document:', error);
@@ -221,12 +221,12 @@ export function ContractQueryTable({
 
       // Create download link
       const url = URL.createObjectURL(data);
-      const link = document.createElement('a');
+      const link = window.document.createElement('a');
       link.href = url;
-      link.download = document.file_name;
-      document.body.appendChild(link);
+      link.download = doc.file_name;
+      window.document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
       toast({
