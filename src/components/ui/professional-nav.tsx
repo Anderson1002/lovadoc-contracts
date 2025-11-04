@@ -149,6 +149,9 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
         if (item.url === "/users" && !["super_admin", "admin"].includes(userRole)) {
           return false;
         }
+        if (item.url === "/contracts" && !["super_admin", "admin", "supervisor"].includes(userRole)) {
+          return false;
+        }
         if (item.url === "/contracts/new" && !["super_admin", "admin", "employee"].includes(userRole)) {
           return false;
         }

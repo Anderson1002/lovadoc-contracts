@@ -74,7 +74,7 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
           title: "Gestionar Contratos",
           url: "/contracts",
           icon: FileText,
-          roles: ["super_admin", "admin", "supervisor", "employee"]
+          roles: ["super_admin", "admin", "supervisor"]
         },
         {
           title: "Consulta Avanzada",
