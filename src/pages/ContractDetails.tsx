@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, DollarSign, User, FileText, Edit, AlertTriangle } from "lucide-react";
 import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
+import { ContractStateHistory } from "@/components/contracts/ContractStateHistory";
 import { formatCurrency } from "@/lib/utils";
 import { Layout } from "@/components/Layout";
 
@@ -334,6 +335,9 @@ export default function ContractDetails() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Historial de Cambios de Estado */}
+        <ContractStateHistory contractId={contract.id} />
       </div>
     </Layout>
   );

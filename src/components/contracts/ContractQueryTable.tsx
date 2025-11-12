@@ -59,6 +59,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { ContractStateHistory } from "./ContractStateHistory";
 
 interface ContractQueryTableProps {
   contracts: any[];
@@ -524,6 +525,9 @@ export function ContractQueryTable({
                                   </p>
                                 </div>
                               )}
+
+                              {/* Historial de Cambios de Estado */}
+                              <ContractStateHistory contractId={selectedContract.id} />
                             </div>
                           )}
                         </DialogContent>

@@ -64,6 +64,14 @@ export function ContractStateActions({
     try {
       setIsLoading(true);
 
+      // Obtener el perfil del usuario actual
+      const { data: userData } = await supabase.auth.getUser();
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', userData.user?.id)
+        .single();
+
       // Actualizar el contrato con el nuevo estado
       const { error: contractError } = await supabase
         .from('contracts')
@@ -76,11 +84,24 @@ export function ContractStateActions({
 
       if (contractError) throw contractError;
 
+      // Registrar en el historial de estados
+      const { error: historyError } = await supabase
+        .from('contract_state_history')
+        .insert({
+          contract_id: contract.id,
+          estado_anterior: currentState as 'registrado' | 'en_ejecucion' | 'devuelto' | 'completado' | 'cancelado',
+          estado_nuevo: newState as 'registrado' | 'en_ejecucion' | 'devuelto' | 'completado' | 'cancelado',
+          changed_by: profileData?.id || userData.user?.id || '',
+          comentarios: comments || null
+        });
+
+      if (historyError) console.warn('Error logging state history:', historyError);
+
       // Registrar el cambio en actividades
       const { error: activityError } = await supabase
         .from('activities')
         .insert({
-          user_id: (await supabase.auth.getUser()).data.user?.id || '',
+          user_id: userData.user?.id || '',
           entity_type: 'contract',
           entity_id: contract.id,
           action: `state_change_${newState}`,

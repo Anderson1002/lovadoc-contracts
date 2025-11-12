@@ -24,6 +24,7 @@ import {
   AlertTriangle
 } from "lucide-react";
 import { ContractStatusBadge } from "./ContractStatusBadge";
+import { ContractStateHistory } from "./ContractStateHistory";
 import { formatCurrency } from "@/lib/utils";
 
 interface ContractDetailPanelProps {
@@ -499,28 +500,8 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
               </CardContent>
             </Card>
 
-            {/* Acciones Rápidas */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Acciones</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" size="sm" className="justify-start">
-                    <Download className="h-4 w-4 mr-2" />
-                    Descargar Contrato
-                  </Button>
-                  <Button variant="outline" size="sm" className="justify-start">
-                    <History className="h-4 w-4 mr-2" />
-                    Ver Historial
-                  </Button>
-                  <Button variant="outline" size="sm" className="justify-start col-span-2">
-                    <Receipt className="h-4 w-4 mr-2" />
-                    Ver Cuentas de Cobro
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Historial de Cambios de Estado */}
+            <ContractStateHistory contractId={contract.id} />
           </div>
         </ScrollArea>
       </SheetContent>
