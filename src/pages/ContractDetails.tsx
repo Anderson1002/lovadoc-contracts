@@ -5,7 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, DollarSign, User, FileText, Edit } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ArrowLeft, Calendar, DollarSign, User, FileText, Edit, AlertTriangle } from "lucide-react";
 import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
 import { formatCurrency } from "@/lib/utils";
 import { Layout } from "@/components/Layout";
@@ -150,6 +151,20 @@ export default function ContractDetails() {
             Editar
           </Button>
         </div>
+
+        {/* Alert de Devolución */}
+        {(contract.estado === 'devuelto' || contract.status === 'devuelto') && contract.comentarios_devolucion && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Contrato Devuelto</AlertTitle>
+            <AlertDescription>
+              <div className="mt-2">
+                <strong>Motivo de la devolución:</strong>
+                <p className="mt-1">{contract.comentarios_devolucion}</p>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Contract Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

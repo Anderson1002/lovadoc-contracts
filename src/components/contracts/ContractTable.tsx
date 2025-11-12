@@ -19,8 +19,14 @@ import {
   MoreVertical,
   Calendar,
   DollarSign,
-  Download
+  Download,
+  MessageSquare
 } from "lucide-react";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +64,7 @@ interface Contract {
   start_date: string;
   end_date: string | null;
   created_at: string;
+  comentarios_devolucion?: string;
 }
 
 interface ContractTableProps {
@@ -297,6 +304,23 @@ export function ContractTable({
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <ContractStatusBadge status={contract.estado || contract.status} />
+                      {(contract.estado === 'devuelto' || contract.status === 'devuelto') && contract.comentarios_devolucion && (
+                        <HoverCard>
+                          <HoverCardTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                              <MessageSquare className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </HoverCardTrigger>
+                          <HoverCardContent className="w-80">
+                            <div className="space-y-2">
+                              <h4 className="text-sm font-semibold text-destructive">Motivo de Devolución</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {contract.comentarios_devolucion}
+                              </p>
+                            </div>
+                          </HoverCardContent>
+                        </HoverCard>
+                      )}
                       <ContractStateActions 
                         contract={contract}
                         userRole={userRole}

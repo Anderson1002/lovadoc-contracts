@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   Calendar, 
   DollarSign, 
@@ -20,7 +21,8 @@ import {
   MapPin,
   Phone,
   Mail,
-  X
+  X,
+  AlertTriangle
 } from "lucide-react";
 import { ContractStatusBadge } from "./ContractStatusBadge";
 import { formatCurrency } from "@/lib/utils";
@@ -255,6 +257,17 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
             </Badge>
           </div>
         </SheetHeader>
+
+        {/* Alert de Devolución */}
+        {(contract.estado === 'devuelto' || contract.status === 'devuelto') && contract.comentarios_devolucion && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Contrato Devuelto</AlertTitle>
+            <AlertDescription>
+              <strong>Motivo:</strong> {contract.comentarios_devolucion}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <ScrollArea className="h-full mt-6">
           <div className="space-y-6 pb-6">
