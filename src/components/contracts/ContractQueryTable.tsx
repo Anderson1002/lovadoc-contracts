@@ -50,8 +50,15 @@ import {
   ChevronsRight,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  MessageSquare,
+  AlertTriangle
 } from "lucide-react";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 interface ContractQueryTableProps {
   contracts: any[];
@@ -406,7 +413,24 @@ export function ContractQueryTable({
                     )}
                   </TableCell>
                   <TableCell>
-                    <ContractStatusBadge status={contract.estado || 'registrado'} />
+                    <div className="flex items-center gap-2">
+                      <ContractStatusBadge status={contract.estado || 'registrado'} />
+                      {(contract.estado === 'devuelto') && contract.comentarios_devolucion && (
+                        <HoverCard>
+                          <HoverCardTrigger>
+                            <MessageSquare className="w-4 h-4 text-destructive cursor-help" />
+                          </HoverCardTrigger>
+                          <HoverCardContent className="w-80">
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-sm">Motivo de Devolución:</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {contract.comentarios_devolucion}
+                              </p>
+                            </div>
+                          </HoverCardContent>
+                        </HoverCard>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -429,6 +453,23 @@ export function ContractQueryTable({
                           </DialogHeader>
                           {selectedContract && (
                             <div className="space-y-6">
+                              {/* Banner de Devolución */}
+                              {(selectedContract.estado === 'devuelto') && selectedContract.comentarios_devolucion && (
+                                <div className="bg-destructive/10 border border-destructive rounded-lg p-4">
+                                  <div className="flex gap-2">
+                                    <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                                    <div>
+                                      <h4 className="font-semibold text-destructive mb-1">
+                                        ⚠️ Este contrato fue devuelto
+                                      </h4>
+                                      <p className="text-sm text-muted-foreground">
+                                        <strong>Debes corregir lo siguiente:</strong>
+                                      </p>
+                                      <p className="text-sm mt-1">{selectedContract.comentarios_devolucion}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                   <Label className="text-sm font-semibold">Creado por</Label>
