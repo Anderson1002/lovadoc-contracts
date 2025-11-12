@@ -13,7 +13,9 @@ import {
   Users,
   Activity,
   CheckCircle,
-  XCircle
+  XCircle,
+  AlertCircle,
+  AlertTriangle
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface DashboardStats {
   totalContracts: number;
@@ -29,7 +32,35 @@ interface DashboardStats {
   cancelledContracts: number;
   totalAmount: number;
   completedPayments: number;
+  returnedContracts: number;
 }
+
+// Helper function to get dashboard configuration based on role
+const getDashboardConfig = (role: string) => {
+  switch (role) {
+    case 'employee':
+      return {
+        title: 'Mis Contratos',
+        description: 'Estado de tus contratos y cuentas de cobro',
+        recentActivityTitle: 'Mis Últimos Contratos',
+        recentActivityDescription: 'Contratos que has registrado'
+      };
+    case 'supervisor':
+      return {
+        title: 'Dashboard - Mi Proceso',
+        description: 'Supervisión de contratos de tu área',
+        recentActivityTitle: 'Actividad Reciente - Mi Equipo',
+        recentActivityDescription: 'Últimos contratos del proceso'
+      };
+    default: // admin, super_admin
+      return {
+        title: 'Dashboard ContratosMédicos Pro',
+        description: 'Resumen general del sistema de gestión de contratos',
+        recentActivityTitle: 'Actividad Reciente',
+        recentActivityDescription: 'Últimos contratos registrados en el sistema'
+      };
+  }
+};
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>({
@@ -38,7 +69,8 @@ export default function Dashboard() {
     pendingReview: 0,
     cancelledContracts: 0,
     totalAmount: 0,
-    completedPayments: 0
+    completedPayments: 0,
+    returnedContracts: 0
   });
   const [contracts, setContracts] = useState<any[]>([]);
   const [recentContracts, setRecentContracts] = useState([]);
@@ -92,6 +124,7 @@ export default function Dashboard() {
       const activeContracts = contracts?.filter(c => c.estado === 'en_ejecucion').length || 0;
       const completedContracts = contracts?.filter(c => c.estado === 'completado').length || 0;
       const cancelledContracts = contracts?.filter(c => c.estado === 'cancelado').length || 0;
+      const returnedContracts = contracts?.filter(c => c.estado === 'devuelto').length || 0;
       const totalAmount = contracts?.reduce((sum, c) => sum + Number(c.total_amount), 0) || 0;
       const completedPayments = payments?.length || 0;
 
@@ -101,7 +134,8 @@ export default function Dashboard() {
         pendingReview: registeredContracts,
         cancelledContracts,
         totalAmount,
-        completedPayments
+        completedPayments,
+        returnedContracts
       });
 
       setContracts(contracts || []);
@@ -152,14 +186,16 @@ export default function Dashboard() {
     );
   }
 
+  const dashboardConfig = getDashboardConfig(userRole);
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard ContratosMédicos Pro</h1>
+          <h1 className="text-3xl font-bold text-foreground">{dashboardConfig.title}</h1>
           <p className="text-muted-foreground">
-            Resumen general del sistema de gestión de contratos
+            {dashboardConfig.description}
           </p>
         </div>
         {["super_admin", "admin", "employee"].includes(userRole) && (
@@ -172,17 +208,44 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* Alert for employees with returned contracts */}
+      {userRole === 'employee' && stats.returnedContracts > 0 && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Contratos Devueltos</AlertTitle>
+          <AlertDescription className="flex items-center justify-between">
+            <span>
+              Tienes {stats.returnedContracts} {stats.returnedContracts === 1 ? 'contrato devuelto que requiere' : 'contratos devueltos que requieren'} corrección.
+            </span>
+            <Button variant="outline" size="sm" asChild className="ml-4">
+              <Link to="/contracts/query?estado=devuelto">
+                Ver ahora
+              </Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
         <div className="lg:col-span-1">
           <ProcessCard />
         </div>
         <StatsCard
-          title="Total Contratos"
+          title={userRole === 'employee' ? 'Mis Contratos' : 'Total Contratos'}
           value={stats.totalContracts}
           icon={FileText}
           description="Total de contratos registrados"
         />
+        {userRole === 'employee' && stats.returnedContracts > 0 && (
+          <StatsCard
+            title="Devueltos"
+            value={stats.returnedContracts}
+            icon={AlertCircle}
+            description="Requieren corrección"
+            className="border-destructive"
+          />
+        )}
         <StatsCard
           title="En Ejecución"
           value={stats.activeContracts}
@@ -221,14 +284,14 @@ export default function Dashboard() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="h-5 w-5" />
-                  Actividad Reciente
+                  {dashboardConfig.recentActivityTitle}
                 </CardTitle>
                 <CardDescription>
-                  Últimos contratos registrados en el sistema
+                  {dashboardConfig.recentActivityDescription}
                 </CardDescription>
               </div>
               <Button variant="outline" size="sm" asChild>
-                <Link to="/contracts">
+                <Link to={userRole === 'employee' ? '/contracts/query' : '/contracts'}>
                   Ver todos
                 </Link>
               </Button>
@@ -268,8 +331,62 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Quick Actions for admins */}
-      {["super_admin", "admin", "supervisor", "treasury"].includes(userRole) && (
+      {/* Quick Actions */}
+      {userRole === 'employee' ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Acciones Rápidas
+            </CardTitle>
+            <CardDescription>
+              Gestiona tus contratos y cuentas de cobro
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/contracts/new" className="flex flex-col items-start gap-2">
+                  <FileText className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Crear Contrato</div>
+                    <div className="text-sm text-muted-foreground">Registrar nuevo contrato</div>
+                  </div>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/billing-accounts" className="flex flex-col items-start gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Mis Cuentas de Cobro</div>
+                    <div className="text-sm text-muted-foreground">Ver facturación</div>
+                  </div>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/contracts/query" className="flex flex-col items-start gap-2">
+                  <FileText className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Consultar Contratos</div>
+                    <div className="text-sm text-muted-foreground">Ver mis contratos</div>
+                  </div>
+                </Link>
+              </Button>
+              {stats.returnedContracts > 0 && (
+                <Button variant="outline" asChild className="justify-start h-auto p-4 border-destructive">
+                  <Link to="/contracts/query?estado=devuelto" className="flex flex-col items-start gap-2">
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <div className="text-left">
+                      <div className="font-medium">Contratos Devueltos</div>
+                      <div className="text-sm text-muted-foreground">{stats.returnedContracts} requieren corrección</div>
+                    </div>
+                  </Link>
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ) : ["super_admin", "admin", "supervisor", "treasury"].includes(userRole) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
