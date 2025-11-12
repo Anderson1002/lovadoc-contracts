@@ -5,7 +5,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ArrowLeft, Calendar, DollarSign, User, FileText, Edit, AlertTriangle } from "lucide-react";
 import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
 import { formatCurrency } from "@/lib/utils";
@@ -154,16 +153,18 @@ export default function ContractDetails() {
 
         {/* Alert de Devolución */}
         {(contract.estado === 'devuelto' || contract.status === 'devuelto') && contract.comentarios_devolucion && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Contrato Devuelto</AlertTitle>
-            <AlertDescription>
-              <div className="mt-2">
-                <strong>Motivo de la devolución:</strong>
-                <p className="mt-1">{contract.comentarios_devolucion}</p>
+          <div className="bg-destructive/10 border border-destructive rounded-lg p-4">
+            <div className="flex gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-semibold text-destructive mb-2">Contrato Devuelto</h4>
+                <p className="text-sm text-muted-foreground">
+                  <strong>Motivo de la devolución:</strong>
+                </p>
+                <p className="text-sm mt-1">{contract.comentarios_devolucion}</p>
               </div>
-            </AlertDescription>
-          </Alert>
+            </div>
+          </div>
         )}
 
         {/* Contract Details */}

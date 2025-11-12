@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   Calendar, 
   DollarSign, 
@@ -258,19 +257,22 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
           </div>
         </SheetHeader>
 
-        {/* Alert de Devolución */}
-        {(contract.estado === 'devuelto' || contract.status === 'devuelto') && contract.comentarios_devolucion && (
-          <Alert variant="destructive" className="mt-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Contrato Devuelto</AlertTitle>
-            <AlertDescription>
-              <strong>Motivo:</strong> {contract.comentarios_devolucion}
-            </AlertDescription>
-          </Alert>
-        )}
-
         <ScrollArea className="h-full mt-6">
           <div className="space-y-6 pb-6">
+            {/* Alert de Devolución */}
+            {(contract.estado === 'devuelto' || contract.status === 'devuelto') && contract.comentarios_devolucion && (
+              <div className="bg-destructive/10 border border-destructive rounded-lg p-4">
+                <div className="flex gap-2">
+                  <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-destructive mb-1">Contrato Devuelto</h4>
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Motivo:</strong> {contract.comentarios_devolucion}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Información Básica */}
             <Card>
               <CardHeader>
