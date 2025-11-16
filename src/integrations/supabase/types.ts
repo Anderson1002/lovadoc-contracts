@@ -1002,6 +1002,7 @@ export type Database = {
         | "en_ejecucion"
         | "completado"
         | "cancelado"
+        | "corregido"
       contract_type: "fixed_amount" | "variable_amount" | "contractor"
       user_role_type:
         | "super_admin"
@@ -1142,6 +1143,7 @@ export const Constants = {
         "en_ejecucion",
         "completado",
         "cancelado",
+        "corregido",
       ],
       contract_type: ["fixed_amount", "variable_amount", "contractor"],
       user_role_type: [
