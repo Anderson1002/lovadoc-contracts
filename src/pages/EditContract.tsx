@@ -31,6 +31,7 @@ export default function EditContract() {
     area_responsable: '',
     supervisor_asignado: ''
   });
+  const [originalContractData, setOriginalContractData] = useState<any>(null);
   const [clientData, setClientData] = useState<any>(null);
   const [calculatedPeriod, setCalculatedPeriod] = useState({ months: 0, days: 0 });
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | null>(null);
@@ -87,6 +88,9 @@ export default function EditContract() {
         supervisor_asignado: (data as any).supervisor_asignado || ''
       });
       
+      // Store original data for change detection
+      setOriginalContractData(data);
+      
       setClientData(data.client);
       
       // Cargar URL del PDF si existe
@@ -109,6 +113,38 @@ export default function EditContract() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const detectChanges = (originalData: any, newData: any) => {
+    const changes: any = {};
+    
+    const fieldLabels: Record<string, string> = {
+      start_date: 'Fecha de Inicio',
+      end_date: 'Fecha de Fin',
+      total_amount: 'Monto Total',
+      description: 'Descripción',
+      signed_contract_path: 'Documento Firmado',
+      contract_type: 'Tipo de Contrato',
+      area_responsable: 'Área Responsable',
+      supervisor_asignado: 'Supervisor Asignado'
+    };
+
+    // Compare relevant fields
+    Object.keys(fieldLabels).forEach(field => {
+      const oldValue = originalData[field]?.toString() || '';
+      const newValue = newData[field]?.toString() || '';
+      
+      // Only register if actually changed
+      if (oldValue !== newValue && (oldValue || newValue)) {
+        changes[field] = {
+          old: oldValue || '(vacío)',
+          new: newValue || '(vacío)',
+          label: fieldLabels[field]
+        };
+      }
+    });
+
+    return Object.keys(changes).length > 0 ? changes : null;
   };
 
   // Función para calcular plazo de ejecución
@@ -238,6 +274,21 @@ export default function EditContract() {
       // Verificar si el contrato está en estado devuelto para cambio automático
       const wasDevuelto = formData.status === 'devuelto';
       
+      // Detect changes if contract was devuelto
+      let changesDetails = null;
+      if (wasDevuelto && originalContractData) {
+        changesDetails = detectChanges(originalContractData, {
+          start_date: formData.start_date,
+          end_date: formData.end_date,
+          total_amount: formData.total_amount,
+          description: formData.description,
+          signed_contract_path: updatedSignedContractPath || originalContractData.signed_contract_path,
+          contract_type: formData.contract_type,
+          area_responsable: formData.area_responsable,
+          supervisor_asignado: formData.supervisor_asignado
+        });
+      }
+      
       const updateData: any = {
         contract_number: formData.contract_number,
         client_profile_id: formData.client_profile_id,
@@ -271,7 +322,7 @@ export default function EditContract() {
 
       if (error) throw error;
 
-      // Si era devuelto, registrar en el historial
+      // Si era devuelto, registrar en el historial con detalles de cambios
       if (wasDevuelto) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -289,7 +340,8 @@ export default function EditContract() {
                 estado_anterior: 'devuelto',
                 estado_nuevo: 'registrado',
                 changed_by: profile.id,
-                comentarios: 'Contrato corregido por el contratista y reenviado para revisión'
+                comentarios: 'Contrato corregido por el contratista y reenviado para revisión',
+                changes_details: changesDetails
               });
           }
         }
