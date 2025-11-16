@@ -471,6 +471,7 @@ export type Database = {
       contract_state_history: {
         Row: {
           changed_by: string
+          changes_details: Json | null
           comentarios: string | null
           contract_id: string
           created_at: string
@@ -480,6 +481,7 @@ export type Database = {
         }
         Insert: {
           changed_by: string
+          changes_details?: Json | null
           comentarios?: string | null
           contract_id: string
           created_at?: string
@@ -489,6 +491,7 @@ export type Database = {
         }
         Update: {
           changed_by?: string
+          changes_details?: Json | null
           comentarios?: string | null
           contract_id?: string
           created_at?: string
