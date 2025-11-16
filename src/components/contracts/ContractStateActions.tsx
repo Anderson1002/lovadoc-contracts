@@ -51,6 +51,7 @@ export function ContractStateActions({
     switch (estado) {
       case 'registrado': return 'REG';
       case 'devuelto': return 'DEV';
+      case 'corregido': return 'COR';
       case 'en_ejecucion': return 'EJE';
       case 'completado': return 'COM';
       case 'cancelado': return 'CAN';
@@ -76,7 +77,7 @@ export function ContractStateActions({
       const { error: contractError } = await supabase
         .from('contracts')
         .update({ 
-          estado: newState as 'registrado' | 'en_ejecucion' | 'devuelto' | 'completado' | 'cancelado',
+          estado: newState as 'registrado' | 'corregido' | 'en_ejecucion' | 'devuelto' | 'completado' | 'cancelado',
           state_code: getStateCode(newState),
           comentarios_devolucion: comments || null
         })
@@ -89,8 +90,8 @@ export function ContractStateActions({
         .from('contract_state_history')
         .insert({
           contract_id: contract.id,
-          estado_anterior: currentState as 'registrado' | 'en_ejecucion' | 'devuelto' | 'completado' | 'cancelado',
-          estado_nuevo: newState as 'registrado' | 'en_ejecucion' | 'devuelto' | 'completado' | 'cancelado',
+          estado_anterior: currentState as 'registrado' | 'corregido' | 'en_ejecucion' | 'devuelto' | 'completado' | 'cancelado',
+          estado_nuevo: newState as 'registrado' | 'corregido' | 'en_ejecucion' | 'devuelto' | 'completado' | 'cancelado',
           changed_by: profileData?.id || userData.user?.id || '',
           comentarios: comments || null
         });
@@ -138,6 +139,7 @@ export function ContractStateActions({
   const getStateLabel = (state: string) => {
     switch (state) {
       case 'registrado': return 'registrado';
+      case 'corregido': return 'corregido';
       case 'devuelto': return 'devuelto';
       case 'en_ejecucion': return 'aprobado y puesto en ejecución';
       case 'completado': return 'completado';
@@ -149,6 +151,12 @@ export function ContractStateActions({
   const getAvailableActions = () => {
     switch (currentState) {
       case 'registrado':
+        return [
+          { action: 'en_ejecucion', label: 'Aprobar', icon: CheckCircle, variant: 'default' },
+          { action: 'devuelto', label: 'Devolver', icon: XCircle, variant: 'destructive' },
+          { action: 'cancelado', label: 'Cancelar', icon: XCircle, variant: 'destructive' }
+        ];
+      case 'corregido':
         return [
           { action: 'en_ejecucion', label: 'Aprobar', icon: CheckCircle, variant: 'default' },
           { action: 'devuelto', label: 'Devolver', icon: XCircle, variant: 'destructive' },

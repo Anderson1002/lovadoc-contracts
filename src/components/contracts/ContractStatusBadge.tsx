@@ -30,6 +30,12 @@ export function ContractStatusBadge({ status, className }: ContractStatusBadgePr
           variant: 'destructive' as const,
           className: 'bg-red-500/20 text-red-700 border-red-500/30'
         };
+      case 'corregido':
+        return {
+          label: 'Corregido',
+          variant: 'default' as const,
+          className: 'bg-purple-500/20 text-purple-700 border-purple-500/30'
+        };
       case 'en_ejecucion':
         return {
           label: 'En Ejecución',

@@ -302,10 +302,10 @@ export default function EditContract() {
         updated_at: new Date().toISOString()
       };
 
-      // Si estaba devuelto, cambiar automáticamente a registrado
+      // Si estaba devuelto, cambiar automáticamente a corregido
       if (wasDevuelto) {
-        updateData.estado = 'registrado';
-        updateData.state_code = 'REG';
+        updateData.estado = 'corregido';
+        updateData.state_code = 'COR';
         updateData.comentarios_devolucion = null; // Limpiar comentarios de devolución
       }
 
@@ -338,9 +338,9 @@ export default function EditContract() {
               .insert({
                 contract_id: id,
                 estado_anterior: 'devuelto',
-                estado_nuevo: 'registrado',
+                estado_nuevo: 'corregido',
                 changed_by: profile.id,
-                comentarios: 'Contrato corregido por el contratista y reenviado para revisión',
+                comentarios: 'Contrato corregido por el contratista y listo para revisión del supervisor',
                 changes_details: changesDetails
               });
           }
