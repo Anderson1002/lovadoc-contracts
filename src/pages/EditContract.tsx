@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save, FileText, Upload, X } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ArrowLeft, Save, FileText, Upload, X, AlertTriangle } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ClientSelector } from "@/components/contracts/ClientSelector";
 
@@ -234,6 +235,9 @@ export default function EditContract() {
         });
       }
 
+      // Verificar si el contrato está en estado devuelto para cambio automático
+      const wasDevuelto = formData.status === 'devuelto';
+      
       const updateData: any = {
         contract_number: formData.contract_number,
         client_profile_id: formData.client_profile_id,
@@ -246,6 +250,13 @@ export default function EditContract() {
         execution_period_days: executionPeriod.days,
         updated_at: new Date().toISOString()
       };
+
+      // Si estaba devuelto, cambiar automáticamente a registrado
+      if (wasDevuelto) {
+        updateData.estado = 'registrado';
+        updateData.state_code = 'REG';
+        updateData.comentarios_devolucion = null; // Limpiar comentarios de devolución
+      }
 
       // Solo actualizar PDF si se subió uno nuevo
       if (updatedSignedContractPath) {
@@ -260,10 +271,39 @@ export default function EditContract() {
 
       if (error) throw error;
 
-      toast({
-        title: "Éxito",
-        description: "Contrato actualizado correctamente"
-      });
+      // Si era devuelto, registrar en el historial
+      if (wasDevuelto) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
+
+          if (profile) {
+            await supabase
+              .from('contract_state_history')
+              .insert({
+                contract_id: id,
+                estado_anterior: 'devuelto',
+                estado_nuevo: 'registrado',
+                changed_by: profile.id,
+                comentarios: 'Contrato corregido por el contratista y reenviado para revisión'
+              });
+          }
+        }
+
+        toast({
+          title: "Contrato Corregido",
+          description: "El contrato ha sido corregido y enviado nuevamente para revisión"
+        });
+      } else {
+        toast({
+          title: "Éxito",
+          description: "Contrato actualizado correctamente"
+        });
+      }
 
       navigate(`/contracts/${id}`);
     } catch (error: any) {
@@ -311,6 +351,18 @@ export default function EditContract() {
             <p className="text-muted-foreground">{formData.contract_number}</p>
           </div>
         </div>
+
+        {/* Alerta para contratos devueltos */}
+        {formData.status === 'devuelto' && (
+          <Alert variant="destructive" className="border-2">
+            <AlertTriangle className="h-5 w-5" />
+            <AlertTitle className="text-lg font-semibold">Contrato Devuelto - Requiere Corrección</AlertTitle>
+            <AlertDescription className="text-base mt-2">
+              Este contrato fue devuelto por el supervisor y necesita ser corregido. 
+              Al guardar los cambios, el contrato se enviará automáticamente para una nueva revisión.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

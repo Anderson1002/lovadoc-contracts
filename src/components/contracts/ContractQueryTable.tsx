@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -52,7 +53,8 @@ import {
   ArrowUp,
   ArrowDown,
   MessageSquare,
-  AlertTriangle
+  AlertTriangle,
+  Edit
 } from "lucide-react";
 import {
   HoverCard,
@@ -84,6 +86,7 @@ export function ContractQueryTable({
   sortColumn,
   sortDirection
 }: ContractQueryTableProps) {
+  const navigate = useNavigate();
   const [selectedContract, setSelectedContract] = useState<any>(null);
   const [documentsDialog, setDocumentsDialog] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState<string>("");
@@ -556,6 +559,15 @@ export function ContractQueryTable({
                             <FileText className="w-4 h-4 mr-2" />
                             Documentos
                           </DropdownMenuItem>
+                          {contract.estado === 'devuelto' && (
+                            <DropdownMenuItem 
+                              className="cursor-pointer hover:bg-muted text-orange-600"
+                              onClick={() => navigate(`/contracts/${contract.id}/edit`)}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Corregir Contrato
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
