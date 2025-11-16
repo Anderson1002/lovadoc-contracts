@@ -69,6 +69,7 @@ const contractStatuses = [
   { value: "all", label: "Todos los estados", icon: Clock },
   { value: "registrado", label: "Registrado", icon: Clock },
   { value: "devuelto", label: "Devuelto", icon: XCircle },
+  { value: "corregido", label: "Corregido", icon: CheckCircle2 },
   { value: "en_ejecucion", label: "En Ejecución", icon: CheckCircle2 },
   { value: "completado", label: "Completado", icon: CheckCircle2 },
   { value: "cancelado", label: "Cancelado", icon: XCircle }
