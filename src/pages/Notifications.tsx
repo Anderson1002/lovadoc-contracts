@@ -115,7 +115,7 @@ export default function Notifications() {
       
       const { data: expiringContracts, error: contractsError } = await supabase
         .from('contracts')
-        .select('id, contract_number, end_date, created_at, client_profile_id, profiles!contracts_client_profile_id_fkey(name)')
+        .select('id, contract_number, contract_number_original, end_date, created_at, client_profile_id, profiles!contracts_client_profile_id_fkey(name)')
         .eq('estado', 'en_ejecucion')
         .lte('end_date', thirtyDaysFromNow.toISOString().split('T')[0])
         .order('end_date', { ascending: true });
@@ -129,7 +129,7 @@ export default function Notifications() {
           realNotifications.push({
             id: `contract-expiry-${contract.id}`,
             title: 'Contrato próximo a vencer',
-            message: `El contrato ${contract.contract_number} (${clientName}) vence en ${daysUntilExpiry} días`,
+            message: `El contrato ${contract.contract_number_original || contract.contract_number} (${clientName}) vence en ${daysUntilExpiry} días`,
             type: daysUntilExpiry <= 7 ? 'error' : 'warning',
             read: false,
             created_at: contract.created_at,
@@ -173,7 +173,7 @@ export default function Notifications() {
 
       const { data: newContracts, error: newContractsError } = await supabase
         .from('contracts')
-        .select('id, contract_number, created_at, total_amount, created_by, client_profile_id, profiles!contracts_created_by_fkey(name), client:profiles!contracts_client_profile_id_fkey(name)')
+        .select('id, contract_number, contract_number_original, created_at, total_amount, created_by, client_profile_id, profiles!contracts_created_by_fkey(name), client:profiles!contracts_client_profile_id_fkey(name)')
         .gte('created_at', sevenDaysAgo.toISOString())
         .order('created_at', { ascending: false })
         .limit(5);
@@ -186,7 +186,7 @@ export default function Notifications() {
           realNotifications.push({
             id: `contract-new-${contract.id}`,
             title: 'Nuevo contrato creado',
-            message: `Se ha creado el contrato ${contract.contract_number} para ${clientName} por $${parseFloat(contract.total_amount.toString()).toLocaleString('es-CO')}`,
+            message: `Se ha creado el contrato ${contract.contract_number_original || contract.contract_number} para ${clientName} por $${parseFloat(contract.total_amount.toString()).toLocaleString('es-CO')}`,
             type: 'success',
             read: false,
             created_at: contract.created_at,

@@ -50,6 +50,7 @@ interface Contract {
   id: string;
   oid: number;
   contract_number: string;
+  contract_number_original?: string;
   client?: {
     name: string;
     email: string;
@@ -89,7 +90,7 @@ export function ContractTable({
   const { toast } = useToast();
 
   const filteredContracts = contracts.filter(contract =>
-    contract.contract_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (contract.contract_number_original || contract.contract_number).toLowerCase().includes(searchTerm.toLowerCase()) ||
     (contract.client?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -293,7 +294,7 @@ export function ContractTable({
                     #{contract.oid}
                   </TableCell>
                   <TableCell className="font-medium font-mono text-xs">
-                    {contract.contract_number}
+                    {contract.contract_number_original || contract.contract_number}
                   </TableCell>
                   <TableCell>{contract.client?.name || 'Sin cliente'}</TableCell>
                   <TableCell>

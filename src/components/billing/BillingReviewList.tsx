@@ -41,7 +41,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
         .from('billing_accounts')
         .select(`
           *,
-          contracts(contract_number, client_name, total_amount)
+          contracts(contract_number, contract_number_original, client_name, total_amount)
         `)
         .eq('status', 'pendiente_revision')
         .order('created_at', { ascending: false });
@@ -105,6 +105,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
           *,
           contracts(
             contract_number,
+            contract_number_original,
             client_name,
             client_document_number,
             client_email,
@@ -325,7 +326,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{billing.contracts?.contract_number}</p>
+                        <p className="font-medium">{billing.contracts?.contract_number_original || billing.contracts?.contract_number}</p>
                         <p className="text-sm text-muted-foreground">{billing.contracts?.client_name}</p>
                       </div>
                     </TableCell>
@@ -415,7 +416,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                 <>
                   Cuenta: {selectedBilling.account_number} - {formatCurrency(selectedBilling.amount)}
                   <br />
-                  Contrato: {selectedBilling.contracts?.contract_number}
+                  Contrato: {selectedBilling.contracts?.contract_number_original || selectedBilling.contracts?.contract_number}
                 </>
               )}
             </DialogDescription>

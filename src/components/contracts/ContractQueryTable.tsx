@@ -377,9 +377,9 @@ export function ContractQueryTable({
             <TableBody>
               {contracts.map((contract) => (
                 <TableRow key={contract.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">
-                    {contract.contract_number}
-                  </TableCell>
+              <TableCell className="font-medium">
+                {contract.contract_number_original || contract.contract_number}
+              </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="font-medium">
@@ -451,9 +451,9 @@ export function ContractQueryTable({
                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
                             <DialogTitle>Detalles del Contrato</DialogTitle>
-                            <DialogDescription>
-                              {selectedContract?.contract_number}
-                            </DialogDescription>
+          <DialogDescription>
+            Contrato: {selectedContract?.contract_number_original || selectedContract?.contract_number}
+          </DialogDescription>
                           </DialogHeader>
                           {selectedContract && (
                             <div className="space-y-6">

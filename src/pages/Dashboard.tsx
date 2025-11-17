@@ -302,7 +302,7 @@ export default function Dashboard() {
                   <div key={contract.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">{contract.contract_number}</p>
+                        <p className="font-medium">{contract.contract_number_original || contract.contract_number}</p>
                         <ContractStatusBadge status={contract.estado || 'registrado'} />
                       </div>
                       <p className="text-sm text-muted-foreground">{contract.client_name}</p>
