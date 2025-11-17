@@ -596,13 +596,74 @@ export function CreateBillingAccountDialog({
 
                 {/* Contract Details */}
                 {contractDetails && (
-                  <div className="mt-4 p-4 bg-muted rounded-lg space-y-2">
-                    <h4 className="font-medium">Detalles del Contrato</h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div><strong>Cliente:</strong> {contractDetails.client_name}</div>
-                      <div><strong>Email:</strong> {contractDetails.client_email || 'No especificado'}</div>
-                      <div><strong>Valor Total:</strong> {formatCurrency(contractDetails.total_amount)}</div>
-                      <div><strong>Descripción:</strong> {contractDetails.description || 'No especificada'}</div>
+                  <div className="mt-4 p-4 bg-muted rounded-lg space-y-3">
+                    <h4 className="font-medium text-base">Detalles del Contrato</h4>
+                    <div className="space-y-3">
+                      {/* Información básica */}
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Número:</span>
+                          <p className="font-medium">{contractDetails.contract_number}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Tipo:</span>
+                          <p className="font-medium">
+                            {contractDetails.contract_type === 'fixed_amount' && 'Monto Fijo'}
+                            {contractDetails.contract_type === 'variable_amount' && 'Monto Variable'}
+                            {contractDetails.contract_type === 'contractor' && 'Contratista'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Referencias administrativas */}
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">CDP:</span>
+                          <p className="font-medium">{contractDetails.cdp || 'No especificado'}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">RP:</span>
+                          <p className="font-medium">{contractDetails.rp || 'No especificado'}</p>
+                        </div>
+                      </div>
+
+                      {/* Valor y período */}
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Valor Total:</span>
+                          <p className="font-medium">{formatCurrency(contractDetails.total_amount)}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Período de Ejecución:</span>
+                          <p className="font-medium">
+                            {contractDetails.execution_period_months 
+                              ? `${contractDetails.execution_period_months} meses` 
+                              : contractDetails.execution_period_days 
+                                ? `${contractDetails.execution_period_days} días`
+                                : 'No especificado'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Vigencia */}
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Fecha Inicio:</span>
+                          <p className="font-medium">{format(new Date(contractDetails.start_date), 'dd/MM/yyyy')}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Fecha Fin:</span>
+                          <p className="font-medium">{format(new Date(contractDetails.end_date), 'dd/MM/yyyy')}</p>
+                        </div>
+                      </div>
+
+                      {/* Descripción */}
+                      {contractDetails.description && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Descripción:</span>
+                          <p className="font-medium text-xs mt-1 line-clamp-2">{contractDetails.description}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
