@@ -377,8 +377,19 @@ export function ContractQueryTable({
             <TableBody>
               {contracts.map((contract) => (
                 <TableRow key={contract.id} className="hover:bg-muted/50">
-              <TableCell className="font-medium">
-                {contract.contract_number_original || contract.contract_number}
+              <TableCell>
+                <div className="flex flex-col">
+                  <span className="font-medium">
+                    {contract.contract_number_original || contract.contract_number}
+                  </span>
+                  {(contract.cdp || contract.rp) && (
+                    <span className="text-xs text-muted-foreground">
+                      {contract.cdp && `CDP: ${contract.cdp}`}
+                      {contract.cdp && contract.rp && ' | '}
+                      {contract.rp && `RP: ${contract.rp}`}
+                    </span>
+                  )}
+                </div>
               </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
