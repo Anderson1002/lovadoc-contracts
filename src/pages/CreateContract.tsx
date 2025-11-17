@@ -107,6 +107,7 @@ export default function CreateContract() {
   const [userRole, setUserRole] = useState<string>("");
   const [activeContracts, setActiveContracts] = useState<any[]>([]);
   const [selectedActiveContract, setSelectedActiveContract] = useState<any>(null);
+  const [registeredContracts, setRegisteredContracts] = useState<Set<string>>(new Set());
   const [loadingActiveContracts, setLoadingActiveContracts] = useState(false);
   const { isProfileComplete, missingFields, loading: profileLoading } = useProfileValidation();
   const { toast } = useToast();
@@ -141,6 +142,7 @@ export default function CreateContract() {
 
       console.log('📋 Buscando contratos para document_number:', profile.document_number);
 
+      // Cargar contratos activos de la tabla externa
       const { data: contracts, error } = await (supabase as any)
         .from('contract')
         .select('*')
@@ -151,9 +153,23 @@ export default function CreateContract() {
         return;
       }
 
+      // Verificar cuáles ya están registrados
+      const { data: existingContracts } = await supabase
+        .from('contracts')
+        .select('contract_number_original')
+        .not('contract_number_original', 'is', null);
+
+      // Crear Set con los números de contrato ya registrados
+      const registered = new Set(
+        (existingContracts || []).map(c => c.contract_number_original)
+      );
+
       console.log('✅ Contratos activos encontrados:', contracts?.length || 0);
+      console.log('🔒 Contratos ya registrados:', registered.size);
       console.log('📊 Datos de contratos:', contracts);
+      
       setActiveContracts(contracts || []);
+      setRegisteredContracts(registered);
     } catch (error) {
       console.error('❌ Error loading active contracts:', error);
     } finally {
@@ -165,6 +181,16 @@ export default function CreateContract() {
   const handleSelectActiveContract = (selectedIndex: string) => {
     const contract = activeContracts[parseInt(selectedIndex)];
     if (!contract) return;
+
+    // Verificar si ya está registrado
+    if (registeredContracts.has(contract.CONTRATO)) {
+      toast({
+        title: "Contrato ya registrado",
+        description: "Este contrato ya ha sido registrado en el sistema",
+        variant: "destructive"
+      });
+      return;
+    }
 
     // Pre-cargar campos de texto/números
     setValue("contractNumberOriginal", contract.CONTRATO || '');
@@ -420,19 +446,44 @@ export default function CreateContract() {
                           <SelectValue placeholder="Selecciona un contrato" />
                         </SelectTrigger>
                         <SelectContent>
-                          {activeContracts.map((contract, index) => (
-                            <SelectItem 
-                              key={`${contract.CONTRATO}-${index}`} 
-                              value={index.toString()}
-                            >
-                              {contract.CONTRATO}
-                              {contract.RP && ` | RP: ${contract.RP}`}
-                              {contract.CDP && ` | CDP: ${contract.CDP}`}
-                            </SelectItem>
-                          ))}
+                          {activeContracts.map((contract, index) => {
+                            const isRegistered = registeredContracts.has(contract.CONTRATO);
+                            
+                            return (
+                              <SelectItem 
+                                key={`${contract.CONTRATO}-${index}`} 
+                                value={index.toString()}
+                                disabled={isRegistered}
+                                className={isRegistered ? "opacity-60" : ""}
+                              >
+                                <div className="flex items-center justify-between w-full">
+                                  <span>
+                                    {contract.CONTRATO}
+                                    {contract.RP && ` | RP: ${contract.RP}`}
+                                    {contract.CDP && ` | CDP: ${contract.CDP}`}
+                                  </span>
+                                  {isRegistered && (
+                                    <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-0.5 rounded">
+                                      Ya registrado
+                                    </span>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {registeredContracts.size > 0 && (
+                      <Alert className="bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800">
+                        <Info className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                        <AlertDescription className="text-yellow-800 dark:text-yellow-200">
+                          <strong>{registeredContracts.size}</strong> contrato(s) ya registrado(s) en el sistema.
+                          Los contratos marcados como "Ya registrado" no pueden ser seleccionados.
+                        </AlertDescription>
+                      </Alert>
+                    )}
 
                     {selectedActiveContract && (
                       <div className="space-y-4 pt-4 border-t">
