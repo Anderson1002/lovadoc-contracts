@@ -135,12 +135,7 @@ export default function ContractDetails() {
             </Button>
             <div>
               <h1 className="text-3xl font-bold">Contrato #{contract.oid}</h1>
-              <p className="text-muted-foreground font-mono text-sm">{contract.contract_number}</p>
-              {contract.contract_number_original && (
-                <p className="text-xs text-muted-foreground">
-                  Original: {contract.contract_number_original}
-                </p>
-              )}
+              <p className="text-muted-foreground font-mono text-sm">{contract.contract_number_original || contract.contract_number}</p>
             </div>
           </div>
           <Button 
@@ -187,7 +182,7 @@ export default function ContractDetails() {
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Número de Contrato</label>
-                <p className="text-lg font-mono">{contract.contract_number}</p>
+                <p className="text-lg font-mono">{contract.contract_number_original || contract.contract_number}</p>
               </div>
               {contract.contract_number_original && (
                 <div>

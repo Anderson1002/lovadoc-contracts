@@ -632,8 +632,8 @@ export function EditBillingAccountDialog({
                   <SelectContent>
                     {contracts.map((contract) => (
                       <SelectItem key={contract.id} value={contract.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{contract.contract_number}</span>
+                        <div className="flex-col">
+                          <span className="font-medium">{contract.contract_number_original || contract.contract_number}</span>
                           <span className="text-sm text-muted-foreground">{contract.client_name}</span>
                         </div>
                       </SelectItem>

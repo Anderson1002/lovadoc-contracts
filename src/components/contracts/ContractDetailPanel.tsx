@@ -248,7 +248,7 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
             </Button>
           </div>
           <SheetDescription className="text-lg font-mono">
-            {contract.contract_number}
+            {contract.contract_number_original || contract.contract_number}
           </SheetDescription>
           <div className="flex items-center gap-2">
             <ContractStatusBadge status={contract.estado || 'registrado'} />
@@ -288,7 +288,7 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                       Número de Contrato
                     </label>
-                    <p className="text-sm font-mono mt-1">{contract.contract_number}</p>
+                    <p className="text-sm font-mono mt-1">{contract.contract_number_original || contract.contract_number}</p>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">

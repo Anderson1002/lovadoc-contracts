@@ -585,11 +585,11 @@ export function CreateBillingAccountDialog({
                       <SelectValue placeholder="Seleccione un contrato activo" />
                     </SelectTrigger>
                     <SelectContent>
-                      {contracts.map((contract) => (
-                        <SelectItem key={contract.id} value={contract.id}>
-                          {contract.contract_number} - {contract.client_name}
-                        </SelectItem>
-                      ))}
+                {contracts.map((contract) => (
+                  <SelectItem key={contract.id} value={contract.id}>
+                    {contract.contract_number_original || contract.contract_number} - {contract.client_name}
+                  </SelectItem>
+                ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -603,7 +603,7 @@ export function CreateBillingAccountDialog({
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
                           <span className="text-muted-foreground">Número:</span>
-                          <p className="font-medium">{contractDetails.contract_number}</p>
+                          <p className="font-medium">{contractDetails.contract_number_original || contractDetails.contract_number}</p>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Tipo:</span>

@@ -320,7 +320,7 @@ export default function CreateContract() {
 
       toast({
         title: "Contrato creado exitosamente",
-        description: `Contrato #${contract.oid} - ${contract.contract_number} registrado.`,
+        description: `Contrato #${contract.oid} - ${contract.contract_number_original || contract.contract_number} registrado.`,
       });
 
       navigate(`/contracts/${contract.id}`);

@@ -7,6 +7,7 @@ import SignatureCanvas from "react-signature-canvas";
 interface Contract {
   id: string;
   contract_number: string;
+  contract_number_original?: string;
   client_name: string;
   client_document_number?: string;
   client_email?: string;
@@ -164,10 +165,10 @@ export function BillingDocumentPreview({
               POR PRESTACIÓN DE SERVICIOS COMO: {selectedContract?.description || 'PROFESIONAL DE SISTEMAS PARA EL DESARROLLO DE NUEVAS APLICACIONES Y/O TECNOLOGÍAS'}. DEL PERIODO DEL MES DE{' '}
               {startDate && endDate && (
                 <>
-                  {format(startDate, 'dd/MM/yyyy')} - {format(endDate, 'dd/MM/yyyy')}
-                </>
-              )}
-              , SEGÚN CONTRATO No. {selectedContract?.contract_number || '[Número de Contrato]'}
+              {format(startDate, 'dd/MM/yyyy')} - {format(endDate, 'dd/MM/yyyy')}
+            </>
+          )}
+          , SEGÚN CONTRATO No. {selectedContract?.contract_number_original || selectedContract?.contract_number || '[Número de Contrato]'}
             </p>
             
             <div className="mt-4">
