@@ -2,11 +2,17 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { History, Clock, User, MessageSquare, ArrowRight, AlertCircle, CheckCircle2, XCircle, FileEdit, Filter } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { History, Clock, User, MessageSquare, ArrowRight, AlertCircle, CheckCircle2, XCircle, FileEdit, Filter, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { ContractStatusBadge } from "./ContractStatusBadge";
 import { ContractFieldChanges } from "./ContractFieldChanges";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 interface ContractStateHistoryProps {
   contractId: string;
@@ -80,6 +86,95 @@ export function ContractStateHistory({ contractId }: ContractStateHistoryProps) 
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getStateName = (estado: string) => {
+    const stateNames: Record<string, string> = {
+      'registrado': 'Registrado',
+      'devuelto': 'Devuelto',
+      'corregido': 'Corregido',
+      'en_ejecucion': 'En Ejecución',
+      'completado': 'Completado',
+      'cancelado': 'Cancelado'
+    };
+    return stateNames[estado] || estado;
+  };
+
+  const exportToPDF = () => {
+    try {
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFontSize(16);
+      doc.text('Historial de Cambios de Estado', 14, 20);
+      doc.setFontSize(10);
+      doc.text(`Generado: ${new Date().toLocaleString('es-CO')}`, 14, 28);
+      doc.text(`Total de cambios: ${filteredHistory.length}`, 14, 34);
+      
+      // Table data
+      const tableData = filteredHistory.map((entry) => [
+        formatDateTime(entry.created_at),
+        entry.estado_anterior ? getStateName(entry.estado_anterior) : '-',
+        getStateName(entry.estado_nuevo),
+        entry.changed_by_profile?.name || 'Sistema',
+        entry.comentarios || '-'
+      ]);
+      
+      autoTable(doc, {
+        startY: 40,
+        head: [['Fecha', 'Estado Anterior', 'Estado Nuevo', 'Usuario', 'Comentarios']],
+        body: tableData,
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+        columnStyles: {
+          0: { cellWidth: 35 },
+          1: { cellWidth: 25 },
+          2: { cellWidth: 25 },
+          3: { cellWidth: 30 },
+          4: { cellWidth: 'auto' }
+        },
+        margin: { left: 14, right: 14 }
+      });
+      
+      doc.save(`historial-estados-${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success('PDF exportado exitosamente');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast.error('Error al exportar PDF');
+    }
+  };
+
+  const exportToExcel = () => {
+    try {
+      const excelData = filteredHistory.map((entry) => ({
+        'Fecha': formatDateTime(entry.created_at),
+        'Estado Anterior': entry.estado_anterior ? getStateName(entry.estado_anterior) : '-',
+        'Estado Nuevo': getStateName(entry.estado_nuevo),
+        'Usuario': entry.changed_by_profile?.name || 'Sistema',
+        'Comentarios': entry.comentarios || '-',
+        'Cambios en Campos': entry.changes_details ? JSON.stringify(entry.changes_details) : '-'
+      }));
+      
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Historial');
+      
+      // Set column widths
+      worksheet['!cols'] = [
+        { wch: 25 }, // Fecha
+        { wch: 20 }, // Estado Anterior
+        { wch: 20 }, // Estado Nuevo
+        { wch: 25 }, // Usuario
+        { wch: 50 }, // Comentarios
+        { wch: 40 }  // Cambios en Campos
+      ];
+      
+      XLSX.writeFile(workbook, `historial-estados-${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Excel exportado exitosamente');
+    } catch (error) {
+      console.error('Error exporting Excel:', error);
+      toast.error('Error al exportar Excel');
+    }
   };
 
   const getStateIcon = (estado: string) => {
@@ -171,6 +266,25 @@ export function ContractStateHistory({ contractId }: ContractStateHistoryProps) 
                 <SelectItem value="cancelado">Cancelado</SelectItem>
               </SelectContent>
             </Select>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={exportToPDF} className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  Exportar a PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportToExcel} className="gap-2">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Exportar a Excel
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardHeader>
