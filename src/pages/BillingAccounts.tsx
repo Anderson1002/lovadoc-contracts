@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Receipt, Eye, MessageSquare } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Receipt, Eye, MessageSquare, AlertCircle } from "lucide-react";
 import { CreateBillingAccountDialog } from "@/components/billing/CreateBillingAccountDialog";
 import { BillingAccountsList } from "@/components/billing/BillingAccountsList";
 import { BillingReviewList } from "@/components/billing/BillingReviewList";
@@ -18,10 +20,17 @@ export default function BillingAccounts() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [availableContracts, setAvailableContracts] = useState(0);
 
   useEffect(() => {
     loadUserProfile();
   }, []);
+
+  useEffect(() => {
+    if (userProfile && canCreateBilling) {
+      loadAvailableContracts();
+    }
+  }, [userProfile]);
 
   const loadUserProfile = async () => {
     try {
@@ -48,6 +57,32 @@ export default function BillingAccounts() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAvailableContracts = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      let query = supabase
+        .from('contracts')
+        .select('id', { count: 'exact', head: true })
+        .in('estado', ['en_ejecucion']);
+
+      // Filter by role
+      if (userRole === 'employee') {
+        query = query.eq('created_by', userProfile.id);
+      } else if (userRole === 'supervisor') {
+        query = query.eq('created_by', userProfile.id);
+      }
+
+      const { count, error } = await query;
+
+      if (error) throw error;
+      setAvailableContracts(count || 0);
+    } catch (error: any) {
+      console.error('Error loading available contracts:', error);
     }
   };
 
@@ -85,13 +120,42 @@ export default function BillingAccounts() {
             </p>
           </div>
           {canCreateBilling && (
-            <Button 
-              onClick={() => setShowCreateDialog(true)}
-              className="flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Nueva Cuenta de Cobro
-            </Button>
+            <div className="flex flex-col items-end gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={() => setShowCreateDialog(true)}
+                      disabled={availableContracts === 0}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Nueva Cuenta de Cobro
+                      {availableContracts > 0 && (
+                        <Badge variant="secondary" className="ml-1">
+                          {availableContracts}
+                        </Badge>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {availableContracts > 0 
+                        ? `${availableContracts} contrato${availableContracts > 1 ? 's' : ''} disponible${availableContracts > 1 ? 's' : ''} en ejecución`
+                        : 'No tienes contratos en ejecución'}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              {availableContracts === 0 && (
+                <Alert className="max-w-md">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Las cuentas de cobro solo pueden crearse para contratos aprobados y en ejecución.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
           )}
         </div>
 
