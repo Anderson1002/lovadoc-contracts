@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { History, Clock, User, MessageSquare, ArrowRight, AlertCircle, CheckCircle2, XCircle, FileEdit } from "lucide-react";
+import { History, Clock, User, MessageSquare, ArrowRight, AlertCircle, CheckCircle2, XCircle, FileEdit, Filter } from "lucide-react";
 import { ContractStatusBadge } from "./ContractStatusBadge";
 import { ContractFieldChanges } from "./ContractFieldChanges";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ContractStateHistoryProps {
   contractId: string;
@@ -26,6 +27,7 @@ interface HistoryEntry {
 export function ContractStateHistory({ contractId }: ContractStateHistoryProps) {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterState, setFilterState] = useState<string>("all");
 
   useEffect(() => {
     loadHistory();
@@ -117,6 +119,10 @@ export function ContractStateHistory({ contractId }: ContractStateHistoryProps) 
     );
   }
 
+  const filteredHistory = filterState === "all" 
+    ? history 
+    : history.filter(entry => entry.estado_nuevo === filterState);
+
   if (history.length === 0) {
     return (
       <Card>
@@ -138,26 +144,51 @@ export function ContractStateHistory({ contractId }: ContractStateHistoryProps) 
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-muted/30 border-b">
-        <CardTitle className="flex items-center gap-2">
-          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10">
-            <History className="h-4 w-4 text-primary" />
+        <div className="flex items-center justify-between gap-4">
+          <CardTitle className="flex items-center gap-2">
+            <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10">
+              <History className="h-4 w-4 text-primary" />
+            </div>
+            Historial de Cambios de Estado
+            <Badge variant="secondary" className="ml-2">
+              {filteredHistory.length} {filteredHistory.length === 1 ? 'cambio' : 'cambios'}
+            </Badge>
+          </CardTitle>
+          
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={filterState} onValueChange={setFilterState}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filtrar por estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los cambios</SelectItem>
+                <SelectItem value="registrado">Registrado</SelectItem>
+                <SelectItem value="devuelto">Devuelto</SelectItem>
+                <SelectItem value="corregido">Corregido</SelectItem>
+                <SelectItem value="en_ejecucion">En Ejecución</SelectItem>
+                <SelectItem value="completado">Completado</SelectItem>
+                <SelectItem value="cancelado">Cancelado</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          Historial de Cambios de Estado
-          <Badge variant="secondary" className="ml-auto">
-            {history.length} {history.length === 1 ? 'cambio' : 'cambios'}
-          </Badge>
-        </CardTitle>
+        </div>
       </CardHeader>
       <CardContent className="pt-6">
-        <div className="space-y-8">
-          {history.map((entry, index) => (
+        {filteredHistory.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            No hay cambios de estado que coincidan con el filtro seleccionado
+          </p>
+        ) : (
+          <div className="space-y-8">
+            {filteredHistory.map((entry, index) => (
             <div 
               key={entry.id} 
               className="relative animate-fade-in"
               style={{ animationDelay: `${index * 50}ms` }}
             >
               {/* Timeline line */}
-              {index < history.length - 1 && (
+              {index < filteredHistory.length - 1 && (
                 <div className="absolute left-5 top-12 bottom-0 w-px bg-gradient-to-b from-border to-transparent" />
               )}
               
@@ -240,14 +271,15 @@ export function ContractStateHistory({ contractId }: ContractStateHistoryProps) 
                   )}
                   
                   {/* Separator between entries */}
-                  {index < history.length - 1 && (
+                  {index < filteredHistory.length - 1 && (
                     <Separator className="mt-6" />
                   )}
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
