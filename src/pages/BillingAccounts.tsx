@@ -247,6 +247,7 @@ export default function BillingAccounts() {
           userProfile={userProfile}
           onSuccess={() => {
             setShowCreateDialog(false);
+            loadAvailableContracts();
             // Refresh the lists
             window.location.reload();
           }}
