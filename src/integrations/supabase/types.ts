@@ -501,6 +501,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "contract_state_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contract_state_history_contract_id_fkey"
             columns: ["contract_id"]
             isOneToOne: false
