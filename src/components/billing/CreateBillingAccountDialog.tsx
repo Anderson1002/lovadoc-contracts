@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Download, Check, ChevronsUpDown } from "lucide-react";
+import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Download, Check, ChevronsUpDown, Pencil, Trash2 } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { formatCurrency, formatCurrencyInput } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
@@ -64,6 +64,8 @@ export function CreateBillingAccountDialog({
     status: 'draft'
   });
   const [showCurrentActivity, setShowCurrentActivity] = useState(false);
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
+  const [existingEvidences, setExistingEvidences] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [contractsLoading, setContractsLoading] = useState(true);
   const [contractSelectOpen, setContractSelectOpen] = useState(false);
@@ -180,6 +182,8 @@ export function CreateBillingAccountDialog({
       status: 'draft'
     });
     setShowCurrentActivity(false);
+    setEditingActivityId(null);
+    setExistingEvidences([]);
     setCurrentDraftId(null);
     setBillingStatus('borrador');
     setPlanillaNumero('');
@@ -487,20 +491,39 @@ export function CreateBillingAccountDialog({
 
     try {
       const billingAccountId = currentDraftId;
+      let savedActivity;
 
-      const { data: savedActivity, error: activityError } = await supabase
-        .from('billing_activities')
-        .insert({
-          billing_account_id: billingAccountId,
-          activity_name: currentActivity.activityName,
-          actions_developed: currentActivity.actions,
-          activity_order: activities.length + 1,
-          status: 'borrador'
-        })
-        .select()
-        .single();
+      if (editingActivityId) {
+        // Update existing activity
+        const { data, error: activityError } = await supabase
+          .from('billing_activities')
+          .update({
+            activity_name: currentActivity.activityName,
+            actions_developed: currentActivity.actions
+          })
+          .eq('id', editingActivityId)
+          .select()
+          .single();
 
-      if (activityError) throw activityError;
+        if (activityError) throw activityError;
+        savedActivity = data;
+      } else {
+        // Insert new activity
+        const { data, error: activityError } = await supabase
+          .from('billing_activities')
+          .insert({
+            billing_account_id: billingAccountId,
+            activity_name: currentActivity.activityName,
+            actions_developed: currentActivity.actions,
+            activity_order: activities.length + 1,
+            status: 'borrador'
+          })
+          .select()
+          .single();
+
+        if (activityError) throw activityError;
+        savedActivity = data;
+      }
 
       if (currentActivity.evidences.length > 0) {
         const evidencePromises = currentActivity.evidences.map(async (file) => {
@@ -528,13 +551,35 @@ export function CreateBillingAccountDialog({
         await Promise.all(evidencePromises);
       }
       
-      const newSavedActivity = {
-        ...currentActivity,
-        status: 'saved' as const,
-        dbId: savedActivity.id
-      };
+      if (editingActivityId) {
+        // Update activity in the list
+        setActivities(prev => prev.map(a => 
+          a.dbId === editingActivityId 
+            ? { ...currentActivity, status: 'saved', dbId: editingActivityId }
+            : a
+        ));
+        
+        toast({
+          title: "Actividad Actualizada",
+          description: `Actividad "${currentActivity.activityName}" ha sido actualizada exitosamente`,
+        });
+      } else {
+        // Add new activity to the list
+        const newSavedActivity: Activity = {
+          ...currentActivity,
+          status: 'saved',
+          dbId: savedActivity.id
+        };
+        
+        setActivities(prev => [...prev, newSavedActivity]);
+        
+        toast({
+          title: "Actividad Registrada",
+          description: `Actividad "${newSavedActivity.activityName}" ha sido registrada exitosamente`,
+        });
+      }
       
-      setActivities(prev => [...prev, newSavedActivity]);
+      // Reset form
       setCurrentActivity({
         id: crypto.randomUUID(),
         activityName: '',
@@ -543,11 +588,8 @@ export function CreateBillingAccountDialog({
         status: 'draft'
       });
       setShowCurrentActivity(false);
-      
-      toast({
-        title: "Actividad Registrada",
-        description: `Actividad "${newSavedActivity.activityName}" ha sido registrada exitosamente`,
-      });
+      setEditingActivityId(null);
+      setExistingEvidences([]);
     } catch (error: any) {
       console.error('Error saving activity:', error);
       toast({
@@ -639,11 +681,109 @@ export function CreateBillingAccountDialog({
   };
 
   const addActivity = () => {
+    setCurrentActivity({
+      id: crypto.randomUUID(),
+      activityName: '',
+      actions: '',
+      evidences: [],
+      status: 'draft'
+    });
+    setEditingActivityId(null);
+    setExistingEvidences([]);
     setShowCurrentActivity(true);
   };
 
-  const removeActivity = (activityId: string) => {
-    setActivities(prev => prev.filter(a => a.id !== activityId));
+  const editActivity = async (activity: Activity) => {
+    if (!activity.dbId) return;
+    
+    try {
+      // Load existing evidences
+      const { data: evidences, error } = await supabase
+        .from('billing_activity_evidence')
+        .select('*')
+        .eq('billing_activity_id', activity.dbId);
+
+      if (error) throw error;
+
+      setCurrentActivity({
+        ...activity,
+        evidences: [] // New files to upload
+      });
+      setExistingEvidences(evidences || []);
+      setEditingActivityId(activity.dbId);
+      setShowCurrentActivity(true);
+    } catch (error: any) {
+      console.error('Error loading activity evidences:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las evidencias de la actividad",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const removeActivity = async (activity: Activity) => {
+    if (!activity.dbId) {
+      setActivities(prev => prev.filter(a => a.id !== activity.id));
+      return;
+    }
+
+    try {
+      // Delete evidences first
+      const { error: evidenceError } = await supabase
+        .from('billing_activity_evidence')
+        .delete()
+        .eq('billing_activity_id', activity.dbId);
+
+      if (evidenceError) throw evidenceError;
+
+      // Delete activity
+      const { error: activityError } = await supabase
+        .from('billing_activities')
+        .delete()
+        .eq('id', activity.dbId);
+
+      if (activityError) throw activityError;
+
+      setActivities(prev => prev.filter(a => a.dbId !== activity.dbId));
+      
+      toast({
+        title: "Actividad Eliminada",
+        description: "La actividad ha sido eliminada exitosamente"
+      });
+    } catch (error: any) {
+      console.error('Error deleting activity:', error);
+      toast({
+        title: "Error",
+        description: `No se pudo eliminar la actividad: ${error.message}`,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const removeExistingEvidence = async (evidenceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('billing_activity_evidence')
+        .delete()
+        .eq('id', evidenceId);
+
+      if (error) throw error;
+
+      setExistingEvidences(prev => prev.filter(e => e.id !== evidenceId));
+      
+      toast({
+        title: "Evidencia Eliminada",
+        description: "La evidencia ha sido eliminada exitosamente"
+      });
+    } catch (error: any) {
+      console.error('Error deleting evidence:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la evidencia",
+        variant: "destructive"
+      });
+    }
   };
 
   const addEvidenceToCurrentActivity = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1017,14 +1157,26 @@ export function CreateBillingAccountDialog({
                               </div>
                             )}
                           </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeActivity(activity.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => editActivity(activity)}
+                              title="Editar actividad"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeActivity(activity)}
+                              title="Eliminar actividad"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1034,7 +1186,9 @@ export function CreateBillingAccountDialog({
                 {/* Current Activity Form */}
                 {showCurrentActivity && (
                   <div className="mt-4 p-4 border rounded-lg bg-muted">
-                    <h4 className="font-medium mb-3">Nueva Actividad</h4>
+                    <h4 className="font-medium mb-3">
+                      {editingActivityId ? 'Editar Actividad' : 'Nueva Actividad'}
+                    </h4>
                     <div className="space-y-3">
                       <div>
                         <Label>Nombre de la Actividad *</Label>
@@ -1057,6 +1211,31 @@ export function CreateBillingAccountDialog({
 
                       <div>
                         <Label>Evidencias (opcional)</Label>
+                        
+                        {/* Existing evidences */}
+                        {existingEvidences.length > 0 && (
+                          <div className="mb-3 space-y-1">
+                            <p className="text-xs text-muted-foreground">Evidencias actuales:</p>
+                            {existingEvidences.map((evidence) => (
+                              <div key={evidence.id} className="flex items-center justify-between text-sm bg-background p-2 rounded">
+                                <span className="flex items-center gap-2">
+                                  <FileText className="h-3 w-3" />
+                                  {evidence.file_name}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeExistingEvidence(evidence.id)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* New evidences to upload */}
                         <Input
                           type="file"
                           multiple
@@ -1065,6 +1244,7 @@ export function CreateBillingAccountDialog({
                         />
                         {currentActivity.evidences.length > 0 && (
                           <div className="mt-2 space-y-1">
+                            <p className="text-xs text-muted-foreground">Nuevas evidencias:</p>
                             {currentActivity.evidences.map((file, index) => (
                               <div key={index} className="flex items-center justify-between text-sm">
                                 <span>{file.name}</span>
@@ -1091,12 +1271,12 @@ export function CreateBillingAccountDialog({
                           {isSubmitting ? (
                             <>
                               <Save className="h-4 w-4 mr-2 animate-pulse" />
-                              Registrando...
+                              {editingActivityId ? 'Actualizando...' : 'Registrando...'}
                             </>
                           ) : (
                             <>
                               <Save className="h-4 w-4 mr-2" />
-                              Registrar Actividad
+                              {editingActivityId ? 'Actualizar Actividad' : 'Registrar Actividad'}
                             </>
                           )}
                         </Button>
