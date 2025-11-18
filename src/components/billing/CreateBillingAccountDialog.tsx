@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Download, Check, ChevronsUpDown, Pencil, Trash2 } from "lucide-react";
+import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Download, Check, ChevronsUpDown, Pencil, Trash2, Eye } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { formatCurrency, formatCurrencyInput } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
@@ -66,6 +66,7 @@ export function CreateBillingAccountDialog({
   const [showCurrentActivity, setShowCurrentActivity] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const [existingEvidences, setExistingEvidences] = useState<any[]>([]);
+  const [previewEvidence, setPreviewEvidence] = useState<{url: string; type: string; name: string} | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [contractsLoading, setContractsLoading] = useState(true);
   const [contractSelectOpen, setContractSelectOpen] = useState(false);
@@ -786,6 +787,39 @@ export function CreateBillingAccountDialog({
     }
   };
 
+  const previewExistingEvidence = async (evidence: any) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('billing-evidence')
+        .createSignedUrl(evidence.file_path, 3600); // URL válida por 1 hora
+
+      if (error) throw error;
+
+      const mimeType = evidence.mime_type || 'application/octet-stream';
+      setPreviewEvidence({
+        url: data.signedUrl,
+        type: mimeType,
+        name: evidence.file_name
+      });
+    } catch (error: any) {
+      console.error('Error previewing evidence:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cargar la vista previa",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const previewNewEvidence = (file: File) => {
+    const url = URL.createObjectURL(file);
+    setPreviewEvidence({
+      url,
+      type: file.type,
+      name: file.name
+    });
+  };
+
   const addEvidenceToCurrentActivity = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     setCurrentActivity(prev => ({
@@ -1218,18 +1252,30 @@ export function CreateBillingAccountDialog({
                             <p className="text-xs text-muted-foreground">Evidencias actuales:</p>
                             {existingEvidences.map((evidence) => (
                               <div key={evidence.id} className="flex items-center justify-between text-sm bg-background p-2 rounded">
-                                <span className="flex items-center gap-2">
-                                  <FileText className="h-3 w-3" />
-                                  {evidence.file_name}
+                                <span className="flex items-center gap-2 flex-1 truncate">
+                                  <FileText className="h-3 w-3 flex-shrink-0" />
+                                  <span className="truncate">{evidence.file_name}</span>
                                 </span>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeExistingEvidence(evidence.id)}
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
+                                <div className="flex gap-1 ml-2">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => previewExistingEvidence(evidence)}
+                                    title="Vista previa"
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeExistingEvidence(evidence.id)}
+                                    title="Eliminar"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1246,16 +1292,28 @@ export function CreateBillingAccountDialog({
                           <div className="mt-2 space-y-1">
                             <p className="text-xs text-muted-foreground">Nuevas evidencias:</p>
                             {currentActivity.evidences.map((file, index) => (
-                              <div key={index} className="flex items-center justify-between text-sm">
-                                <span>{file.name}</span>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeEvidenceFromCurrentActivity(index)}
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
+                              <div key={index} className="flex items-center justify-between text-sm bg-muted p-2 rounded">
+                                <span className="flex-1 truncate">{file.name}</span>
+                                <div className="flex gap-1 ml-2">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => previewNewEvidence(file)}
+                                    title="Vista previa"
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeEvidenceFromCurrentActivity(index)}
+                                    title="Eliminar"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1548,6 +1606,62 @@ export function CreateBillingAccountDialog({
           </div>
         </div>
       </DialogContent>
+
+      {/* Evidence Preview Dialog */}
+      <Dialog open={!!previewEvidence} onOpenChange={() => setPreviewEvidence(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              {previewEvidence?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center bg-muted rounded-lg overflow-hidden" style={{ minHeight: '400px', maxHeight: '70vh' }}>
+            {previewEvidence && (
+              <>
+                {previewEvidence.type.startsWith('image/') ? (
+                  <img 
+                    src={previewEvidence.url} 
+                    alt={previewEvidence.name}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                ) : previewEvidence.type === 'application/pdf' ? (
+                  <iframe
+                    src={previewEvidence.url}
+                    className="w-full h-full"
+                    style={{ minHeight: '500px' }}
+                    title={previewEvidence.name}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-4 p-8 text-center">
+                    <FileText className="h-16 w-16 text-muted-foreground" />
+                    <div>
+                      <p className="text-lg font-medium">Vista previa no disponible</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Este tipo de archivo no puede ser visualizado directamente
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Tipo: {previewEvidence.type}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = previewEvidence.url;
+                        link.download = previewEvidence.name;
+                        link.click();
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Descargar Archivo
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
