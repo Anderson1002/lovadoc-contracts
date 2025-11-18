@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Download } from "lucide-react";
+import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Download, Check, ChevronsUpDown } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { formatCurrency, formatCurrencyInput } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
@@ -65,6 +66,7 @@ export function CreateBillingAccountDialog({
   const [showCurrentActivity, setShowCurrentActivity] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [contractsLoading, setContractsLoading] = useState(true);
+  const [contractSelectOpen, setContractSelectOpen] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [billingStatus, setBillingStatus] = useState<'borrador' | 'pendiente_revision' | 'aprobada' | 'rechazada' | 'pagada'>('borrador');
   
@@ -580,39 +582,77 @@ export function CreateBillingAccountDialog({
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Contrato *</Label>
-                  <Select value={selectedContract} onValueChange={setSelectedContract}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un contrato activo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                {contracts.map((contract) => (
-                  <SelectItem key={contract.id} value={contract.id}>
-                    <div className="flex flex-col gap-1 py-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
-                          {contract.contract_number_original || contract.contract_number}
-                        </span>
-                        {contract.client_name && (
-                          <span className="text-sm text-muted-foreground">
-                            • {contract.client_name}
+                  <Popover open={contractSelectOpen} onOpenChange={setContractSelectOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={contractSelectOpen}
+                        className="w-full justify-between"
+                      >
+                        {selectedContract ? (
+                          <span className="truncate">
+                            {contracts.find((c) => c.id === selectedContract)?.contract_number_original || 
+                             contracts.find((c) => c.id === selectedContract)?.contract_number}
+                            {contracts.find((c) => c.id === selectedContract)?.client_name && 
+                              ` • ${contracts.find((c) => c.id === selectedContract)?.client_name}`}
                           </span>
+                        ) : (
+                          "Seleccione un contrato activo"
                         )}
-                      </div>
-                      {(contract.cdp || contract.rp) && (
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          {contract.cdp && (
-                            <span>CDP: {contract.cdp}</span>
-                          )}
-                          {contract.rp && (
-                            <span>RP: {contract.rp}</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-                    </SelectContent>
-                  </Select>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[500px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar contrato..." />
+                        <CommandList>
+                          <CommandEmpty>No se encontraron contratos.</CommandEmpty>
+                          <CommandGroup>
+                            {contracts.map((contract) => (
+                              <CommandItem
+                                key={contract.id}
+                                value={`${contract.contract_number_original || contract.contract_number} ${contract.client_name || ''} ${contract.cdp || ''} ${contract.rp || ''}`}
+                                onSelect={() => {
+                                  setSelectedContract(contract.id);
+                                  setContractSelectOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedContract === contract.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <div className="flex flex-col gap-1 py-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium">
+                                      {contract.contract_number_original || contract.contract_number}
+                                    </span>
+                                    {contract.client_name && (
+                                      <span className="text-sm text-muted-foreground">
+                                        • {contract.client_name}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {(contract.cdp || contract.rp) && (
+                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                      {contract.cdp && (
+                                        <span>CDP: {contract.cdp}</span>
+                                      )}
+                                      {contract.rp && (
+                                        <span>RP: {contract.rp}</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 {/* Contract Details */}
