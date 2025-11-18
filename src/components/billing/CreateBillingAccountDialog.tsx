@@ -587,7 +587,28 @@ export function CreateBillingAccountDialog({
                     <SelectContent>
                 {contracts.map((contract) => (
                   <SelectItem key={contract.id} value={contract.id}>
-                    {contract.contract_number_original || contract.contract_number} - {contract.client_name}
+                    <div className="flex flex-col gap-1 py-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">
+                          {contract.contract_number_original || contract.contract_number}
+                        </span>
+                        {contract.client_name && (
+                          <span className="text-sm text-muted-foreground">
+                            • {contract.client_name}
+                          </span>
+                        )}
+                      </div>
+                      {(contract.cdp || contract.rp) && (
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          {contract.cdp && (
+                            <span>CDP: {contract.cdp}</span>
+                          )}
+                          {contract.rp && (
+                            <span>RP: {contract.rp}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </SelectItem>
                 ))}
                     </SelectContent>
