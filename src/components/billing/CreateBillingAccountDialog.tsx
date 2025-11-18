@@ -81,7 +81,11 @@ export function CreateBillingAccountDialog({
     social_security: { file: null, uploaded: false, uploading: false }
   });
   
-  const canSubmitForReview = selectedContract && amount && startDate && endDate && 
+  // Progressive validation for each phase
+  const canSaveDetails = selectedContract && amount && startDate && endDate;
+  const canSaveActivity = currentDraftId && currentActivity.activityName.trim() && currentActivity.actions.trim();
+  const canSavePlanilla = currentDraftId && planillaNumero && planillaValor && planillaFecha && planillaFile;
+  const canSubmitForReview = currentDraftId && selectedContract && amount && startDate && endDate && 
                             activities.filter(a => a.status === 'saved').length > 0 && 
                             planillaNumero && planillaValor && planillaFecha && planillaFile &&
                             signatureRef && !signatureRef.isEmpty();
@@ -325,6 +329,143 @@ export function CreateBillingAccountDialog({
     }
   };
 
+  const saveBillingDetailsOnly = async () => {
+    if (!selectedContract || !amount || !startDate || !endDate) {
+      toast({
+        title: "Error",
+        description: "Complete todos los campos básicos: contrato, valor y período de facturación",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const startDateString = format(startDate, 'yyyy-MM-dd');
+      
+      const { data: existingBilling, error: searchError } = await supabase
+        .from('billing_accounts')
+        .select('*')
+        .eq('contract_id', selectedContract)
+        .eq('billing_month', startDateString)
+        .eq('created_by', userProfile.id)
+        .maybeSingle();
+
+      if (searchError) throw searchError;
+
+      let billingAccountId = currentDraftId;
+
+      if (existingBilling) {
+        const { error: updateError } = await supabase
+          .from('billing_accounts')
+          .update({
+            amount: parseFloat(amount),
+            billing_start_date: startDateString,
+            billing_end_date: format(endDate, 'yyyy-MM-dd')
+          })
+          .eq('id', existingBilling.id);
+
+        if (updateError) throw updateError;
+        billingAccountId = existingBilling.id;
+      } else {
+        const { data: draftBilling, error: draftError } = await supabase
+          .from('billing_accounts')
+          .insert({
+            contract_id: selectedContract,
+            amount: parseFloat(amount),
+            billing_month: startDateString,
+            billing_start_date: startDateString,
+            billing_end_date: format(endDate, 'yyyy-MM-dd'),
+            created_by: userProfile.id,
+            status: 'borrador',
+            account_number: ''
+          })
+          .select()
+          .single();
+
+        if (draftError) throw draftError;
+        billingAccountId = draftBilling.id;
+      }
+      
+      setCurrentDraftId(billingAccountId);
+      setBillingStatus('borrador');
+
+      toast({
+        title: "Detalles Guardados",
+        description: "Los detalles de facturación han sido guardados exitosamente"
+      });
+    } catch (error: any) {
+      console.error('Error saving billing details:', error);
+      toast({
+        title: "Error",
+        description: `Error al guardar detalles: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const savePlanillaOnly = async () => {
+    if (!currentDraftId) {
+      toast({
+        title: "Error",
+        description: "Debe guardar primero los detalles de facturación",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!planillaNumero || !planillaValor || !planillaFecha || !planillaFile) {
+      toast({
+        title: "Error",
+        description: "Complete todos los campos de la planilla",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      // Upload planilla file
+      const planillaPath = `${currentDraftId}/planilla.${planillaFile.name.split('.').pop()}`;
+      
+      const { data: planillaUploadData, error: planillaUploadError } = await supabase.storage
+        .from('billing-documents')
+        .upload(planillaPath, planillaFile, { upsert: true });
+        
+      if (planillaUploadError) throw planillaUploadError;
+
+      // Update billing account with planilla data
+      const { error: updateError } = await supabase
+        .from('billing_accounts')
+        .update({
+          planilla_numero: planillaNumero,
+          planilla_valor: parseFloat(planillaValor),
+          planilla_fecha: planillaFecha,
+          planilla_file_url: planillaUploadData.path
+        })
+        .eq('id', currentDraftId);
+      
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Planilla Guardada",
+        description: "La planilla de seguridad social ha sido guardada exitosamente"
+      });
+    } catch (error: any) {
+      console.error('Error saving planilla:', error);
+      toast({
+        title: "Error",
+        description: `Error al guardar planilla: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const saveActivityIndividually = async () => {
     if (!currentActivity.activityName.trim() || !currentActivity.actions.trim()) {
       toast({
@@ -335,58 +476,17 @@ export function CreateBillingAccountDialog({
       return;
     }
 
+    if (!currentDraftId) {
+      toast({
+        title: "Error",
+        description: "Debe guardar primero los detalles de facturación",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      let billingAccountId = currentDraftId;
-      
-      if (!billingAccountId) {
-        if (!selectedContract || !amount || !startDate || !endDate) {
-          toast({
-            title: "Error",
-            description: "Complete los campos básicos: contrato, valor y período de facturación para registrar actividades",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        const startDateString = format(startDate, 'yyyy-MM-dd');
-        
-        const { data: existingBilling, error: searchError } = await supabase
-          .from('billing_accounts')
-          .select('*')
-          .eq('contract_id', selectedContract)
-          .eq('billing_month', startDateString)
-          .eq('created_by', userProfile.id)
-          .maybeSingle();
-
-        if (searchError) throw searchError;
-
-        if (existingBilling) {
-          billingAccountId = existingBilling.id;
-          setCurrentDraftId(existingBilling.id);
-          setBillingStatus(existingBilling.status as 'borrador' | 'pendiente_revision' | 'aprobada' | 'rechazada' | 'pagada');
-        } else {
-          const { data: draftBilling, error: draftError } = await supabase
-            .from('billing_accounts')
-            .insert({
-              contract_id: selectedContract,
-              amount: parseFloat(amount),
-              billing_month: startDateString,
-              billing_start_date: startDateString,
-              billing_end_date: format(endDate, 'yyyy-MM-dd'),
-              created_by: userProfile.id,
-              status: 'borrador',
-              account_number: ''
-            })
-            .select()
-            .single();
-
-          if (draftError) throw draftError;
-          
-          billingAccountId = draftBilling.id;
-          setCurrentDraftId(draftBilling.id);
-          setBillingStatus('borrador');
-        }
-      }
+      const billingAccountId = currentDraftId;
 
       const { data: savedActivity, error: activityError } = await supabase
         .from('billing_activities')
@@ -574,10 +674,23 @@ export function CreateBillingAccountDialog({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Form */}
           <div className="space-y-6">
-            {/* Contract Selection */}
-            <Card>
+            {/* Phase 1: Contract Selection & Billing Details */}
+            <Card className={currentDraftId ? "border-green-600/50" : ""}>
               <CardHeader>
-                <CardTitle>Selección de Contrato</CardTitle>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      {currentDraftId && <CheckCircle className="h-5 w-5 text-green-600" />}
+                      1. Detalles de Facturación
+                    </CardTitle>
+                    <CardDescription>
+                      Seleccione el contrato y complete los datos básicos
+                    </CardDescription>
+                  </div>
+                  {currentDraftId && (
+                    <Badge variant="default" className="bg-green-600">Guardado</Badge>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -819,28 +932,72 @@ export function CreateBillingAccountDialog({
                     </Popover>
                   </div>
                 </div>
+                
+                {/* Save Details Button */}
+                <div className="pt-4 border-t">
+                  <Button
+                    type="button"
+                    onClick={saveBillingDetailsOnly}
+                    disabled={!canSaveDetails || isSubmitting}
+                    className="w-full"
+                    variant={currentDraftId ? "outline" : "default"}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Save className="h-4 w-4 mr-2 animate-pulse" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        {currentDraftId ? "Actualizar Detalles" : "Guardar Detalles"}
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Activities */}
-            <Card>
+            {/* Phase 2: Activities Section */}
+            <Card className={activities.filter(a => a.status === 'saved').length > 0 ? "border-green-600/50" : ""}>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  Actividades Desarrolladas
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addActivity}
-                    disabled={!selectedContract}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Agregar Actividad
-                  </Button>
-                </CardTitle>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      {activities.filter(a => a.status === 'saved').length > 0 && (
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      )}
+                      2. Actividades Desarrolladas
+                    </CardTitle>
+                    <CardDescription>
+                      Registre las actividades realizadas durante el período
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {activities.filter(a => a.status === 'saved').length > 0 && (
+                      <Badge variant="default" className="bg-green-600">
+                        {activities.filter(a => a.status === 'saved').length} registrada(s)
+                      </Badge>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addActivity}
+                      disabled={!currentDraftId}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agregar Actividad
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                {activities.filter(a => a.status === 'saved').length === 0 ? (
+                {!currentDraftId ? (
+                  <p className="text-muted-foreground text-center py-4 text-sm">
+                    Primero debe guardar los detalles de facturación para agregar actividades
+                  </p>
+                ) : activities.filter(a => a.status === 'saved').length === 0 ? (
                   <p className="text-muted-foreground text-center py-4">
                     No hay actividades registradas. Agregue al menos una actividad.
                   </p>
@@ -929,10 +1086,19 @@ export function CreateBillingAccountDialog({
                         <Button
                           type="button"
                           onClick={saveActivityIndividually}
-                          disabled={!currentActivity.activityName.trim() || !currentActivity.actions.trim()}
+                          disabled={!canSaveActivity || isSubmitting}
                         >
-                          <Save className="h-4 w-4 mr-2" />
-                          Registrar Actividad
+                          {isSubmitting ? (
+                            <>
+                              <Save className="h-4 w-4 mr-2 animate-pulse" />
+                              Registrando...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-2" />
+                              Registrar Actividad
+                            </>
+                          )}
                         </Button>
                         <Button
                           type="button"
@@ -948,10 +1114,23 @@ export function CreateBillingAccountDialog({
               </CardContent>
             </Card>
 
-            {/* Planilla Section */}
-            <Card>
+            {/* Phase 3: Planilla Section */}
+            <Card className={canSavePlanilla ? "border-green-600/50" : ""}>
               <CardHeader>
-                <CardTitle>Planilla de Seguridad Social</CardTitle>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      {canSavePlanilla && <CheckCircle className="h-5 w-5 text-green-600" />}
+                      3. Planilla de Seguridad Social
+                    </CardTitle>
+                    <CardDescription>
+                      Complete la información de la planilla (se puede guardar independientemente)
+                    </CardDescription>
+                  </div>
+                  {canSavePlanilla && (
+                    <Badge variant="default" className="bg-green-600">Completa</Badge>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -1002,13 +1181,56 @@ export function CreateBillingAccountDialog({
                     )}
                   </div>
                 </div>
+                
+                {/* Save Planilla Button */}
+                <div className="pt-4 border-t">
+                  <Button
+                    type="button"
+                    onClick={savePlanillaOnly}
+                    disabled={!canSavePlanilla || isSubmitting}
+                    className="w-full"
+                    variant={canSavePlanilla ? "outline" : "secondary"}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Save className="h-4 w-4 mr-2 animate-pulse" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Guardar Planilla
+                      </>
+                    )}
+                  </Button>
+                  {!currentDraftId && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Primero debe guardar los detalles de facturación
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
-            {/* Signature Section */}
-            <Card>
+            {/* Phase 4: Signature Section */}
+            <Card className={signatureRef && !signatureRef.isEmpty() ? "border-green-600/50" : ""}>
               <CardHeader>
-                <CardTitle>Firma del Contratista</CardTitle>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      {signatureRef && !signatureRef.isEmpty() && (
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      )}
+                      4. Firma del Contratista
+                    </CardTitle>
+                    <CardDescription>
+                      Firme el documento para completar el proceso
+                    </CardDescription>
+                  </div>
+                  {signatureRef && !signatureRef.isEmpty() && (
+                    <Badge variant="default" className="bg-green-600">Firmado</Badge>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -1039,6 +1261,59 @@ export function CreateBillingAccountDialog({
               </CardContent>
             </Card>
 
+            {/* Progressive Status Indicator */}
+            <Card className="border-primary/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Estado del Proceso</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">1. Detalles de Facturación</span>
+                  {currentDraftId ? (
+                    <Badge variant="default" className="bg-green-600">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Guardado
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Pendiente</Badge>
+                  )}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">2. Actividades ({activities.filter(a => a.status === 'saved').length})</span>
+                  {activities.filter(a => a.status === 'saved').length > 0 ? (
+                    <Badge variant="default" className="bg-green-600">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      {activities.filter(a => a.status === 'saved').length} registrada(s)
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Pendiente</Badge>
+                  )}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">3. Planilla de Seguridad Social</span>
+                  {canSavePlanilla ? (
+                    <Badge variant="default" className="bg-green-600">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Completa
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Pendiente</Badge>
+                  )}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">4. Firma</span>
+                  {signatureRef && !signatureRef.isEmpty() ? (
+                    <Badge variant="default" className="bg-green-600">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Firmado
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Pendiente</Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Action Buttons */}
             <div className="flex gap-3">
               <Button
@@ -1046,18 +1321,34 @@ export function CreateBillingAccountDialog({
                 variant="outline"
                 onClick={() => onOpenChange(false)}
               >
-                Cancelar
+                Guardar y Cerrar
               </Button>
               
               <Button
                 type="button"
                 onClick={handleSubmit}
                 disabled={!canSubmitForReview || isSubmitting}
+                className="flex-1"
               >
-                {isSubmitting && <Send className="h-4 w-4 mr-2 animate-pulse" />}
-                Enviar para Revisión
+                {isSubmitting ? (
+                  <>
+                    <Send className="h-4 w-4 mr-2 animate-pulse" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Enviar para Revisión
+                  </>
+                )}
               </Button>
             </div>
+            
+            {!canSubmitForReview && (
+              <p className="text-sm text-muted-foreground text-center">
+                Complete todos los pasos para enviar la cuenta de cobro
+              </p>
+            )}
           </div>
 
           {/* Right Column - Preview */}
