@@ -114,9 +114,9 @@ export default function BillingAccounts() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Cuentas de Cobro</h1>
+            <h1 className="text-3xl font-bold text-foreground">Radicación de Cobros</h1>
             <p className="text-muted-foreground">
-              Gestión de cuentas de cobro y revisiones
+              Para radicar exitosamente se requieren 3 documentos: Informe de Actividades, Certificación y Cuenta de Cobro
             </p>
           </div>
           {canCreateBilling && (
@@ -130,7 +130,7 @@ export default function BillingAccounts() {
                       className="flex items-center gap-2"
                     >
                       <Plus className="w-4 h-4" />
-                      Nueva Cuenta de Cobro
+                      Nuevo Informe de Actividades
                       {availableContracts > 0 && (
                         <Badge variant="secondary" className="ml-1">
                           {availableContracts}
@@ -148,10 +148,10 @@ export default function BillingAccounts() {
                 </Tooltip>
               </TooltipProvider>
               {availableContracts === 0 && (
-                <Alert className="max-w-md">
+                  <Alert className="max-w-md">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    Las cuentas de cobro solo pueden crearse para contratos aprobados y en ejecución.
+                    Los informes de actividades solo pueden crearse para contratos aprobados y en ejecución.
                   </AlertDescription>
                 </Alert>
               )}

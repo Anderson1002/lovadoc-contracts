@@ -889,9 +889,9 @@ export function CreateBillingAccountDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nueva Cuenta de Cobro</DialogTitle>
+          <DialogTitle>Nuevo Informe de Actividades</DialogTitle>
           <DialogDescription>
-            Complete la información para crear una nueva cuenta de cobro
+            Complete la información para crear un nuevo informe de actividades
           </DialogDescription>
         </DialogHeader>
 

@@ -641,7 +641,7 @@ export function EditBillingAccountDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Cargando cuenta de cobro...</DialogTitle>
+            <DialogTitle>Cargando informe de actividades...</DialogTitle>
           </DialogHeader>
           <div className="flex justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -656,12 +656,12 @@ export function EditBillingAccountDialog({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {canEdit ? 'Editar Cuenta de Cobro' : 'Ver Cuenta de Cobro'} - {billingAccount?.account_number}
+            {canEdit ? 'Editar Informe de Actividades' : 'Ver Informe de Actividades'} - {billingAccount?.account_number}
           </DialogTitle>
           <DialogDescription>
             {canEdit 
-              ? 'Modifique la información de la cuenta de cobro. Complete todos los campos requeridos.'
-              : 'Información detallada de la cuenta de cobro.'
+              ? 'Modifique la información del informe de actividades. Complete todos los campos requeridos.'
+              : 'Información detallada del informe de actividades.'
             }
           </DialogDescription>
         </DialogHeader>
@@ -671,7 +671,7 @@ export function EditBillingAccountDialog({
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Información del Contrato</CardTitle>
-              <CardDescription>Seleccione el contrato para esta cuenta de cobro</CardDescription>
+              <CardDescription>Seleccione el contrato para este informe de actividades</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -1227,7 +1227,7 @@ export function EditBillingAccountDialog({
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Firma del Contratista</CardTitle>
-              <CardDescription>Firme digitalmente el documento de cuenta de cobro</CardDescription>
+              <CardDescription>Firme digitalmente el documento del informe de actividades</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
