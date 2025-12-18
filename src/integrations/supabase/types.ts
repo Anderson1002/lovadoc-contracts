@@ -90,6 +90,9 @@ export type Database = {
         Row: {
           account_number: string
           amount: number
+          arl_planilla_fecha: string | null
+          arl_planilla_numero: string | null
+          arl_planilla_valor: number | null
           billing_end_date: string | null
           billing_month: string
           billing_start_date: string | null
@@ -101,6 +104,9 @@ export type Database = {
           firma_url: string | null
           id: string
           notes: string | null
+          pension_planilla_fecha: string | null
+          pension_planilla_numero: string | null
+          pension_planilla_valor: number | null
           planilla_fecha: string | null
           planilla_file_url: string | null
           planilla_numero: string | null
@@ -108,6 +114,9 @@ export type Database = {
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          salud_planilla_fecha: string | null
+          salud_planilla_numero: string | null
+          salud_planilla_valor: number | null
           state_code: string | null
           status: string
           updated_at: string
@@ -115,6 +124,9 @@ export type Database = {
         Insert: {
           account_number: string
           amount: number
+          arl_planilla_fecha?: string | null
+          arl_planilla_numero?: string | null
+          arl_planilla_valor?: number | null
           billing_end_date?: string | null
           billing_month: string
           billing_start_date?: string | null
@@ -126,6 +138,9 @@ export type Database = {
           firma_url?: string | null
           id?: string
           notes?: string | null
+          pension_planilla_fecha?: string | null
+          pension_planilla_numero?: string | null
+          pension_planilla_valor?: number | null
           planilla_fecha?: string | null
           planilla_file_url?: string | null
           planilla_numero?: string | null
@@ -133,6 +148,9 @@ export type Database = {
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          salud_planilla_fecha?: string | null
+          salud_planilla_numero?: string | null
+          salud_planilla_valor?: number | null
           state_code?: string | null
           status?: string
           updated_at?: string
@@ -140,6 +158,9 @@ export type Database = {
         Update: {
           account_number?: string
           amount?: number
+          arl_planilla_fecha?: string | null
+          arl_planilla_numero?: string | null
+          arl_planilla_valor?: number | null
           billing_end_date?: string | null
           billing_month?: string
           billing_start_date?: string | null
@@ -151,6 +172,9 @@ export type Database = {
           firma_url?: string | null
           id?: string
           notes?: string | null
+          pension_planilla_fecha?: string | null
+          pension_planilla_numero?: string | null
+          pension_planilla_valor?: number | null
           planilla_fecha?: string | null
           planilla_file_url?: string | null
           planilla_numero?: string | null
@@ -158,6 +182,9 @@ export type Database = {
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          salud_planilla_fecha?: string | null
+          salud_planilla_numero?: string | null
+          salud_planilla_valor?: number | null
           state_code?: string | null
           status?: string
           updated_at?: string

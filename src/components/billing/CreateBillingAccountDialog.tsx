@@ -82,6 +82,17 @@ export function CreateBillingAccountDialog({
   const [existingPlanillaName, setExistingPlanillaName] = useState<string | null>(null);
   const planillaFileInputRef = useRef<HTMLInputElement>(null);
   
+  // Desglose de Aportes de Seguridad Social
+  const [saludNumero, setSaludNumero] = useState('');
+  const [saludValor, setSaludValor] = useState('');
+  const [saludFecha, setSaludFecha] = useState('');
+  const [pensionNumero, setPensionNumero] = useState('');
+  const [pensionValor, setPensionValor] = useState('');
+  const [pensionFecha, setPensionFecha] = useState('');
+  const [arlNumero, setArlNumero] = useState('');
+  const [arlValor, setArlValor] = useState('');
+  const [arlFecha, setArlFecha] = useState('');
+  
   const [uploads, setUploads] = useState<Record<string, Omit<FileUpload, 'type'>>>({
     social_security: { file: null, uploaded: false, uploading: false }
   });
@@ -181,6 +192,16 @@ export function CreateBillingAccountDialog({
     setExistingPlanillaPath(null);
     setExistingPlanillaUrl(null);
     setExistingPlanillaName(null);
+    // Reset desglose de aportes
+    setSaludNumero('');
+    setSaludValor('');
+    setSaludFecha('');
+    setPensionNumero('');
+    setPensionValor('');
+    setPensionFecha('');
+    setArlNumero('');
+    setArlValor('');
+    setArlFecha('');
     setUploads({
       social_security: { file: null, uploaded: false, uploading: false }
     });
@@ -466,14 +487,24 @@ export function CreateBillingAccountDialog({
         return;
       }
 
-      // Update billing account with planilla data
+      // Update billing account with planilla data and desglose
       const { error: updateError } = await supabase
         .from('billing_accounts')
         .update({
           planilla_numero: planillaNumero,
           planilla_valor: parseFloat(planillaValor),
           planilla_fecha: planillaFecha,
-          planilla_file_url: planillaUploadData.path
+          planilla_file_url: planillaUploadData.path,
+          // Desglose de aportes
+          salud_planilla_numero: saludNumero || null,
+          salud_planilla_valor: saludValor ? parseFloat(saludValor) : null,
+          salud_planilla_fecha: saludFecha || null,
+          pension_planilla_numero: pensionNumero || null,
+          pension_planilla_valor: pensionValor ? parseFloat(pensionValor) : null,
+          pension_planilla_fecha: pensionFecha || null,
+          arl_planilla_numero: arlNumero || null,
+          arl_planilla_valor: arlValor ? parseFloat(arlValor) : null,
+          arl_planilla_fecha: arlFecha || null
         })
         .eq('id', currentDraftId);
       
@@ -1558,6 +1589,137 @@ export function CreateBillingAccountDialog({
               </CardContent>
             </Card>
 
+            {/* Phase 3b: Desglose de Aportes */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      Desglose de Aportes
+                    </CardTitle>
+                    <CardDescription>
+                      Detalle de los aportes a Salud, Pensión y ARL (opcional)
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* PAGO APORTES SALUD */}
+                <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                  <h4 className="font-medium text-sm text-primary">PAGO APORTES SALUD</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Número de Planilla</Label>
+                      <Input
+                        value={saludNumero}
+                        onChange={(e) => setSaludNumero(e.target.value)}
+                        placeholder="Ej: 90304264"
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Valor</Label>
+                      <Input
+                        type="text"
+                        value={saludValor ? formatCurrencyInput(saludValor) : ''}
+                        onChange={(e) => {
+                          const numericValue = e.target.value.replace(/[^\d]/g, '');
+                          setSaludValor(numericValue);
+                        }}
+                        placeholder="$ 0"
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Fecha de Pago</Label>
+                      <Input
+                        type="date"
+                        value={saludFecha}
+                        onChange={(e) => setSaludFecha(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* PAGO APORTES PENSIÓN */}
+                <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                  <h4 className="font-medium text-sm text-primary">PAGO APORTES PENSIÓN</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Número de Planilla</Label>
+                      <Input
+                        value={pensionNumero}
+                        onChange={(e) => setPensionNumero(e.target.value)}
+                        placeholder="Ej: 90304264"
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Valor</Label>
+                      <Input
+                        type="text"
+                        value={pensionValor ? formatCurrencyInput(pensionValor) : ''}
+                        onChange={(e) => {
+                          const numericValue = e.target.value.replace(/[^\d]/g, '');
+                          setPensionValor(numericValue);
+                        }}
+                        placeholder="$ 0"
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Fecha de Pago</Label>
+                      <Input
+                        type="date"
+                        value={pensionFecha}
+                        onChange={(e) => setPensionFecha(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* PAGO APORTES ARL */}
+                <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                  <h4 className="font-medium text-sm text-primary">PAGO APORTES ARL</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Número de Planilla</Label>
+                      <Input
+                        value={arlNumero}
+                        onChange={(e) => setArlNumero(e.target.value)}
+                        placeholder="Ej: 90304264"
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Valor</Label>
+                      <Input
+                        type="text"
+                        value={arlValor ? formatCurrencyInput(arlValor) : ''}
+                        onChange={(e) => {
+                          const numericValue = e.target.value.replace(/[^\d]/g, '');
+                          setArlValor(numericValue);
+                        }}
+                        placeholder="$ 0"
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Fecha de Pago</Label>
+                      <Input
+                        type="date"
+                        value={arlFecha}
+                        onChange={(e) => setArlFecha(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Progressive Status Indicator */}
             <Card className="border-primary/20">
               <CardHeader className="pb-3">
@@ -1649,6 +1811,15 @@ export function CreateBillingAccountDialog({
               planillaNumero={planillaNumero}
               planillaValor={planillaValor}
               planillaFecha={planillaFecha}
+              saludNumero={saludNumero}
+              saludValor={saludValor}
+              saludFecha={saludFecha}
+              pensionNumero={pensionNumero}
+              pensionValor={pensionValor}
+              pensionFecha={pensionFecha}
+              arlNumero={arlNumero}
+              arlValor={arlValor}
+              arlFecha={arlFecha}
             />
           </div>
         </div>

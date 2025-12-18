@@ -90,6 +90,17 @@ export function EditBillingAccountDialog({
   const [pendingPlanillaFile, setPendingPlanillaFile] = useState<File | null>(null);
   const planillaFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Desglose de Aportes de Seguridad Social
+  const [saludNumero, setSaludNumero] = useState<string>("");
+  const [saludValor, setSaludValor] = useState<string>("");
+  const [saludFecha, setSaludFecha] = useState<string>("");
+  const [pensionNumero, setPensionNumero] = useState<string>("");
+  const [pensionValor, setPensionValor] = useState<string>("");
+  const [pensionFecha, setPensionFecha] = useState<string>("");
+  const [arlNumero, setArlNumero] = useState<string>("");
+  const [arlValor, setArlValor] = useState<string>("");
+  const [arlFecha, setArlFecha] = useState<string>("");
+
   const canEdit = billingAccount?.status === 'borrador' || billingAccount?.status === 'rechazada';
   const hasProfileSignature = !!profileSignatureUrl;
   const canSubmitForReview = selectedContract && amount && startDate && endDate && 
@@ -175,6 +186,17 @@ export function EditBillingAccountDialog({
       setPlanillaNumero((billing as any).planilla_numero || "");
       setPlanillaValor((billing as any).planilla_valor?.toString() || "");
       setPlanillaFecha((billing as any).planilla_fecha ? new Date((billing as any).planilla_fecha) : undefined);
+
+      // Load desglose de aportes
+      setSaludNumero((billing as any).salud_planilla_numero || "");
+      setSaludValor((billing as any).salud_planilla_valor?.toString() || "");
+      setSaludFecha((billing as any).salud_planilla_fecha || "");
+      setPensionNumero((billing as any).pension_planilla_numero || "");
+      setPensionValor((billing as any).pension_planilla_valor?.toString() || "");
+      setPensionFecha((billing as any).pension_planilla_fecha || "");
+      setArlNumero((billing as any).arl_planilla_numero || "");
+      setArlValor((billing as any).arl_planilla_valor?.toString() || "");
+      setArlFecha((billing as any).arl_planilla_fecha || "");
 
       // Load activities
       const { data: activitiesData, error: activitiesError } = await supabase
@@ -464,6 +486,16 @@ export function EditBillingAccountDialog({
           planilla_numero: planillaNumero || null,
           planilla_valor: planillaValor ? parseFloat(planillaValor) : null,
           planilla_fecha: planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : null,
+          // Desglose de aportes
+          salud_planilla_numero: saludNumero || null,
+          salud_planilla_valor: saludValor ? parseFloat(saludValor) : null,
+          salud_planilla_fecha: saludFecha || null,
+          pension_planilla_numero: pensionNumero || null,
+          pension_planilla_valor: pensionValor ? parseFloat(pensionValor) : null,
+          pension_planilla_fecha: pensionFecha || null,
+          arl_planilla_numero: arlNumero || null,
+          arl_planilla_valor: arlValor ? parseFloat(arlValor) : null,
+          arl_planilla_fecha: arlFecha || null,
           status: 'borrador'
         })
         .eq('id', billingAccount.id);
@@ -1233,6 +1265,129 @@ export function EditBillingAccountDialog({
               </div>
             </CardContent>
           </Card>
+
+          {/* Desglose de Aportes */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Desglose de Aportes</CardTitle>
+              <CardDescription>Detalle de los aportes a Salud, Pensión y ARL (opcional)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* PAGO APORTES SALUD */}
+              <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                <h4 className="font-medium text-sm text-primary">PAGO APORTES SALUD</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Número de Planilla</Label>
+                    <Input
+                      value={saludNumero}
+                      onChange={(e) => setSaludNumero(e.target.value)}
+                      placeholder="Ej: 90304264"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Valor</Label>
+                    <Input
+                      type="text"
+                      value={saludValor ? formatCurrency(parseFloat(saludValor)) : ''}
+                      onChange={(e) => {
+                        const numericValue = e.target.value.replace(/[^\d]/g, '');
+                        setSaludValor(numericValue);
+                      }}
+                      placeholder="$ 0"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Fecha de Pago</Label>
+                    <Input
+                      type="date"
+                      value={saludFecha}
+                      onChange={(e) => setSaludFecha(e.target.value)}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* PAGO APORTES PENSIÓN */}
+              <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                <h4 className="font-medium text-sm text-primary">PAGO APORTES PENSIÓN</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Número de Planilla</Label>
+                    <Input
+                      value={pensionNumero}
+                      onChange={(e) => setPensionNumero(e.target.value)}
+                      placeholder="Ej: 90304264"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Valor</Label>
+                    <Input
+                      type="text"
+                      value={pensionValor ? formatCurrency(parseFloat(pensionValor)) : ''}
+                      onChange={(e) => {
+                        const numericValue = e.target.value.replace(/[^\d]/g, '');
+                        setPensionValor(numericValue);
+                      }}
+                      placeholder="$ 0"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Fecha de Pago</Label>
+                    <Input
+                      type="date"
+                      value={pensionFecha}
+                      onChange={(e) => setPensionFecha(e.target.value)}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* PAGO APORTES ARL */}
+              <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                <h4 className="font-medium text-sm text-primary">PAGO APORTES ARL</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Número de Planilla</Label>
+                    <Input
+                      value={arlNumero}
+                      onChange={(e) => setArlNumero(e.target.value)}
+                      placeholder="Ej: 90304264"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Valor</Label>
+                    <Input
+                      type="text"
+                      value={arlValor ? formatCurrency(parseFloat(arlValor)) : ''}
+                      onChange={(e) => {
+                        const numericValue = e.target.value.replace(/[^\d]/g, '');
+                        setArlValor(numericValue);
+                      }}
+                      placeholder="$ 0"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Fecha de Pago</Label>
+                    <Input
+                      type="date"
+                      value={arlFecha}
+                      onChange={(e) => setArlFecha(e.target.value)}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           </div>
 
           {/* Right Column - Document Preview */}
@@ -1256,6 +1411,15 @@ export function EditBillingAccountDialog({
                     planillaFecha={planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : undefined}
                     signatureUrl={profileSignatureUrl}
                     reviewComments={reviewComments}
+                    saludNumero={saludNumero}
+                    saludValor={saludValor}
+                    saludFecha={saludFecha}
+                    pensionNumero={pensionNumero}
+                    pensionValor={pensionValor}
+                    pensionFecha={pensionFecha}
+                    arlNumero={arlNumero}
+                    arlValor={arlValor}
+                    arlFecha={arlFecha}
                   />
                 </CardContent>
               </Card>

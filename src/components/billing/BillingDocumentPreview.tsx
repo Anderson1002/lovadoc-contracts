@@ -55,6 +55,16 @@ interface BillingDocumentPreviewProps {
       name: string;
     };
   }>;
+  // Desglose de Aportes
+  saludNumero?: string;
+  saludValor?: string;
+  saludFecha?: string;
+  pensionNumero?: string;
+  pensionValor?: string;
+  pensionFecha?: string;
+  arlNumero?: string;
+  arlValor?: string;
+  arlFecha?: string;
 }
 
 export function BillingDocumentPreview({
@@ -68,7 +78,16 @@ export function BillingDocumentPreview({
   planillaValor,
   planillaFecha,
   signatureUrl,
-  reviewComments
+  reviewComments,
+  saludNumero,
+  saludValor,
+  saludFecha,
+  pensionNumero,
+  pensionValor,
+  pensionFecha,
+  arlNumero,
+  arlValor,
+  arlFecha
 }: BillingDocumentPreviewProps) {
   console.log('BillingDocumentPreview - userProfile:', userProfile);
   console.log('BillingDocumentPreview - selectedContract:', selectedContract);
@@ -76,6 +95,11 @@ export function BillingDocumentPreview({
   console.log('BillingDocumentPreview - reviewComments:', reviewComments);
   
   const documentNumber = `DSE ${format(new Date(), 'yyyMM')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+
+  // Check if any desglose data exists
+  const hasDesgloseData = saludNumero || saludValor || saludFecha || 
+                          pensionNumero || pensionValor || pensionFecha || 
+                          arlNumero || arlValor || arlFecha;
 
   if (!selectedContract || !startDate || !endDate) {
     return (
@@ -223,6 +247,54 @@ export function BillingDocumentPreview({
             </div>
           )}
 
+          {/* Desglose de Aportes Section */}
+          {hasDesgloseData && (
+            <div className="mt-4 border-t pt-4">
+              <h3 className="font-bold mb-3">DESGLOSE DE APORTES:</h3>
+              <table className="w-full border-collapse border border-gray-400 text-xs">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-400 p-2 text-left font-bold">CONCEPTO</th>
+                    <th className="border border-gray-400 p-2 text-left font-bold">NUMERO DE PLANILLA</th>
+                    <th className="border border-gray-400 p-2 text-right font-bold">VALOR</th>
+                    <th className="border border-gray-400 p-2 text-center font-bold">FECHA DE PAGO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border border-gray-400 p-2 font-semibold">PAGO APORTES SALUD</td>
+                    <td className="border border-gray-400 p-2">{saludNumero || '-'}</td>
+                    <td className="border border-gray-400 p-2 text-right">
+                      {saludValor ? formatCurrency(parseFloat(saludValor)) : '-'}
+                    </td>
+                    <td className="border border-gray-400 p-2 text-center">
+                      {saludFecha ? format(new Date(saludFecha), 'dd/MM/yyyy') : '-'}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-400 p-2 font-semibold">PAGO APORTES PENSIÓN</td>
+                    <td className="border border-gray-400 p-2">{pensionNumero || '-'}</td>
+                    <td className="border border-gray-400 p-2 text-right">
+                      {pensionValor ? formatCurrency(parseFloat(pensionValor)) : '-'}
+                    </td>
+                    <td className="border border-gray-400 p-2 text-center">
+                      {pensionFecha ? format(new Date(pensionFecha), 'dd/MM/yyyy') : '-'}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-400 p-2 font-semibold">PAGO APORTES ARL</td>
+                    <td className="border border-gray-400 p-2">{arlNumero || '-'}</td>
+                    <td className="border border-gray-400 p-2 text-right">
+                      {arlValor ? formatCurrency(parseFloat(arlValor)) : '-'}
+                    </td>
+                    <td className="border border-gray-400 p-2 text-center">
+                      {arlFecha ? format(new Date(arlFecha), 'dd/MM/yyyy') : '-'}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Signature Area */}
           <div className="mt-6 text-center border-t pt-4">
