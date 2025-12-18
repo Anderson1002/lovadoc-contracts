@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Eye, RefreshCw, FileText, X, Download } from "lucide-react";
 import { formatCurrency, formatCurrencyInput } from "@/lib/utils";
 import SignatureCanvas from "react-signature-canvas";
 import { BillingCompletionProgress } from "./BillingCompletionProgress";
@@ -39,6 +40,9 @@ export function EditBillingAccountDialog({
   const [signatureRef, setSignatureRef] = useState<SignatureCanvas | null>(null);
   const [planillaFile, setPlanillaFile] = useState<File | null>(null);
   const [activitiesCount, setActivitiesCount] = useState(0);
+  const [existingPlanillaUrl, setExistingPlanillaUrl] = useState<string | null>(null);
+  const [existingPlanillaName, setExistingPlanillaName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (billingAccount && open) {
@@ -52,10 +56,34 @@ export function EditBillingAccountDialog({
         planilla_valor: billingAccount.planilla_valor?.toString() || '',
         planilla_fecha: billingAccount.planilla_fecha || ''
       });
+      // Reset file state
+      setPlanillaFile(null);
       // Load activities count
       loadActivitiesCount(billingAccount.id);
+      // Load existing planilla URL
+      loadExistingPlanillaUrl(billingAccount.planilla_file_url);
     }
   }, [billingAccount, open]);
+
+  const loadExistingPlanillaUrl = async (filePath: string | null) => {
+    if (!filePath) {
+      setExistingPlanillaUrl(null);
+      setExistingPlanillaName(null);
+      return;
+    }
+
+    try {
+      const { data } = await supabase.storage
+        .from('billing-documents')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      setExistingPlanillaUrl(data?.signedUrl || null);
+      setExistingPlanillaName(filePath.split('/').pop() || 'planilla.pdf');
+    } catch (error) {
+      console.error('Error loading planilla URL:', error);
+      setExistingPlanillaUrl(null);
+    }
+  };
 
   const loadActivitiesCount = async (billingAccountId: string) => {
     try {
@@ -260,26 +288,124 @@ export function EditBillingAccountDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="planilla_fecha">Fecha de Pago</Label>
-                <Input
-                  id="planilla_fecha"
-                  type="date"
-                  value={formData.planilla_fecha}
-                  onChange={(e) => setFormData(prev => ({ ...prev, planilla_fecha: e.target.value }))}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="planilla_fecha">Fecha de Pago</Label>
+              <Input
+                id="planilla_fecha"
+                type="date"
+                value={formData.planilla_fecha}
+                onChange={(e) => setFormData(prev => ({ ...prev, planilla_fecha: e.target.value }))}
+              />
+            </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="planilla_file">Archivo de Planilla</Label>
-                <Input
-                  id="planilla_file"
-                  type="file"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  onChange={(e) => setPlanillaFile(e.target.files?.[0] || null)}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label>Archivo de Planilla</Label>
+              
+              {/* Input oculto para seleccionar archivo */}
+              <Input
+                ref={fileInputRef}
+                id="planilla_file"
+                type="file"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                onChange={(e) => setPlanillaFile(e.target.files?.[0] || null)}
+                className="hidden"
+              />
+
+              {/* Si hay archivo existente y NO hay nuevo archivo seleccionado */}
+              {existingPlanillaUrl && !planillaFile ? (
+                <div className="border rounded-lg p-3 bg-muted/50">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="h-5 w-5 text-primary shrink-0" />
+                      <span className="text-sm font-medium truncate">
+                        {existingPlanillaName}
+                      </span>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(existingPlanillaUrl, '_blank')}
+                        title="Ver archivo"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = existingPlanillaUrl;
+                          link.download = existingPlanillaName || 'planilla.pdf';
+                          link.click();
+                        }}
+                        title="Descargar"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        title="Cambiar archivo"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                    <span>✓</span> Archivo subido correctamente
+                  </p>
+                </div>
+              ) : planillaFile ? (
+                /* Nuevo archivo seleccionado (pendiente de guardar) */
+                <div className="border rounded-lg p-3 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="h-5 w-5 text-amber-600 shrink-0" />
+                      <span className="text-sm font-medium truncate">{planillaFile.name}</span>
+                      <Badge variant="outline" className="text-amber-600 border-amber-300 shrink-0">
+                        Pendiente
+                      </Badge>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setPlanillaFile(null);
+                        if (fileInputRef.current) {
+                          fileInputRef.current.value = '';
+                        }
+                      }}
+                      title="Cancelar cambio"
+                      className="text-amber-600 hover:text-amber-700 shrink-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-amber-600 mt-2">
+                    ℹ️ {existingPlanillaUrl ? 'Este archivo reemplazará al anterior cuando guardes los cambios' : 'El archivo se subirá cuando guardes los cambios'}
+                  </p>
+                </div>
+              ) : (
+                /* No hay archivo */
+                <div 
+                  className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    Clic para seleccionar archivo PDF
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PDF, DOC, DOCX, JPG, PNG
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
