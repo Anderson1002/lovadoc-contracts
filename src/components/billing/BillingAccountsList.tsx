@@ -41,7 +41,12 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
         .from('billing_accounts')
         .select(`
           *,
-          contracts(contract_number, contract_number_original, client_name, total_amount)
+          contracts(
+            contract_number, 
+            contract_number_original, 
+            total_amount,
+            client:profiles!client_profile_id(name, email)
+          )
         `);
 
       // Apply filters based on type and user role only if needed
@@ -224,7 +229,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
                   <TableCell>
                     <div>
                       <p className="font-medium">{billing.contracts?.contract_number_original || billing.contracts?.contract_number}</p>
-                      <p className="text-sm text-muted-foreground">{billing.contracts?.client_name}</p>
+                      <p className="text-sm text-muted-foreground">{billing.contracts?.client?.name}</p>
                     </div>
                   </TableCell>
                   <TableCell>
