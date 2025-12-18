@@ -79,8 +79,8 @@ export function EditBillingAccountDialog({
   const [planillaValor, setPlanillaValor] = useState<string>("");
   const [planillaFecha, setPlanillaFecha] = useState<Date>();
   const [reviewComments, setReviewComments] = useState<any[]>([]);
-  const signatureRef = useRef<SignatureCanvas>(null);
   const [creatorProfile, setCreatorProfile] = useState<any>(null);
+  const [profileSignatureUrl, setProfileSignatureUrl] = useState<string | null>(null);
   
   // Estados para gestión mejorada de archivo PDF de planilla
   const [existingPlanillaPath, setExistingPlanillaPath] = useState<string | null>(null);
@@ -90,9 +90,11 @@ export function EditBillingAccountDialog({
   const planillaFileInputRef = useRef<HTMLInputElement>(null);
 
   const canEdit = billingAccount?.status === 'borrador' || billingAccount?.status === 'rechazada';
+  const hasProfileSignature = !!profileSignatureUrl;
   const canSubmitForReview = selectedContract && amount && startDate && endDate && 
                             activities.filter(a => a.status === 'saved').length > 0 && 
                             uploads.social_security.uploaded &&
+                            hasProfileSignature &&
                             (billingAccount?.status === 'borrador' || billingAccount?.status === 'rechazada');
 
   useEffect(() => {
@@ -146,7 +148,18 @@ export function EditBillingAccountDialog({
           .select('*')
           .eq('id', billing.created_by)
           .single();
-        if (!creatorError) setCreatorProfile(creator);
+        if (!creatorError) {
+          setCreatorProfile(creator);
+          // Load signature from creator's profile
+          if (creator.signature_url) {
+            const { data: signedUrl } = await supabase.storage
+              .from('billing-signatures')
+              .createSignedUrl(creator.signature_url, 3600);
+            if (signedUrl?.signedUrl) {
+              setProfileSignatureUrl(signedUrl.signedUrl);
+            }
+          }
+        }
       } catch (e) {
         console.warn('No se pudo cargar el perfil del creador de la cuenta de cobro', e);
       }
@@ -161,11 +174,6 @@ export function EditBillingAccountDialog({
       setPlanillaNumero((billing as any).planilla_numero || "");
       setPlanillaValor((billing as any).planilla_valor?.toString() || "");
       setPlanillaFecha((billing as any).planilla_fecha ? new Date((billing as any).planilla_fecha) : undefined);
-      
-      // Load signature if exists
-      if ((billing as any).firma_url && signatureRef.current) {
-        signatureRef.current.fromDataURL((billing as any).firma_url);
-      }
 
       // Load activities
       const { data: activitiesData, error: activitiesError } = await supabase
@@ -445,12 +453,6 @@ export function EditBillingAccountDialog({
     try {
       setIsSubmitting(true);
 
-      // Guardar firma como base64 si existe
-      let firmaUrl = null;
-      if (signatureRef.current && !signatureRef.current.isEmpty()) {
-        firmaUrl = signatureRef.current.toDataURL();
-      }
-
       const { error } = await supabase
         .from('billing_accounts')
         .update({
@@ -461,7 +463,6 @@ export function EditBillingAccountDialog({
           planilla_numero: planillaNumero || null,
           planilla_valor: planillaValor ? parseFloat(planillaValor) : null,
           planilla_fecha: planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : null,
-          firma_url: firmaUrl,
           status: 'borrador'
         })
         .eq('id', billingAccount.id);
@@ -554,12 +555,6 @@ export function EditBillingAccountDialog({
     try {
       setIsSubmitting(true);
 
-      // Guardar firma como base64 si existe
-      let firmaUrl = null;
-      if (signatureRef.current && !signatureRef.current.isEmpty()) {
-        firmaUrl = signatureRef.current.toDataURL();
-      }
-
       const { error } = await supabase
         .from('billing_accounts')
         .update({
@@ -570,7 +565,6 @@ export function EditBillingAccountDialog({
           planilla_numero: planillaNumero || null,
           planilla_valor: planillaValor ? parseFloat(planillaValor) : null,
           planilla_fecha: planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : null,
-          firma_url: firmaUrl,
           status: 'pendiente_revision'
         })
         .eq('id', billingAccount.id);
@@ -1227,36 +1221,37 @@ export function EditBillingAccountDialog({
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Firma del Contratista</CardTitle>
-              <CardDescription>Firme digitalmente el documento del informe de actividades</CardDescription>
+              <CardDescription>
+                La firma se toma automáticamente de su perfil
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Área de Firma</Label>
-                <div className="border border-gray-300 rounded-lg p-4 bg-white">
-                  <SignatureCanvas
-                    ref={signatureRef}
-                    canvasProps={{
-                      width: 500,
-                      height: 200,
-                      className: 'signature-canvas w-full h-48 border border-gray-200 rounded'
-                    }}
-                    backgroundColor="rgb(255,255,255)"
-                  />
+              {profileSignatureUrl ? (
+                <div className="space-y-2">
+                  <div className="border rounded-lg p-4 bg-muted/30">
+                    <img 
+                      src={profileSignatureUrl} 
+                      alt="Firma del contratista" 
+                      className="max-h-32 mx-auto"
+                    />
+                  </div>
+                  <p className="text-xs text-green-600 text-center flex items-center justify-center gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    Firma cargada desde su perfil
+                  </p>
                 </div>
-                {canEdit && (
+              ) : (
+                <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
+                  <p className="mb-2">No tiene una firma registrada en su perfil</p>
                   <Button
-                    type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => signatureRef.current?.clear()}
+                    onClick={() => window.open('/profile', '_blank')}
                   >
-                    Limpiar Firma
+                    Ir a mi perfil para agregar firma
                   </Button>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Dibuje su firma en el recuadro arriba usando el mouse o pantalla táctil
-                </p>
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -1278,7 +1273,7 @@ export function EditBillingAccountDialog({
                   planillaNumero={planillaNumero}
                   planillaValor={planillaValor}
                   planillaFecha={planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : undefined}
-                  signatureRef={signatureRef.current}
+                  signatureUrl={profileSignatureUrl}
                   reviewComments={reviewComments}
                 />
               </CardContent>

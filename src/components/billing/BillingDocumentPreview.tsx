@@ -2,7 +2,6 @@ import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
-import SignatureCanvas from "react-signature-canvas";
 
 interface Contract {
   id: string;
@@ -47,7 +46,7 @@ interface BillingDocumentPreviewProps {
   planillaNumero?: string;
   planillaValor?: string;
   planillaFecha?: string;
-  signatureRef?: SignatureCanvas | null;
+  signatureUrl?: string | null;
   reviewComments?: Array<{
     action: string;
     comments: string;
@@ -68,12 +67,12 @@ export function BillingDocumentPreview({
   planillaNumero,
   planillaValor,
   planillaFecha,
-  signatureRef,
+  signatureUrl,
   reviewComments
 }: BillingDocumentPreviewProps) {
   console.log('BillingDocumentPreview - userProfile:', userProfile);
   console.log('BillingDocumentPreview - selectedContract:', selectedContract);
-  console.log('BillingDocumentPreview - signatureRef:', signatureRef);
+  console.log('BillingDocumentPreview - signatureUrl:', signatureUrl);
   console.log('BillingDocumentPreview - reviewComments:', reviewComments);
   
   const documentNumber = `DSE ${format(new Date(), 'yyyMM')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
@@ -229,11 +228,11 @@ export function BillingDocumentPreview({
           <div className="mt-6 text-center border-t pt-4">
             <p>Actividad económica RUT 6201: 202110330</p>
             <div className="mt-8">
-              {signatureRef && !signatureRef.isEmpty() ? (
+              {signatureUrl ? (
                 <div className="flex flex-col items-center">
                   <div className="w-48 h-24 border border-gray-300 rounded flex items-center justify-center">
                     <img 
-                      src={signatureRef.toDataURL()} 
+                      src={signatureUrl} 
                       alt="Firma" 
                       className="max-w-full max-h-full"
                     />
@@ -244,6 +243,7 @@ export function BillingDocumentPreview({
                 <div>
                   <div className="border-t border-black w-48 mx-auto"></div>
                   <p className="mt-2"><strong>(FIRMA DEL CONTRATISTA)</strong></p>
+                  <p className="text-xs text-red-500 mt-1">(Sin firma registrada en el perfil)</p>
                 </div>
               )}
               <p>C.C. {userProfile?.document_number || '[Número de Cédula]'} de Bogotá</p>

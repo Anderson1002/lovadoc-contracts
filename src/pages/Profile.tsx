@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,11 @@ import {
   Edit3,
   Save,
   LogOut,
-  Camera
+  Camera,
+  PenTool,
+  Eye,
+  Trash2,
+  Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +36,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/ui/app-sidebar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import SignatureCanvas from "react-signature-canvas";
 
 interface ProfileFormData {
   name: string;
@@ -54,6 +59,12 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Signature states
+  const signatureRef = useRef<SignatureCanvas>(null);
+  const [existingSignatureUrl, setExistingSignatureUrl] = useState<string | null>(null);
+  const [isEditingSignature, setIsEditingSignature] = useState(false);
+  const [isSavingSignature, setIsSavingSignature] = useState(false);
 
   const {
     register,
@@ -117,6 +128,11 @@ export default function Profile() {
           bank_account: profile.bank_account || "",
           bank_name: profile.bank_name || ""
         });
+
+        // Load existing signature URL
+        if (profile.signature_url) {
+          loadSignatureUrl(profile.signature_url);
+        }
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -125,6 +141,118 @@ export default function Profile() {
         description: "No se pudo cargar el perfil",
         variant: "destructive"
       });
+    }
+  };
+
+  const loadSignatureUrl = async (signaturePath: string) => {
+    try {
+      const { data } = await supabase.storage
+        .from('billing-signatures')
+        .createSignedUrl(signaturePath, 3600); // 1 hour
+      
+      if (data?.signedUrl) {
+        setExistingSignatureUrl(data.signedUrl);
+      }
+    } catch (error) {
+      console.error('Error loading signature URL:', error);
+    }
+  };
+
+  const handleSaveSignature = async () => {
+    if (!signatureRef.current || signatureRef.current.isEmpty()) {
+      toast({
+        title: "Error",
+        description: "Por favor dibuje su firma antes de guardar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!userProfile) return;
+
+    try {
+      setIsSavingSignature(true);
+
+      // Get signature as blob
+      const canvas = signatureRef.current.getCanvas();
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((b) => resolve(b!), 'image/png');
+      });
+
+      // Upload to storage
+      const fileName = `${userProfile.user_id}/signature_${Date.now()}.png`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('billing-signatures')
+        .upload(fileName, blob, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Update profile with signature path
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ signature_url: uploadData.path })
+        .eq('id', userProfile.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setUserProfile({ ...userProfile, signature_url: uploadData.path });
+      await loadSignatureUrl(uploadData.path);
+      setIsEditingSignature(false);
+
+      toast({
+        title: "Firma guardada",
+        description: "Su firma ha sido guardada correctamente"
+      });
+    } catch (error: any) {
+      console.error('Error saving signature:', error);
+      toast({
+        title: "Error al guardar firma",
+        description: error.message || "Ocurrió un error inesperado",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingSignature(false);
+    }
+  };
+
+  const handleDeleteSignature = async () => {
+    if (!userProfile?.signature_url) return;
+
+    try {
+      setIsSavingSignature(true);
+
+      // Delete from storage
+      await supabase.storage
+        .from('billing-signatures')
+        .remove([userProfile.signature_url]);
+
+      // Update profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({ signature_url: null })
+        .eq('id', userProfile.id);
+
+      if (error) throw error;
+
+      setUserProfile({ ...userProfile, signature_url: null });
+      setExistingSignatureUrl(null);
+      setIsEditingSignature(true);
+
+      toast({
+        title: "Firma eliminada",
+        description: "Su firma ha sido eliminada correctamente"
+      });
+    } catch (error: any) {
+      console.error('Error deleting signature:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo eliminar la firma",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingSignature(false);
     }
   };
 
@@ -465,6 +593,127 @@ export default function Profile() {
                           </>
                         )}
                       </form>
+                    </CardContent>
+                  </Card>
+
+                  {/* Signature Section */}
+                  <Card className="border-2 shadow-lg">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <PenTool className="w-5 h-5" />
+                            Firma del Contratista
+                          </CardTitle>
+                          <CardDescription>
+                            Su firma se usará automáticamente en los Informes de Actividades
+                          </CardDescription>
+                        </div>
+                        {existingSignatureUrl && !isEditingSignature && (
+                          <Badge className="bg-green-500 text-white">Firmado</Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Show existing signature or editing mode */}
+                      {existingSignatureUrl && !isEditingSignature ? (
+                        <div className="space-y-4">
+                          <div className="border rounded-lg p-4 bg-muted/30">
+                            <img 
+                              src={existingSignatureUrl} 
+                              alt="Firma del contratista" 
+                              className="max-h-32 mx-auto"
+                            />
+                          </div>
+                          <div className="flex gap-2 justify-center">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(existingSignatureUrl, '_blank')}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              Ver
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsEditingSignature(true)}
+                            >
+                              <Edit3 className="w-4 h-4 mr-2" />
+                              Cambiar
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={handleDeleteSignature}
+                              disabled={isSavingSignature}
+                            >
+                              {isSavingSignature ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Eliminar
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="border rounded-lg p-4 bg-white">
+                            <SignatureCanvas
+                              ref={signatureRef}
+                              canvasProps={{
+                                width: 500,
+                                height: 150,
+                                className: 'signature-canvas w-full h-36 border border-gray-200 rounded'
+                              }}
+                              backgroundColor="rgb(255,255,255)"
+                            />
+                          </div>
+                          <div className="flex gap-2 justify-between">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => signatureRef.current?.clear()}
+                            >
+                              Limpiar
+                            </Button>
+                            <div className="flex gap-2">
+                              {isEditingSignature && existingSignatureUrl && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setIsEditingSignature(false)}
+                                >
+                                  Cancelar
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                onClick={handleSaveSignature}
+                                disabled={isSavingSignature}
+                              >
+                                {isSavingSignature ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                    Guardando...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Save className="w-4 h-4 mr-2" />
+                                    Guardar Firma
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground text-center">
+                            Dibuje su firma usando el mouse o pantalla táctil. Esta firma se usará en todos sus documentos.
+                          </p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>

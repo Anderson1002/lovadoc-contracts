@@ -858,6 +858,7 @@ export type Database = {
           phone: string | null
           proceso_id: number | null
           role_id: string
+          signature_url: string | null
           tax_regime: string | null
           updated_at: string
           user_id: string
@@ -877,6 +878,7 @@ export type Database = {
           phone?: string | null
           proceso_id?: number | null
           role_id: string
+          signature_url?: string | null
           tax_regime?: string | null
           updated_at?: string
           user_id: string
@@ -896,6 +898,7 @@ export type Database = {
           phone?: string | null
           proceso_id?: number | null
           role_id?: string
+          signature_url?: string | null
           tax_regime?: string | null
           updated_at?: string
           user_id?: string
