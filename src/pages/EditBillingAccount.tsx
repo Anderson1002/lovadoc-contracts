@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { BillingDocumentPreview } from "@/components/billing/BillingDocumentPreview";
+import { BillingCompletionProgress } from "@/components/billing/BillingCompletionProgress";
 import SignatureCanvas from "react-signature-canvas";
 
 interface EditBillingAccountDialogProps {
@@ -661,6 +662,20 @@ export function EditBillingAccountDialog({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Progress Indicator */}
+          <BillingCompletionProgress
+            contractId={selectedContract || null}
+            amount={amount || null}
+            billingStartDate={startDate || null}
+            billingEndDate={endDate || null}
+            activitiesCount={activities.filter(a => a.status === 'saved').length}
+            planillaNumero={planillaNumero || null}
+            planillaValor={planillaValor || null}
+            planillaFecha={planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : null}
+            planillaFile={pendingPlanillaFile || existingPlanillaPath}
+            hasSignature={!!profileSignatureUrl}
+          />
+
           {/* Contract Selection */}
           <Card>
             <CardHeader>
