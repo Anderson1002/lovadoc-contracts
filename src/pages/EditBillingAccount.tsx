@@ -648,7 +648,7 @@ export function EditBillingAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {canEdit ? 'Editar Informe de Actividades' : 'Ver Informe de Actividades'} - {billingAccount?.account_number}
@@ -661,7 +661,9 @@ export function EditBillingAccountDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Form */}
+          <div className="space-y-6">
           {/* Progress Indicator */}
           <BillingCompletionProgress
             contractId={selectedContract || null}
@@ -1231,31 +1233,34 @@ export function EditBillingAccountDialog({
               </div>
             </CardContent>
           </Card>
+          </div>
 
-          {/* Document Preview */}
-          {billingAccount && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Vista Previa del Documento</CardTitle>
-                <CardDescription>Visualización del documento generado</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <BillingDocumentPreview
-                  userProfile={creatorProfile || userProfile}
-                  selectedContract={selectedContractData}
-                  amount={amount}
-                  startDate={startDate}
-                  endDate={endDate}
-                  activities={activities}
-                  planillaNumero={planillaNumero}
-                  planillaValor={planillaValor}
-                  planillaFecha={planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : undefined}
-                  signatureUrl={profileSignatureUrl}
-                  reviewComments={reviewComments}
-                />
-              </CardContent>
-            </Card>
-          )}
+          {/* Right Column - Document Preview */}
+          <div className="space-y-6">
+            {billingAccount && (
+              <Card className="sticky top-0">
+                <CardHeader>
+                  <CardTitle className="text-lg">Vista Previa del Documento</CardTitle>
+                  <CardDescription>Visualización del documento generado</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <BillingDocumentPreview
+                    userProfile={creatorProfile || userProfile}
+                    selectedContract={selectedContractData}
+                    amount={amount}
+                    startDate={startDate}
+                    endDate={endDate}
+                    activities={activities}
+                    planillaNumero={planillaNumero}
+                    planillaValor={planillaValor}
+                    planillaFecha={planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : undefined}
+                    signatureUrl={profileSignatureUrl}
+                    reviewComments={reviewComments}
+                  />
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
 
         {/* Action Buttons */}
