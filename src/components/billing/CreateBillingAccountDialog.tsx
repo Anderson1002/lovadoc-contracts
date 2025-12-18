@@ -17,7 +17,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { BillingDocumentPreview } from "./BillingDocumentPreview";
-import SignatureCanvas from "react-signature-canvas";
 
 interface CreateBillingAccountDialogProps {
   open: boolean;
@@ -82,8 +81,6 @@ export function CreateBillingAccountDialog({
   const [existingPlanillaUrl, setExistingPlanillaUrl] = useState<string | null>(null);
   const [existingPlanillaName, setExistingPlanillaName] = useState<string | null>(null);
   const planillaFileInputRef = useRef<HTMLInputElement>(null);
-  const [signatureRef, setSignatureRef] = useState<SignatureCanvas | null>(null);
-  const [hasSignature, setHasSignature] = useState(false);
   
   const [uploads, setUploads] = useState<Record<string, Omit<FileUpload, 'type'>>>({
     social_security: { file: null, uploaded: false, uploading: false }
@@ -96,31 +93,7 @@ export function CreateBillingAccountDialog({
   const canSavePlanilla = currentDraftId && planillaNumero && planillaValor && planillaFecha && (planillaFile || existingPlanillaPath);
   const canSubmitForReview = currentDraftId && selectedContract && amount && startDate && endDate && 
                             activities.filter(a => a.status === 'saved').length > 0 && 
-                            planillaNumero && planillaValor && planillaFecha && hasPlanillaFile &&
-                            hasSignature;
-  
-  // Safe helper to check signature state
-  const checkSignatureEmpty = (): boolean => {
-    try {
-      return signatureRef ? signatureRef.isEmpty() : true;
-    } catch {
-      return true;
-    }
-  };
-  
-  console.log('Validation check:', {
-    selectedContract: !!selectedContract,
-    amount: !!amount,
-    startDate: !!startDate,
-    endDate: !!endDate,
-    activities: activities.filter(a => a.status === 'saved').length,
-    planillaNumero: !!planillaNumero,
-    planillaValor: !!planillaValor,
-    planillaFecha: !!planillaFecha,
-    planillaFile: !!planillaFile,
-    hasSignature,
-    canSubmit: canSubmitForReview
-  });
+                            planillaNumero && planillaValor && planillaFecha && hasPlanillaFile;
 
   useEffect(() => {
     if (open) {
@@ -208,9 +181,6 @@ export function CreateBillingAccountDialog({
     setExistingPlanillaPath(null);
     setExistingPlanillaUrl(null);
     setExistingPlanillaName(null);
-    if (signatureRef) {
-      signatureRef.clear();
-    }
     setUploads({
       social_security: { file: null, uploaded: false, uploading: false }
     });
@@ -663,7 +633,7 @@ export function CreateBillingAccountDialog({
     if (!canSubmitForReview) {
       toast({
         title: "Error",
-        description: "Complete todos los campos requeridos, registre al menos una actividad, complete la planilla y firme el documento",
+        description: "Complete todos los campos requeridos, registre al menos una actividad y complete la planilla",
         variant: "destructive"
       });
       return;
@@ -673,20 +643,6 @@ export function CreateBillingAccountDialog({
       setIsSubmitting(true);
 
       let billingAccountId = currentDraftId;
-
-      // Upload signature
-      const signatureBlob = await new Promise<Blob>((resolve) => {
-        signatureRef!.getCanvas().toBlob(resolve as any, 'image/png');
-      });
-      
-      const signatureFile = new File([signatureBlob], 'signature.png', { type: 'image/png' });
-      const signaturePath = `${billingAccountId}/signature.png`;
-      
-      const { data: signatureUploadData, error: signatureUploadError } = await supabase.storage
-        .from('billing-signatures')
-        .upload(signaturePath, signatureFile, { upsert: true });
-        
-      if (signatureUploadError) throw signatureUploadError;
 
       // Upload planilla file
       let planillaFileUrl = null;
@@ -713,7 +669,6 @@ export function CreateBillingAccountDialog({
           planilla_valor: parseFloat(planillaValor),
           planilla_fecha: planillaFecha,
           planilla_file_url: planillaFileUrl,
-          firma_url: signatureUploadData.path,
           enviado_el: new Date().toISOString()
         })
         .eq('id', billingAccountId);
@@ -1603,59 +1558,6 @@ export function CreateBillingAccountDialog({
               </CardContent>
             </Card>
 
-            {/* Phase 4: Signature Section */}
-            <Card className={hasSignature ? "border-green-600/50" : ""}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      {hasSignature && (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      )}
-                      4. Firma del Contratista
-                    </CardTitle>
-                    <CardDescription>
-                      Firme el documento para completar el proceso
-                    </CardDescription>
-                  </div>
-                  {hasSignature && (
-                    <Badge variant="default" className="bg-green-600">Firmado</Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="border rounded-lg p-4">
-                    <SignatureCanvas
-                      ref={(ref) => setSignatureRef(ref)}
-                      canvasProps={{
-                        className: 'signature-canvas border rounded w-full h-32',
-                        width: 400,
-                        height: 128
-                      }}
-                      onEnd={() => setHasSignature(true)}
-                    />
-                    <div className="flex justify-between mt-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          signatureRef?.clear();
-                          setHasSignature(false);
-                        }}
-                      >
-                        Limpiar
-                      </Button>
-                      <span className="text-sm text-muted-foreground">
-                        Dibuje su firma en el recuadro
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Progressive Status Indicator */}
             <Card className="border-primary/20">
               <CardHeader className="pb-3">
@@ -1690,17 +1592,6 @@ export function CreateBillingAccountDialog({
                     <Badge variant="default" className="bg-green-600">
                       <CheckCircle className="h-3 w-3 mr-1" />
                       Completa
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">Pendiente</Badge>
-                  )}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">4. Firma</span>
-                  {hasSignature ? (
-                    <Badge variant="default" className="bg-green-600">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Firmado
                     </Badge>
                   ) : (
                     <Badge variant="secondary">Pendiente</Badge>
@@ -1758,7 +1649,6 @@ export function CreateBillingAccountDialog({
               planillaNumero={planillaNumero}
               planillaValor={planillaValor}
               planillaFecha={planillaFecha}
-              signatureUrl={signatureRef ? signatureRef.toDataURL() : null}
             />
           </div>
         </div>
