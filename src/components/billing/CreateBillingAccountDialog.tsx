@@ -17,7 +17,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { BillingDocumentPreview } from "./BillingDocumentPreview";
-import { BillingCompletionProgress } from "./BillingCompletionProgress";
 import SignatureCanvas from "react-signature-canvas";
 
 interface CreateBillingAccountDialogProps {
@@ -898,19 +897,6 @@ export function CreateBillingAccountDialog({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Form */}
           <div className="space-y-6">
-            {/* Progress Indicator */}
-            <BillingCompletionProgress
-              contractId={selectedContract || null}
-              amount={amount}
-              billingStartDate={startDate || null}
-              billingEndDate={endDate || null}
-              activitiesCount={activities.filter(a => a.status === 'saved').length}
-              planillaNumero={planillaNumero}
-              planillaValor={planillaValor}
-              planillaFecha={planillaFecha}
-              planillaFile={planillaFile}
-              hasSignature={!!(signatureRef && !signatureRef.isEmpty())}
-            />
             {/* Phase 1: Contract Selection & Billing Details */}
             <Card className={currentDraftId ? "border-green-600/50" : ""}>
               <CardHeader>
