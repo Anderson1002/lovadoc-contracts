@@ -676,11 +676,23 @@ export function EditBillingAccountDialog({
             hasSignature={!!profileSignatureUrl}
           />
 
-          {/* Contract Selection */}
-          <Card>
+          {/* Phase 1: Contract Selection & Billing Details - Combined */}
+          <Card className={billingAccount ? "border-green-600/50" : ""}>
             <CardHeader>
-              <CardTitle className="text-lg">Información del Contrato</CardTitle>
-              <CardDescription>Seleccione el contrato para este informe de actividades</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    {billingAccount && <CheckCircle className="h-5 w-5 text-green-600" />}
+                    1. Detalles de Facturación
+                  </CardTitle>
+                  <CardDescription>
+                    Seleccione el contrato y complete los datos básicos
+                  </CardDescription>
+                </div>
+                {billingAccount && (
+                  <Badge variant="default" className="bg-green-600">Guardado</Badge>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -759,64 +771,124 @@ export function EditBillingAccountDialog({
                 </Popover>
               </div>
 
+              {/* Contract Details - Expanded like CreateBillingAccountDialog */}
               {selectedContractData && (
-                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                  <h4 className="font-medium">Detalles del Contrato Seleccionado</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Cliente:</span>
-                      <span className="ml-2 font-medium">{selectedContractData.client_name}</span>
+                <div className="mt-4 p-4 bg-muted rounded-lg space-y-3">
+                  <h4 className="font-medium text-base">Detalles del Contrato</h4>
+                  <div className="space-y-3">
+                    {/* Información básica */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Número:</span>
+                        <p className="font-medium">{selectedContractData.contract_number_original || selectedContractData.contract_number}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Tipo:</span>
+                        <p className="font-medium">
+                          {selectedContractData.contract_type === 'fixed_amount' && 'Monto Fijo'}
+                          {selectedContractData.contract_type === 'variable_amount' && 'Monto Variable'}
+                          {selectedContractData.contract_type === 'contractor' && 'Contratista'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Valor Total:</span>
-                      <span className="ml-2 font-medium">{formatCurrency(selectedContractData.total_amount)}</span>
+
+                    {/* Referencias administrativas */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">CDP:</span>
+                        <p className="font-medium">{selectedContractData.cdp || 'No especificado'}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">RP:</span>
+                        <p className="font-medium">{selectedContractData.rp || 'No especificado'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Inicio:</span>
-                      <span className="ml-2">{new Date(selectedContractData.start_date).toLocaleDateString('es-ES')}</span>
+
+                    {/* Valor y período */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Valor Total:</span>
+                        <p className="font-medium">{formatCurrency(selectedContractData.total_amount)}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Período de Ejecución:</span>
+                        <p className="font-medium">
+                          {selectedContractData.execution_period_months 
+                            ? `${selectedContractData.execution_period_months} meses` 
+                            : selectedContractData.execution_period_days 
+                              ? `${selectedContractData.execution_period_days} días`
+                              : 'No especificado'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Fin:</span>
-                      <span className="ml-2">{new Date(selectedContractData.end_date).toLocaleDateString('es-ES')}</span>
+
+                    {/* Vigencia */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Fecha Inicio:</span>
+                        <p className="font-medium">{format(new Date(selectedContractData.start_date), 'dd/MM/yyyy')}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Fecha Fin:</span>
+                        <p className="font-medium">{format(new Date(selectedContractData.end_date), 'dd/MM/yyyy')}</p>
+                      </div>
                     </div>
+
+                    {/* Descripción */}
+                    {selectedContractData.description && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Descripción:</span>
+                        <p className="font-medium text-xs mt-1 line-clamp-2">{selectedContractData.description}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* User Profile Details */}
+              {userProfile && (
+                <div className="mt-4 p-4 bg-muted rounded-lg space-y-2">
+                  <h4 className="font-medium">Datos del Contratista</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><strong>Nombre:</strong> {userProfile.name}</div>
+                    <div><strong>Email:</strong> {userProfile.email}</div>
+                    <div><strong>Documento:</strong> {userProfile.document_number || 'No especificado'}</div>
+                    <div><strong>Teléfono:</strong> {userProfile.phone || 'No especificado'}</div>
+                    <div><strong>Dirección:</strong> {userProfile.address || 'No especificada'}</div>
+                    <div><strong>NIT:</strong> {userProfile.nit || 'No especificado'}</div>
+                    <div><strong>Régimen:</strong> {userProfile.tax_regime || 'Régimen Simplificado'}</div>
+                    <div><strong>Banco:</strong> {userProfile.bank_name || 'No especificado'}</div>
+                    <div><strong>Cuenta:</strong> {userProfile.bank_account || 'No especificada'}</div>
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Billing Details */}
+          {/* Billing Details Card */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Detalles de Facturación</CardTitle>
               <CardDescription>Configure el valor y período de facturación</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Valor a Facturar *</Label>
-                  <Input
-                    id="amount"
-                    type="text"
-                    inputMode="numeric"
-                    value={amount}
-                    onChange={(e) => {
-                      // Permitir solo números
-                      const value = e.target.value.replace(/[^\d]/g, '');
-                      setAmount(value);
-                    }}
-                    placeholder="0"
-                    disabled={!canEdit}
-                  />
-                  {formattedAmount && (
-                    <p className="text-sm text-muted-foreground">
-                      Formato: {formattedAmount}
-                    </p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label>Valor de la Cuenta *</Label>
+                <Input
+                  type="text"
+                  value={amount ? formatCurrencyInput(amount) : ''}
+                  onChange={(e) => {
+                    const numericValue = e.target.value.replace(/[^\d]/g, '');
+                    setAmount(numericValue);
+                  }}
+                  placeholder="$ 0"
+                  disabled={!canEdit}
+                />
+              </div>
 
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Fecha de Inicio del Período *</Label>
+                  <Label>Fecha Inicio *</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -828,22 +900,21 @@ export function EditBillingAccountDialog({
                         disabled={!canEdit}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {startDate ? format(startDate, "dd/MM/yyyy") : "Seleccionar fecha"}
+                        {startDate ? format(startDate, "PPP") : "Seleccionar fecha"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0">
                       <Calendar
                         mode="single"
                         selected={startDate}
                         onSelect={setStartDate}
-                        initialFocus
                       />
                     </PopoverContent>
                   </Popover>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Fecha de Fin del Período *</Label>
+                  <Label>Fecha Fin *</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -855,15 +926,14 @@ export function EditBillingAccountDialog({
                         disabled={!canEdit}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {endDate ? format(endDate, "dd/MM/yyyy") : "Seleccionar fecha"}
+                        {endDate ? format(endDate, "PPP") : "Seleccionar fecha"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0">
                       <Calendar
                         mode="single"
                         selected={endDate}
                         onSelect={setEndDate}
-                        initialFocus
                       />
                     </PopoverContent>
                   </Popover>
