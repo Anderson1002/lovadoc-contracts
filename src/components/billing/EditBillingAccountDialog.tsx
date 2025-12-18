@@ -110,8 +110,19 @@ export function EditBillingAccountDialog({
     try {
       setLoading(true);
 
+      // Get current user ID for storage path
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "No se pudo obtener la sesión del usuario",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Validate that billing account is in draft status
-      if (billingAccount.status !== 'draft') {
+      if (billingAccount.status !== 'borrador' && billingAccount.status !== 'draft') {
         toast({
           title: "Error",
           description: "Solo se pueden editar cuentas en estado borrador",
@@ -120,7 +131,7 @@ export function EditBillingAccountDialog({
         return;
       }
 
-      // Upload signature if present
+      // Upload signature if present - use user_id in path to match RLS policy
       let firmaUrl = billingAccount.firma_url;
       if (signatureRef && !signatureRef.isEmpty()) {
         const signatureBlob = await new Promise<Blob>((resolve) => {
@@ -128,26 +139,38 @@ export function EditBillingAccountDialog({
         });
         
         const signatureFile = new File([signatureBlob], 'signature.png', { type: 'image/png' });
-        const signaturePath = `${billingAccount.id}/signature.png`;
+        const signaturePath = `${user.id}/${billingAccount.id}/signature.png`;
         
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('billing-signatures')
           .upload(signaturePath, signatureFile, { upsert: true });
           
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Error uploading signature:', uploadError);
+          throw uploadError;
+        }
         firmaUrl = uploadData.path;
       }
 
-      // Upload planilla file if present
+      // Upload planilla file if present - use user_id in path to match RLS policy
       let planillaFileUrl = billingAccount.planilla_file_url;
       if (planillaFile) {
-        const planillaPath = `${billingAccount.id}/planilla.${planillaFile.name.split('.').pop()}`;
+        const fileExt = planillaFile.name.split('.').pop();
+        const planillaPath = `${user.id}/${billingAccount.id}/planilla.${fileExt}`;
         
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('billing-documents')
           .upload(planillaPath, planillaFile, { upsert: true });
           
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Error uploading planilla file:', uploadError);
+          toast({
+            title: "Error al subir archivo",
+            description: `No se pudo subir el archivo de planilla: ${uploadError.message}`,
+            variant: "destructive"
+          });
+          return;
+        }
         planillaFileUrl = uploadData.path;
       }
 
