@@ -83,6 +83,7 @@ export function CreateBillingAccountDialog({
   const [existingPlanillaName, setExistingPlanillaName] = useState<string | null>(null);
   const planillaFileInputRef = useRef<HTMLInputElement>(null);
   const [signatureRef, setSignatureRef] = useState<SignatureCanvas | null>(null);
+  const [hasSignature, setHasSignature] = useState(false);
   
   const [uploads, setUploads] = useState<Record<string, Omit<FileUpload, 'type'>>>({
     social_security: { file: null, uploaded: false, uploading: false }
@@ -96,7 +97,16 @@ export function CreateBillingAccountDialog({
   const canSubmitForReview = currentDraftId && selectedContract && amount && startDate && endDate && 
                             activities.filter(a => a.status === 'saved').length > 0 && 
                             planillaNumero && planillaValor && planillaFecha && hasPlanillaFile &&
-                            signatureRef && !signatureRef.isEmpty();
+                            hasSignature;
+  
+  // Safe helper to check signature state
+  const checkSignatureEmpty = (): boolean => {
+    try {
+      return signatureRef ? signatureRef.isEmpty() : true;
+    } catch {
+      return true;
+    }
+  };
   
   console.log('Validation check:', {
     selectedContract: !!selectedContract,
@@ -108,8 +118,7 @@ export function CreateBillingAccountDialog({
     planillaValor: !!planillaValor,
     planillaFecha: !!planillaFecha,
     planillaFile: !!planillaFile,
-    signatureRef: !!signatureRef,
-    signatureNotEmpty: signatureRef ? !signatureRef.isEmpty() : false,
+    hasSignature,
     canSubmit: canSubmitForReview
   });
 
@@ -1595,12 +1604,12 @@ export function CreateBillingAccountDialog({
             </Card>
 
             {/* Phase 4: Signature Section */}
-            <Card className={signatureRef && !signatureRef.isEmpty() ? "border-green-600/50" : ""}>
+            <Card className={hasSignature ? "border-green-600/50" : ""}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      {signatureRef && !signatureRef.isEmpty() && (
+                      {hasSignature && (
                         <CheckCircle className="h-5 w-5 text-green-600" />
                       )}
                       4. Firma del Contratista
@@ -1609,7 +1618,7 @@ export function CreateBillingAccountDialog({
                       Firme el documento para completar el proceso
                     </CardDescription>
                   </div>
-                  {signatureRef && !signatureRef.isEmpty() && (
+                  {hasSignature && (
                     <Badge variant="default" className="bg-green-600">Firmado</Badge>
                   )}
                 </div>
@@ -1624,13 +1633,17 @@ export function CreateBillingAccountDialog({
                         width: 400,
                         height: 128
                       }}
+                      onEnd={() => setHasSignature(true)}
                     />
                     <div className="flex justify-between mt-2">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => signatureRef?.clear()}
+                        onClick={() => {
+                          signatureRef?.clear();
+                          setHasSignature(false);
+                        }}
                       >
                         Limpiar
                       </Button>
@@ -1684,7 +1697,7 @@ export function CreateBillingAccountDialog({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">4. Firma</span>
-                  {signatureRef && !signatureRef.isEmpty() ? (
+                  {hasSignature ? (
                     <Badge variant="default" className="bg-green-600">
                       <CheckCircle className="h-3 w-3 mr-1" />
                       Firmado
