@@ -1217,44 +1217,6 @@ export function EditBillingAccountDialog({
             </CardContent>
           </Card>
 
-          {/* Firma del Contratista */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Firma del Contratista</CardTitle>
-              <CardDescription>
-                La firma se toma automáticamente de su perfil
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {profileSignatureUrl ? (
-                <div className="space-y-2">
-                  <div className="border rounded-lg p-4 bg-muted/30">
-                    <img 
-                      src={profileSignatureUrl} 
-                      alt="Firma del contratista" 
-                      className="max-h-32 mx-auto"
-                    />
-                  </div>
-                  <p className="text-xs text-green-600 text-center flex items-center justify-center gap-1">
-                    <CheckCircle className="h-3 w-3" />
-                    Firma cargada desde su perfil
-                  </p>
-                </div>
-              ) : (
-                <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
-                  <p className="mb-2">No tiene una firma registrada en su perfil</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open('/profile', '_blank')}
-                  >
-                    Ir a mi perfil para agregar firma
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Document Preview */}
           {billingAccount && (
             <Card>
