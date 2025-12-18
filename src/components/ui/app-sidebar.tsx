@@ -92,22 +92,30 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
       ]
     },
     {
-      title: "Cuentas de Cobro",
+      title: "Radicación de Cobros",
       url: "/billing",
       icon: DollarSign,
       roles: ["super_admin", "admin", "supervisor", "employee"],
       children: [
         {
-          title: "Registro Cuenta de Cobro",
-          url: "/billing/new",
-          icon: DollarSign,
+          title: "Informe de Actividades",
+          url: "/billing",
+          icon: FileText,
           roles: ["super_admin", "admin", "supervisor", "employee"]
         },
         {
-          title: "Consultar Cuentas",
-          url: "/billing/query",
-          icon: FileText,
-          roles: ["super_admin", "admin", "supervisor", "employee"]
+          title: "Certificación",
+          url: "/billing/certification",
+          icon: FileCheck,
+          roles: ["super_admin", "admin", "supervisor", "employee"],
+          badge: "Próximamente"
+        },
+        {
+          title: "Cuenta de Cobro",
+          url: "/billing/invoice",
+          icon: DollarSign,
+          roles: ["super_admin", "admin", "supervisor", "employee"],
+          badge: "Próximamente"
         },
         {
           title: "Apoyo Supervisor",
