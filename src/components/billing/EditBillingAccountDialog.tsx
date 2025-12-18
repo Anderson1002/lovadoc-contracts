@@ -38,6 +38,7 @@ export function EditBillingAccountDialog({
     planilla_fecha: ''
   });
   const [signatureRef, setSignatureRef] = useState<SignatureCanvas | null>(null);
+  const [hasSignatureDrawn, setHasSignatureDrawn] = useState(false);
   const [planillaFile, setPlanillaFile] = useState<File | null>(null);
   const [activitiesCount, setActivitiesCount] = useState(0);
   const [existingPlanillaUrl, setExistingPlanillaUrl] = useState<string | null>(null);
@@ -100,7 +101,7 @@ export function EditBillingAccountDialog({
     }
   };
 
-  const hasSignature = !!(signatureRef && !signatureRef.isEmpty()) || !!billingAccount?.firma_url;
+  const hasSignature = hasSignatureDrawn || !!billingAccount?.firma_url;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +134,7 @@ export function EditBillingAccountDialog({
 
       // Upload signature if present - use user_id in path to match RLS policy
       let firmaUrl = billingAccount.firma_url;
-      if (signatureRef && !signatureRef.isEmpty()) {
+      if (hasSignatureDrawn && signatureRef) {
         const signatureBlob = await new Promise<Blob>((resolve) => {
           signatureRef.getCanvas().toBlob(resolve as any, 'image/png');
         });
@@ -442,13 +443,17 @@ export function EditBillingAccountDialog({
                   width: 400,
                   height: 128
                 }}
+                onEnd={() => setHasSignatureDrawn(true)}
               />
               <div className="flex justify-between mt-2">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => signatureRef?.clear()}
+                  onClick={() => {
+                    signatureRef?.clear();
+                    setHasSignatureDrawn(false);
+                  }}
                 >
                   Limpiar
                 </Button>
