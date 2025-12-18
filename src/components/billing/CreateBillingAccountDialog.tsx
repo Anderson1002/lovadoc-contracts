@@ -1759,7 +1759,7 @@ export function CreateBillingAccountDialog({
               planillaNumero={planillaNumero}
               planillaValor={planillaValor}
               planillaFecha={planillaFecha}
-              signatureRef={signatureRef}
+              signatureUrl={signatureRef ? signatureRef.toDataURL() : null}
             />
           </div>
         </div>
