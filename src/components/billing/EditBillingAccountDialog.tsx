@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { formatCurrency, formatCurrencyInput } from "@/lib/utils";
 import SignatureCanvas from "react-signature-canvas";
+import { BillingCompletionProgress } from "./BillingCompletionProgress";
 
 interface EditBillingAccountDialogProps {
   open: boolean;
@@ -37,6 +38,7 @@ export function EditBillingAccountDialog({
   });
   const [signatureRef, setSignatureRef] = useState<SignatureCanvas | null>(null);
   const [planillaFile, setPlanillaFile] = useState<File | null>(null);
+  const [activitiesCount, setActivitiesCount] = useState(0);
 
   useEffect(() => {
     if (billingAccount && open) {
@@ -50,8 +52,27 @@ export function EditBillingAccountDialog({
         planilla_valor: billingAccount.planilla_valor?.toString() || '',
         planilla_fecha: billingAccount.planilla_fecha || ''
       });
+      // Load activities count
+      loadActivitiesCount(billingAccount.id);
     }
   }, [billingAccount, open]);
+
+  const loadActivitiesCount = async (billingAccountId: string) => {
+    try {
+      const { count, error } = await supabase
+        .from('billing_activities')
+        .select('*', { count: 'exact', head: true })
+        .eq('billing_account_id', billingAccountId);
+      
+      if (!error) {
+        setActivitiesCount(count || 0);
+      }
+    } catch (error) {
+      console.error('Error loading activities count:', error);
+    }
+  };
+
+  const hasSignature = !!(signatureRef && !signatureRef.isEmpty()) || !!billingAccount?.firma_url;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,10 +165,23 @@ export function EditBillingAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Cuenta de Cobro</DialogTitle>
         </DialogHeader>
+
+        <BillingCompletionProgress
+          contractId={billingAccount?.contract_id || null}
+          amount={formData.amount}
+          billingStartDate={formData.billing_start_date}
+          billingEndDate={formData.billing_end_date}
+          activitiesCount={activitiesCount}
+          planillaNumero={formData.planilla_numero}
+          planillaValor={formData.planilla_valor}
+          planillaFecha={formData.planilla_fecha}
+          planillaFile={planillaFile || billingAccount?.planilla_file_url}
+          hasSignature={hasSignature}
+        />
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
