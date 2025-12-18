@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Loader2, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Loader2, Trash2, Check, ChevronsUpDown, Eye, Download, RefreshCw } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { formatCurrency, formatCurrencyInput } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
@@ -81,6 +81,13 @@ export function EditBillingAccountDialog({
   const [reviewComments, setReviewComments] = useState<any[]>([]);
   const signatureRef = useRef<SignatureCanvas>(null);
   const [creatorProfile, setCreatorProfile] = useState<any>(null);
+  
+  // Estados para gestión mejorada de archivo PDF de planilla
+  const [existingPlanillaPath, setExistingPlanillaPath] = useState<string | null>(null);
+  const [existingPlanillaUrl, setExistingPlanillaUrl] = useState<string | null>(null);
+  const [existingPlanillaName, setExistingPlanillaName] = useState<string | null>(null);
+  const [pendingPlanillaFile, setPendingPlanillaFile] = useState<File | null>(null);
+  const planillaFileInputRef = useRef<HTMLInputElement>(null);
 
   const canEdit = billingAccount?.status === 'borrador' || billingAccount?.status === 'rechazada';
   const canSubmitForReview = selectedContract && amount && startDate && endDate && 
@@ -188,17 +195,33 @@ export function EditBillingAccountDialog({
 
       if (documentsError) throw documentsError;
 
-      // Update uploads state with existing documents
+      // Update uploads state with existing documents and load planilla URL
       const updatedUploads = { ...uploads };
-      documents?.forEach(doc => {
+      for (const doc of documents || []) {
         if (doc.document_type === 'social_security') {
           updatedUploads.social_security = {
             file: null,
             uploaded: true,
             uploading: false
           };
+          
+          // Cargar URL del archivo de planilla existente
+          setExistingPlanillaPath(doc.file_path);
+          setExistingPlanillaName(doc.file_name || doc.file_path.split('/').pop() || 'planilla.pdf');
+          
+          try {
+            const { data: urlData, error: urlError } = await supabase.storage
+              .from('billing-documents')
+              .createSignedUrl(doc.file_path, 3600); // 1 hora de validez
+            
+            if (!urlError && urlData?.signedUrl) {
+              setExistingPlanillaUrl(urlData.signedUrl);
+            }
+          } catch (e) {
+            console.warn('No se pudo obtener URL del archivo de planilla:', e);
+          }
         }
-      });
+      }
       setUploads(updatedUploads);
 
     } catch (error: any) {
@@ -445,16 +468,22 @@ export function EditBillingAccountDialog({
 
       if (error) throw error;
 
-      // Upload social security document if changed
-      if (uploads.social_security.file) {
-        const fileExt = uploads.social_security.file.name.split('.').pop();
-        const fileName = `${userProfile.user_id}/${billingAccount.id}/social_security.${fileExt}`;
+      // Upload social security document if changed (using pendingPlanillaFile)
+      if (pendingPlanillaFile) {
+        const fileExt = pendingPlanillaFile.name.split('.').pop();
+        const fileName = `${userProfile.user_id}/${billingAccount.id}/social_security_${Date.now()}.${fileExt}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('billing-documents')
-          .upload(fileName, uploads.social_security.file, { upsert: true });
+          .upload(fileName, pendingPlanillaFile, { upsert: true });
 
         if (uploadError) throw uploadError;
+
+        // Update billing account with new planilla path
+        await supabase
+          .from('billing_accounts')
+          .update({ planilla_file_url: uploadData.path })
+          .eq('id', billingAccount.id);
 
         // Delete existing document record and create new one
         await supabase
@@ -469,11 +498,29 @@ export function EditBillingAccountDialog({
             billing_account_id: billingAccount.id,
             document_type: 'social_security',
             uploaded_by: userProfile.id,
-            file_name: uploads.social_security.file.name,
+            file_name: pendingPlanillaFile.name,
             file_path: uploadData.path,
-            file_size: uploads.social_security.file.size,
-            mime_type: uploads.social_security.file.type
+            file_size: pendingPlanillaFile.size,
+            mime_type: pendingPlanillaFile.type
           });
+        
+        // Actualizar estados locales
+        setExistingPlanillaPath(uploadData.path);
+        setExistingPlanillaName(pendingPlanillaFile.name);
+        setPendingPlanillaFile(null);
+        
+        // Obtener nueva URL firmada
+        const { data: urlData } = await supabase.storage
+          .from('billing-documents')
+          .createSignedUrl(uploadData.path, 3600);
+        if (urlData?.signedUrl) {
+          setExistingPlanillaUrl(urlData.signedUrl);
+        }
+        
+        setUploads(prev => ({
+          ...prev,
+          social_security: { file: null, uploaded: true, uploading: false }
+        }));
       }
 
       toast({
@@ -530,16 +577,22 @@ export function EditBillingAccountDialog({
 
       if (error) throw error;
 
-      // Upload social security document if changed
-      if (uploads.social_security.file) {
-        const fileExt = uploads.social_security.file.name.split('.').pop();
-        const fileName = `${userProfile.user_id}/${billingAccount.id}/social_security.${fileExt}`;
+      // Upload social security document if changed (using pendingPlanillaFile)
+      if (pendingPlanillaFile) {
+        const fileExt = pendingPlanillaFile.name.split('.').pop();
+        const fileName = `${userProfile.user_id}/${billingAccount.id}/social_security_${Date.now()}.${fileExt}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('billing-documents')
-          .upload(fileName, uploads.social_security.file, { upsert: true });
+          .upload(fileName, pendingPlanillaFile, { upsert: true });
 
         if (uploadError) throw uploadError;
+
+        // Update billing account with new planilla path
+        await supabase
+          .from('billing_accounts')
+          .update({ planilla_file_url: uploadData.path })
+          .eq('id', billingAccount.id);
 
         // Delete existing document record and create new one
         await supabase
@@ -554,10 +607,10 @@ export function EditBillingAccountDialog({
             billing_account_id: billingAccount.id,
             document_type: 'social_security',
             uploaded_by: userProfile.id,
-            file_name: uploads.social_security.file.name,
+            file_name: pendingPlanillaFile.name,
             file_path: uploadData.path,
-            file_size: uploads.social_security.file.size,
-            mime_type: uploads.social_security.file.type
+            file_size: pendingPlanillaFile.size,
+            mime_type: pendingPlanillaFile.type
           });
       }
 
@@ -1017,27 +1070,155 @@ export function EditBillingAccountDialog({
 
               <div className="space-y-2">
                 <Label htmlFor="social_security">Archivo de Planilla *</Label>
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <Input
-                      id="social_security"
-                      type="file"
-                      accept=".pdf"
-                      onChange={(e) => handleFileUpload(e, 'social_security')}
-                      disabled={!canEdit}
-                      className="cursor-pointer"
-                    />
-                  </div>
-                  {uploads.social_security.uploaded && (
-                    <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle className="h-4 w-4" />
-                      <span className="text-sm">Subido</span>
+                
+                {/* Input oculto para selección de archivo */}
+                <input
+                  ref={planillaFileInputRef}
+                  id="social_security"
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    
+                    if (file.type !== 'application/pdf') {
+                      toast({
+                        title: "Error",
+                        description: "Solo se permiten archivos PDF",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+                    
+                    if (file.size > 10 * 1024 * 1024) {
+                      toast({
+                        title: "Error",
+                        description: "El archivo no puede ser mayor a 10MB",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+                    
+                    setPendingPlanillaFile(file);
+                  }}
+                  disabled={!canEdit}
+                  className="hidden"
+                />
+                
+                {/* Caso 1: Hay un archivo existente guardado (sin cambio pendiente) */}
+                {existingPlanillaPath && !pendingPlanillaFile && (
+                  <div className="border rounded-lg p-4 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-green-600" />
+                        <span className="font-medium text-green-700 dark:text-green-300">{existingPlanillaName}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {existingPlanillaUrl && (
+                          <>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(existingPlanillaUrl, '_blank')}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = existingPlanillaUrl;
+                                link.download = existingPlanillaName || 'planilla.pdf';
+                                link.click();
+                              }}
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              Descargar
+                            </Button>
+                          </>
+                        )}
+                        {canEdit && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => planillaFileInputRef.current?.click()}
+                          >
+                            <RefreshCw className="h-4 w-4 mr-1" />
+                            Cambiar
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Solo archivos PDF, máximo 10MB
-                </p>
+                    <div className="flex items-center gap-2 mt-2 text-sm text-green-600">
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Archivo guardado correctamente</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Caso 2: Hay un archivo pendiente de guardar */}
+                {pendingPlanillaFile && (
+                  <div className="border rounded-lg p-4 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-amber-600" />
+                        <span className="font-medium text-amber-700 dark:text-amber-300">{pendingPlanillaFile.name}</span>
+                        <Badge variant="outline" className="text-amber-600 border-amber-300">
+                          Pendiente de guardar
+                        </Badge>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setPendingPlanillaFile(null);
+                          if (planillaFileInputRef.current) {
+                            planillaFileInputRef.current.value = '';
+                          }
+                        }}
+                        className="text-amber-600 hover:text-amber-700"
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Cancelar
+                      </Button>
+                    </div>
+                    <p className="text-xs text-amber-600 mt-2">
+                      {existingPlanillaPath 
+                        ? 'Este archivo reemplazará al anterior cuando guardes los cambios'
+                        : 'Este archivo se subirá cuando guardes los cambios'}
+                    </p>
+                  </div>
+                )}
+                
+                {/* Caso 3: No hay archivo existente ni pendiente */}
+                {!existingPlanillaPath && !pendingPlanillaFile && (
+                  <div 
+                    className={cn(
+                      "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+                      canEdit 
+                        ? "hover:border-primary hover:bg-primary/5 border-muted-foreground/25" 
+                        : "border-muted cursor-not-allowed opacity-50"
+                    )}
+                    onClick={() => canEdit && planillaFileInputRef.current?.click()}
+                  >
+                    <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium">Clic para seleccionar archivo PDF</p>
+                    <p className="text-xs text-muted-foreground mt-1">PDF, máximo 10MB</p>
+                  </div>
+                )}
+                
+                {!existingPlanillaPath && !pendingPlanillaFile && (
+                  <p className="text-xs text-amber-600 flex items-center gap-1">
+                    <X className="h-3 w-3" />
+                    Sin archivo de planilla
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
