@@ -360,9 +360,9 @@ export function BillingDocumentPreview({
                 <tr>
                   <td className="border border-black p-2 font-semibold bg-gray-50">FIRMA DEL CONTRATISTA</td>
                   <td className="border border-black p-2 text-center" colSpan={3}>
-                    <div className="flex flex-col items-center py-4">
+                    <div className="flex items-center justify-center py-4">
                       {signatureUrl ? (
-                        <div className="w-48 h-16 flex items-center justify-center mb-2">
+                        <div className="w-48 h-16 flex items-center justify-center">
                           <img 
                             src={signatureUrl} 
                             alt="Firma del contratista" 
@@ -370,10 +370,8 @@ export function BillingDocumentPreview({
                           />
                         </div>
                       ) : (
-                        <div className="w-48 border-b-2 border-black mb-2 h-12"></div>
+                        <div className="w-48 border-b-2 border-black h-12"></div>
                       )}
-                      <p className="font-bold">{userProfile.name}</p>
-                      <p>C.C. {userProfile.document_number || '-'}</p>
                     </div>
                   </td>
                 </tr>
