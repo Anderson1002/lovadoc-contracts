@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Download, Check, ChevronsUpDown, Pencil, Trash2, Eye, RefreshCw } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Download, Check, ChevronsUpDown, Pencil, Trash2, Eye, RefreshCw, ClipboardList, ClipboardCheck, Receipt } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { formatCurrency, formatCurrencyInput } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +18,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { BillingDocumentPreview } from "./BillingDocumentPreview";
+import { CertificationForm } from "./CertificationForm";
+import { CertificationPreview } from "./CertificationPreview";
+import { InvoiceForm } from "./InvoiceForm";
+import { InvoicePreview } from "./InvoicePreview";
+import { BillingProgressTracker } from "./BillingProgressTracker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CreateBillingAccountDialogProps {
@@ -72,6 +78,29 @@ export function CreateBillingAccountDialog({
   const [contractSelectOpen, setContractSelectOpen] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [billingStatus, setBillingStatus] = useState<'borrador' | 'pendiente_revision' | 'aprobada' | 'rechazada' | 'pagada'>('borrador');
+  const [activeTab, setActiveTab] = useState<string>("informe");
+  
+  // Certification form fields
+  const [novedades, setNovedades] = useState('');
+  const [certificationDate, setCertificationDate] = useState('');
+  
+  // Invoice form fields
+  const [invoiceCity, setInvoiceCity] = useState('');
+  const [invoiceDate, setInvoiceDate] = useState('');
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [amountInWords, setAmountInWords] = useState('');
+  const [declarationSingleEmployer, setDeclarationSingleEmployer] = useState(true);
+  const [declaration80PercentIncome, setDeclaration80PercentIncome] = useState(true);
+  const [benefitPrepaidHealth, setBenefitPrepaidHealth] = useState(false);
+  const [benefitVoluntaryPension, setBenefitVoluntaryPension] = useState(false);
+  const [benefitHousingInterest, setBenefitHousingInterest] = useState(false);
+  const [benefitHealthContributions, setBenefitHealthContributions] = useState(true);
+  const [benefitEconomicDependents, setBenefitEconomicDependents] = useState(false);
+  
+  // Completion tracking
+  const [informeComplete, setInformeComplete] = useState(false);
+  const [certificacionComplete, setCertificacionComplete] = useState(false);
+  const [cuentaCobroComplete, setCuentaCobroComplete] = useState(false);
   
   // New fields for planilla and signature
   const [planillaNumero, setPlanillaNumero] = useState('');
@@ -186,6 +215,7 @@ export function CreateBillingAccountDialog({
     setExistingEvidences([]);
     setCurrentDraftId(null);
     setBillingStatus('borrador');
+    setActiveTab("informe");
     setPlanillaNumero('');
     setPlanillaValor('');
     setPlanillaFecha('');
@@ -203,6 +233,25 @@ export function CreateBillingAccountDialog({
     setArlNumero('');
     setArlValor('');
     setArlFecha('');
+    // Reset certification fields
+    setNovedades('');
+    setCertificationDate('');
+    // Reset invoice fields
+    setInvoiceCity(userProfile?.city || '');
+    setInvoiceDate('');
+    setInvoiceNumber('');
+    setAmountInWords('');
+    setDeclarationSingleEmployer(true);
+    setDeclaration80PercentIncome(true);
+    setBenefitPrepaidHealth(false);
+    setBenefitVoluntaryPension(false);
+    setBenefitHousingInterest(false);
+    setBenefitHealthContributions(true);
+    setBenefitEconomicDependents(false);
+    // Reset completion tracking
+    setInformeComplete(false);
+    setCertificacionComplete(false);
+    setCuentaCobroComplete(false);
     setUploads({
       social_security: { file: null, uploaded: false, uploading: false }
     });
@@ -880,55 +929,98 @@ export function CreateBillingAccountDialog({
     }));
   };
 
+  // Check completion status
+  useEffect(() => {
+    const hasActivities = activities.filter(a => a.status === 'saved').length > 0;
+    const hasPlanilla = planillaNumero && planillaValor && planillaFecha && (planillaFile || existingPlanillaPath);
+    setInformeComplete(!!currentDraftId && hasActivities && !!hasPlanilla);
+    
+    setCertificacionComplete(!!novedades && !!certificationDate);
+    
+    setCuentaCobroComplete(!!invoiceDate && !!amountInWords);
+  }, [currentDraftId, activities, planillaNumero, planillaValor, planillaFecha, planillaFile, existingPlanillaPath, novedades, certificationDate, invoiceDate, amountInWords]);
+
+  // Calculate if can submit (all 3 formats complete)
+  const canSubmitAllFormats = informeComplete && certificacionComplete && cuentaCobroComplete;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Nuevo Informe de Actividades</DialogTitle>
+          <DialogTitle>Nueva Cuenta de Cobro</DialogTitle>
           <DialogDescription>
-            Complete la información para crear un nuevo informe de actividades
+            Complete los 3 formatos requeridos para radicar la cuenta de cobro
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Form */}
-          <div className="space-y-6">
-            {/* Phase 1: Contract Selection & Billing Details */}
-            <Card className={currentDraftId ? "border-green-600/50" : ""}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      {currentDraftId && <CheckCircle className="h-5 w-5 text-green-600" />}
-                      1. Detalles de Facturación
-                    </CardTitle>
-                    <CardDescription>
-                      Seleccione el contrato y complete los datos básicos
-                    </CardDescription>
-                  </div>
-                  {currentDraftId && (
-                    <Badge variant="default" className="bg-green-600">Guardado</Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Contrato *</Label>
-                  <Popover open={contractSelectOpen} onOpenChange={setContractSelectOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={contractSelectOpen}
-                        className="w-full justify-between"
-                      >
-                        {selectedContract ? (
-                          <span className="truncate">
-                            {contracts.find((c) => c.id === selectedContract)?.contract_number_original || 
-                             contracts.find((c) => c.id === selectedContract)?.contract_number}
-                            {contracts.find((c) => c.id === selectedContract)?.client_name && 
-                              ` • ${contracts.find((c) => c.id === selectedContract)?.client_name}`}
-                          </span>
+        {/* Progress Tracker */}
+        <BillingProgressTracker
+          informeComplete={informeComplete}
+          certificacionComplete={certificacionComplete}
+          cuentaCobroComplete={cuentaCobroComplete}
+          currentTab={activeTab}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden" style={{ maxHeight: 'calc(95vh - 200px)' }}>
+          {/* Left Column - Tabs with Forms */}
+          <ScrollArea className="h-full pr-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="informe" className="flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  <span className="hidden sm:inline">Informe</span>
+                  {informeComplete && <CheckCircle className="h-3 w-3 text-green-600" />}
+                </TabsTrigger>
+                <TabsTrigger value="certificacion" className="flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4" />
+                  <span className="hidden sm:inline">Certificación</span>
+                  {certificacionComplete && <CheckCircle className="h-3 w-3 text-green-600" />}
+                </TabsTrigger>
+                <TabsTrigger value="cuenta" className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4" />
+                  <span className="hidden sm:inline">Cuenta</span>
+                  {cuentaCobroComplete && <CheckCircle className="h-3 w-3 text-green-600" />}
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Tab 1: Informe de Actividades */}
+              <TabsContent value="informe" className="space-y-6">
+                {/* Contract Selection & Billing Details */}
+                <Card className={currentDraftId ? "border-green-600/50" : ""}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          {currentDraftId && <CheckCircle className="h-5 w-5 text-green-600" />}
+                          1. Detalles de Facturación
+                        </CardTitle>
+                        <CardDescription>
+                          Seleccione el contrato y complete los datos básicos
+                        </CardDescription>
+                      </div>
+                      {currentDraftId && (
+                        <Badge variant="default" className="bg-green-600">Guardado</Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Contrato *</Label>
+                      <Popover open={contractSelectOpen} onOpenChange={setContractSelectOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={contractSelectOpen}
+                            className="w-full justify-between"
+                          >
+                            {selectedContract ? (
+                              <span className="truncate">
+                                {contracts.find((c) => c.id === selectedContract)?.contract_number_original || 
+                                 contracts.find((c) => c.id === selectedContract)?.contract_number}
+                                {contracts.find((c) => c.id === selectedContract)?.client_name && 
+                                  ` • ${contracts.find((c) => c.id === selectedContract)?.client_name}`}
+                              </span>
                         ) : (
                           "Seleccione un contrato activo"
                         )}
@@ -1721,50 +1813,59 @@ export function CreateBillingAccountDialog({
               </CardContent>
             </Card>
 
-            {/* Progressive Status Indicator */}
-            <Card className="border-primary/20">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Estado del Proceso</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">1. Detalles de Facturación</span>
-                  {currentDraftId ? (
-                    <Badge variant="default" className="bg-green-600">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Guardado
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">Pendiente</Badge>
-                  )}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">2. Actividades ({activities.filter(a => a.status === 'saved').length})</span>
-                  {activities.filter(a => a.status === 'saved').length > 0 ? (
-                    <Badge variant="default" className="bg-green-600">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      {activities.filter(a => a.status === 'saved').length} registrada(s)
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">Pendiente</Badge>
-                  )}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">3. Planilla de Seguridad Social</span>
-                  {canSavePlanilla ? (
-                    <Badge variant="default" className="bg-green-600">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Completa
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">Pendiente</Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+              </TabsContent>
+
+              {/* Tab 2: Certificación */}
+              <TabsContent value="certificacion" className="space-y-6">
+                <CertificationForm
+                  contractDetails={contractDetails}
+                  userProfile={userProfile}
+                  startDate={startDate}
+                  endDate={endDate}
+                  amount={amount}
+                  novedades={novedades}
+                  onNovedadesChange={setNovedades}
+                  certificationDate={certificationDate}
+                  onCertificationDateChange={setCertificationDate}
+                  isComplete={certificacionComplete}
+                />
+              </TabsContent>
+
+              {/* Tab 3: Cuenta de Cobro */}
+              <TabsContent value="cuenta" className="space-y-6">
+                <InvoiceForm
+                  contractDetails={contractDetails}
+                  userProfile={userProfile}
+                  amount={amount}
+                  invoiceNumber={invoiceNumber}
+                  onInvoiceNumberChange={setInvoiceNumber}
+                  invoiceCity={invoiceCity}
+                  onInvoiceCityChange={setInvoiceCity}
+                  invoiceDate={invoiceDate}
+                  onInvoiceDateChange={setInvoiceDate}
+                  amountInWords={amountInWords}
+                  onAmountInWordsChange={setAmountInWords}
+                  declarationSingleEmployer={declarationSingleEmployer}
+                  onDeclarationSingleEmployerChange={setDeclarationSingleEmployer}
+                  declaration80PercentIncome={declaration80PercentIncome}
+                  onDeclaration80PercentIncomeChange={setDeclaration80PercentIncome}
+                  benefitPrepaidHealth={benefitPrepaidHealth}
+                  onBenefitPrepaidHealthChange={setBenefitPrepaidHealth}
+                  benefitVoluntaryPension={benefitVoluntaryPension}
+                  onBenefitVoluntaryPensionChange={setBenefitVoluntaryPension}
+                  benefitHousingInterest={benefitHousingInterest}
+                  onBenefitHousingInterestChange={setBenefitHousingInterest}
+                  benefitHealthContributions={benefitHealthContributions}
+                  onBenefitHealthContributionsChange={setBenefitHealthContributions}
+                  benefitEconomicDependents={benefitEconomicDependents}
+                  onBenefitEconomicDependentsChange={setBenefitEconomicDependents}
+                  isComplete={cuentaCobroComplete}
+                />
+              </TabsContent>
+            </Tabs>
 
             {/* Action Buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-3 pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"
@@ -1776,7 +1877,7 @@ export function CreateBillingAccountDialog({
               <Button
                 type="button"
                 onClick={handleSubmit}
-                disabled={!canSubmitForReview || isSubmitting}
+                disabled={!canSubmitAllFormats || isSubmitting}
                 className="flex-1"
               >
                 {isSubmitting ? (
@@ -1787,43 +1888,74 @@ export function CreateBillingAccountDialog({
                 ) : (
                   <>
                     <Send className="h-4 w-4 mr-2" />
-                    Enviar para Revisión
+                    Radicar Cuenta de Cobro
                   </>
                 )}
               </Button>
             </div>
             
-            {!canSubmitForReview && (
+            {!canSubmitAllFormats && (
               <p className="text-sm text-muted-foreground text-center">
-                Complete todos los pasos para enviar la cuenta de cobro
+                Complete los 3 formatos para radicar la cuenta de cobro
               </p>
             )}
-          </div>
+          </ScrollArea>
 
           {/* Right Column - Preview */}
-          <div className="lg:sticky lg:top-0 lg:self-start">
-            <ScrollArea className="h-[calc(90vh-120px)] pr-4">
+          <div className="lg:sticky lg:top-0 lg:self-start h-full">
+            <ScrollArea className="h-[calc(95vh-250px)] pr-4">
               <div className="space-y-4">
-                <BillingDocumentPreview
-                  userProfile={userProfile}
-                  selectedContract={contractDetails}
-                  amount={amount}
-                  startDate={startDate}
-                  endDate={endDate}
-                  activities={activities.filter(a => a.status === 'saved')}
-                  planillaNumero={planillaNumero}
-                  planillaValor={planillaValor}
-                  planillaFecha={planillaFecha}
-                  saludNumero={saludNumero}
-                  saludValor={saludValor}
-                  saludFecha={saludFecha}
-                  pensionNumero={pensionNumero}
-                  pensionValor={pensionValor}
-                  pensionFecha={pensionFecha}
-                  arlNumero={arlNumero}
-                  arlValor={arlValor}
-                  arlFecha={arlFecha}
-                />
+                {activeTab === 'informe' && (
+                  <BillingDocumentPreview
+                    userProfile={userProfile}
+                    selectedContract={contractDetails}
+                    amount={amount}
+                    startDate={startDate}
+                    endDate={endDate}
+                    activities={activities.filter(a => a.status === 'saved')}
+                    planillaNumero={planillaNumero}
+                    planillaValor={planillaValor}
+                    planillaFecha={planillaFecha}
+                    saludNumero={saludNumero}
+                    saludValor={saludValor}
+                    saludFecha={saludFecha}
+                    pensionNumero={pensionNumero}
+                    pensionValor={pensionValor}
+                    pensionFecha={pensionFecha}
+                    arlNumero={arlNumero}
+                    arlValor={arlValor}
+                    arlFecha={arlFecha}
+                  />
+                )}
+                {activeTab === 'certificacion' && (
+                  <CertificationPreview
+                    contractDetails={contractDetails}
+                    userProfile={userProfile}
+                    startDate={startDate}
+                    endDate={endDate}
+                    amount={amount}
+                    novedades={novedades}
+                    certificationDate={certificationDate}
+                  />
+                )}
+                {activeTab === 'cuenta' && (
+                  <InvoicePreview
+                    contractDetails={contractDetails}
+                    userProfile={userProfile}
+                    amount={amount}
+                    invoiceNumber={invoiceNumber}
+                    invoiceCity={invoiceCity}
+                    invoiceDate={invoiceDate}
+                    amountInWords={amountInWords}
+                    declarationSingleEmployer={declarationSingleEmployer}
+                    declaration80PercentIncome={declaration80PercentIncome}
+                    benefitPrepaidHealth={benefitPrepaidHealth}
+                    benefitVoluntaryPension={benefitVoluntaryPension}
+                    benefitHousingInterest={benefitHousingInterest}
+                    benefitHealthContributions={benefitHealthContributions}
+                    benefitEconomicDependents={benefitEconomicDependents}
+                  />
+                )}
               </div>
             </ScrollArea>
           </div>
