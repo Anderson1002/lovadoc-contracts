@@ -355,35 +355,30 @@ export function BillingDocumentPreview({
                     {arlFecha || '-'}
                   </td>
                 </tr>
+
+                {/* FIRMA DEL CONTRATISTA */}
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">FIRMA DEL CONTRATISTA</td>
+                  <td className="border border-black p-2 text-center" colSpan={3}>
+                    <div className="flex flex-col items-center py-4">
+                      {signatureUrl ? (
+                        <div className="w-48 h-16 flex items-center justify-center mb-2">
+                          <img 
+                            src={signatureUrl} 
+                            alt="Firma del contratista" 
+                            className="max-w-full max-h-full"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-48 border-b-2 border-black mb-2 h-12"></div>
+                      )}
+                      <p className="font-bold">{userProfile.name}</p>
+                      <p>C.C. {userProfile.document_number || '-'}</p>
+                    </div>
+                  </td>
+                </tr>
               </tbody>
             </table>
-          </div>
-
-          {/* FIRMA DEL CONTRATISTA */}
-          <div className="p-6">
-            <div className="text-center">
-              <div className="mb-8">
-                {signatureUrl ? (
-                  <div className="flex flex-col items-center">
-                    <div className="w-48 h-20 flex items-center justify-center">
-                      <img 
-                        src={signatureUrl} 
-                        alt="Firma del contratista" 
-                        className="max-w-full max-h-full"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-20 flex items-end justify-center">
-                    <div className="w-64 border-b-2 border-black"></div>
-                  </div>
-                )}
-              </div>
-              
-              <p className="font-bold">FIRMA DEL CONTRATISTA</p>
-              <p className="mt-1">{userProfile.name}</p>
-              <p>C.C. {userProfile.document_number || '-'}</p>
-            </div>
           </div>
         </div>
       </CardContent>
