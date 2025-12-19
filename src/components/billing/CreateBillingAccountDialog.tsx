@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { BillingDocumentPreview } from "./BillingDocumentPreview";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CreateBillingAccountDialogProps {
   open: boolean;
@@ -1800,27 +1801,31 @@ export function CreateBillingAccountDialog({
           </div>
 
           {/* Right Column - Preview */}
-          <div className="space-y-4">
-            <BillingDocumentPreview
-              userProfile={userProfile}
-              selectedContract={contractDetails}
-              amount={amount}
-              startDate={startDate}
-              endDate={endDate}
-              activities={activities.filter(a => a.status === 'saved')}
-              planillaNumero={planillaNumero}
-              planillaValor={planillaValor}
-              planillaFecha={planillaFecha}
-              saludNumero={saludNumero}
-              saludValor={saludValor}
-              saludFecha={saludFecha}
-              pensionNumero={pensionNumero}
-              pensionValor={pensionValor}
-              pensionFecha={pensionFecha}
-              arlNumero={arlNumero}
-              arlValor={arlValor}
-              arlFecha={arlFecha}
-            />
+          <div className="lg:sticky lg:top-0 lg:self-start">
+            <ScrollArea className="h-[calc(90vh-120px)] pr-4">
+              <div className="space-y-4">
+                <BillingDocumentPreview
+                  userProfile={userProfile}
+                  selectedContract={contractDetails}
+                  amount={amount}
+                  startDate={startDate}
+                  endDate={endDate}
+                  activities={activities.filter(a => a.status === 'saved')}
+                  planillaNumero={planillaNumero}
+                  planillaValor={planillaValor}
+                  planillaFecha={planillaFecha}
+                  saludNumero={saludNumero}
+                  saludValor={saludValor}
+                  saludFecha={saludFecha}
+                  pensionNumero={pensionNumero}
+                  pensionValor={pensionValor}
+                  pensionFecha={pensionFecha}
+                  arlNumero={arlNumero}
+                  arlValor={arlValor}
+                  arlFecha={arlFecha}
+                />
+              </div>
+            </ScrollArea>
           </div>
         </div>
       </DialogContent>
