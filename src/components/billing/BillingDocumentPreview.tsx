@@ -1,7 +1,8 @@
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, parseLocalDate } from "@/lib/utils";
 
 interface Contract {
   id: string;
@@ -16,6 +17,8 @@ interface Contract {
   client_bank_name?: string;
   description?: string;
   total_amount: number;
+  start_date?: string;
+  end_date?: string;
 }
 
 interface UserProfile {
@@ -74,9 +77,6 @@ export function BillingDocumentPreview({
   startDate,
   endDate,
   activities,
-  planillaNumero,
-  planillaValor,
-  planillaFecha,
   signatureUrl,
   reviewComments,
   saludNumero,
@@ -89,18 +89,7 @@ export function BillingDocumentPreview({
   arlValor,
   arlFecha
 }: BillingDocumentPreviewProps) {
-  console.log('BillingDocumentPreview - userProfile:', userProfile);
-  console.log('BillingDocumentPreview - selectedContract:', selectedContract);
-  console.log('BillingDocumentPreview - signatureUrl:', signatureUrl);
-  console.log('BillingDocumentPreview - reviewComments:', reviewComments);
   
-  const documentNumber = `DSE ${format(new Date(), 'yyyMM')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-
-  // Check if any desglose data exists
-  const hasDesgloseData = saludNumero || saludValor || saludFecha || 
-                          pensionNumero || pensionValor || pensionFecha || 
-                          arlNumero || arlValor || arlFecha;
-
   if (!selectedContract || !startDate || !endDate) {
     return (
       <Card className="mt-4">
@@ -119,6 +108,35 @@ export function BillingDocumentPreview({
     );
   }
 
+  // Calculate period info
+  const mesNombre = format(startDate, 'MMMM', { locale: es }).toUpperCase();
+  const año = format(startDate, 'yyyy');
+  
+  // Calculate execution period
+  const contractStartDate = selectedContract.start_date 
+    ? parseLocalDate(selectedContract.start_date)
+    : startDate;
+  const contractEndDate = selectedContract.end_date 
+    ? parseLocalDate(selectedContract.end_date)
+    : endDate;
+  
+  const diffTime = Math.abs(contractEndDate.getTime() - contractStartDate.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffMonths = Math.ceil(diffDays / 30);
+  const plazoEjecucion = diffMonths > 1 ? `${diffMonths} MESES` : `${diffDays} DÍAS`;
+
+  // Calculate financial values
+  const valorPago = parseFloat(amount) || 0;
+  const valorInicial = selectedContract.total_amount || 0;
+  const valorAdicion = 0; // Could be added as prop if needed
+  const valorContratoTotal = valorInicial + valorAdicion;
+  const valorEjecutadoAntes = 0; // Would need historical data
+  const totalEjecutado = valorEjecutadoAntes + valorPago;
+  const saldoPorEjecutar = valorContratoTotal - totalEjecutado;
+
+  // Helper to format date for display
+  const formatDisplayDate = (date: Date) => format(date, 'dd/MM/yyyy');
+
   return (
     <Card className="mt-4">
       <CardHeader>
@@ -128,9 +146,9 @@ export function BillingDocumentPreview({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Review Comments Section - Always at the top when present */}
+        {/* Review Comments Section - Internal use only */}
         {reviewComments && reviewComments.length > 0 && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg print:hidden">
             <h3 className="font-bold mb-3 text-lg text-blue-800">📝 HISTORIAL DE REVISIONES</h3>
             <div className="space-y-3">
               {reviewComments.map((review, index) => (
@@ -155,170 +173,216 @@ export function BillingDocumentPreview({
           </div>
         )}
         
-        <div className="border rounded-lg p-6 bg-white text-black font-mono text-sm space-y-4">
+        {/* Main Document - Formal Format */}
+        <div className="border-2 border-black bg-white text-black font-sans text-sm">
           {/* Header */}
-          <div className="text-center space-y-2">
-            <h1 className="font-bold uppercase">{userProfile?.name || 'JONATHAN RAMIREZ'}</h1>
-            <p>C.C. {userProfile?.document_number || '[Número de Cédula]'}</p>
-            <p>{userProfile?.address || '[Dirección]'}</p>
-            <p>{userProfile?.phone || '[Teléfono]'}</p>
-            <p>CORREO ELECTRÓNICO: {userProfile?.email || 'jonathanramirezjd04@gmail.com'}</p>
-            <p>{userProfile?.tax_regime || 'Régimen Simplificado'}</p>
-            {userProfile?.nit && <p>NIT: {userProfile.nit}</p>}
+          <div className="text-center py-4 border-b-2 border-black">
+            <h1 className="font-bold text-xl tracking-wide">INFORME DE ACTIVIDADES</h1>
+          </div>
+          
+          {/* Period */}
+          <div className="text-center py-3 border-b-2 border-black bg-gray-50">
+            <p className="font-semibold">PERÍODO: DEL MES DE {mesNombre} {año}</p>
           </div>
 
-          <div className="border-t pt-4">
-            <h2 className="font-bold text-center">DOCUMENTO EQUIVALENTE FACTURA No. {documentNumber}</h2>
-          </div>
-
-          {/* Document Details */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p><strong>Ciudad y fecha:</strong> Facatativá, {format(new Date(), 'dd \'de\' MMMM \'de\' yyyy')}</p>
-              <p><strong>Cliente:</strong> {selectedContract.client_name}</p>
-              <p><strong>NIT:</strong> {selectedContract.client_document_number || '[NIT del Cliente]'}</p>
-              <p><strong>Dirección:</strong> {selectedContract.client_address || '[Dirección del Cliente]'}</p>
-              <p><strong>Teléfono:</strong> {selectedContract.client_phone || '[Teléfono del Cliente]'}</p>
+          {/* DATOS BÁSICOS DEL CONTRATO */}
+          <div className="border-b-2 border-black">
+            <div className="bg-gray-200 px-3 py-2 border-b border-black">
+              <h2 className="font-bold text-center">DATOS BÁSICOS DEL CONTRATO</h2>
             </div>
-          </div>
-
-          {/* Service Description */}
-          <div className="border border-black p-4 mt-4">
-            <p className="font-bold">
-              POR PRESTACIÓN DE SERVICIOS COMO: {selectedContract?.description || 'PROFESIONAL DE SISTEMAS PARA EL DESARROLLO DE NUEVAS APLICACIONES Y/O TECNOLOGÍAS'}. DEL PERIODO DEL MES DE{' '}
-              {startDate && endDate && (
-                <>
-              {format(startDate, 'dd/MM/yyyy')} - {format(endDate, 'dd/MM/yyyy')}
-            </>
-          )}
-          , SEGÚN CONTRATO No. {selectedContract?.contract_number_original || selectedContract?.contract_number || '[Número de Contrato]'}
-            </p>
             
-            <div className="mt-4">
-              <p><strong>SON:</strong> {amount ? formatCurrency(parseFloat(amount)) : '$ 0'}</p>
-              <p><strong>PESOS COLOMBIANOS</strong></p>
-            </div>
-
-            <p className="mt-4">
-              <strong>No. CUENTA BANCARIA Nº:</strong> {userProfile?.bank_account || '[Número de Cuenta]'}<br/>
-              <strong>BANCO:</strong> {userProfile?.bank_name || '[Nombre del Banco]'}
-            </p>
+            <table className="w-full border-collapse">
+              <tbody>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50 w-1/3">No. CONTRATO</td>
+                  <td className="border border-black p-2">{selectedContract.contract_number_original || selectedContract.contract_number}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">OBJETO DEL CONTRATO</td>
+                  <td className="border border-black p-2">{selectedContract.description || '-'}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">NOMBRE DEL CONTRATISTA</td>
+                  <td className="border border-black p-2">{userProfile.name}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">No. DE IDENTIFICACIÓN</td>
+                  <td className="border border-black p-2">{userProfile.document_number || '-'}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">DIRECCIÓN</td>
+                  <td className="border border-black p-2">{userProfile.address || '-'}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">TELÉFONO DE CONTACTO</td>
+                  <td className="border border-black p-2">{userProfile.phone || '-'}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">PLAZO DE EJECUCIÓN</td>
+                  <td className="border border-black p-2">{plazoEjecucion}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">FECHA ACTA DE INICIO</td>
+                  <td className="border border-black p-2">{formatDisplayDate(contractStartDate)}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">FECHA DE TERMINACIÓN</td>
+                  <td className="border border-black p-2">{formatDisplayDate(contractEndDate)}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">VALOR INICIAL DEL CONTRATO</td>
+                  <td className="border border-black p-2">{formatCurrency(valorInicial)}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">VALOR ADICIÓN</td>
+                  <td className="border border-black p-2">{valorAdicion > 0 ? formatCurrency(valorAdicion) : '-'}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">VALOR CONTRATO INICIAL + ADICIÓN</td>
+                  <td className="border border-black p-2">{formatCurrency(valorContratoTotal)}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">VALOR EJECUTADO ANTES DE ESTE PAGO</td>
+                  <td className="border border-black p-2">{valorEjecutadoAntes > 0 ? formatCurrency(valorEjecutadoAntes) : '-'}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">VALOR A PAGAR</td>
+                  <td className="border border-black p-2 font-bold">{formatCurrency(valorPago)}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">TOTAL EJECUTADO</td>
+                  <td className="border border-black p-2">{formatCurrency(totalEjecutado)}</td>
+                </tr>
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">SALDO POR EJECUTAR</td>
+                  <td className="border border-black p-2">{formatCurrency(saldoPorEjecutar)}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
-          {/* Activities Section */}
-          {activities.length > 0 && (
-            <div className="mt-4">
-              <h3 className="font-bold mb-2">ACTIVIDADES DESARROLLADAS:</h3>
-              <div className="space-y-2">
-                {activities.map((activity, index) => (
-                  <div key={index} className="border-l-2 border-gray-300 pl-3">
-                    <p><strong>{index + 1}. {activity.activityName}</strong></p>
-                    <p className="text-sm">{activity.actions}</p>
-                    {activity.evidences.length > 0 && (
-                      <p className="text-xs text-gray-600">
-                        Evidencias: {activity.evidences.map(f => f.name).join(', ')}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Legal Text */}
-          <div className="text-xs mt-4 border-t pt-2">
-            <p>
-              Bajo la gravedad del juramento informo que no he contratado con más de 1 empleado por un término 
-              igual o superior a 90 días, y por consiguiente solicito se me aplique la retención en la fuente por salarios 
-              de acuerdo a lo establecido en el artículo 2 del decreto 1625 de 2016, adicionado conforme por el 
-              artículo 1.2.4.1.6 del decreto 1625 de 2016, adicionado por el art. 1 dec. 2392/16.
-            </p>
+          {/* ACTIVIDADES / ACCIONES DESARROLLADAS */}
+          <div className="border-b-2 border-black">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th className="border border-black p-2 text-center w-12">N°</th>
+                  <th className="border border-black p-2 text-center w-1/4">ACTIVIDADES DEL CONTRATO</th>
+                  <th className="border border-black p-2 text-center">ACCIONES DESARROLLADAS DE ACUERDO AL OBJETO DEL CONTRATO</th>
+                  <th className="border border-black p-2 text-center w-1/5">EVIDENCIAS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activities.length > 0 ? (
+                  activities.map((activity, index) => (
+                    <tr key={index}>
+                      <td className="border border-black p-2 text-center align-top">{index + 1}</td>
+                      <td className="border border-black p-2 align-top">{activity.activityName}</td>
+                      <td className="border border-black p-2 align-top whitespace-pre-wrap">{activity.actions}</td>
+                      <td className="border border-black p-2 align-top text-xs">
+                        {activity.evidences.length > 0 
+                          ? activity.evidences.map(f => f.name).join(', ')
+                          : '-'
+                        }
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="border border-black p-2 text-center">1</td>
+                    <td className="border border-black p-2 text-gray-400 italic">Sin actividades registradas</td>
+                    <td className="border border-black p-2 text-gray-400 italic">-</td>
+                    <td className="border border-black p-2 text-gray-400 italic">-</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
 
-          {/* Planilla Section */}
-          {(planillaNumero || planillaValor || planillaFecha) && (
-            <div className="mt-4 border-t pt-4">
-              <h3 className="font-bold mb-2">PLANILLA DE SEGURIDAD SOCIAL:</h3>
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <p><strong>Número:</strong> {planillaNumero || 'No especificado'}</p>
-                <p><strong>Valor:</strong> {planillaValor ? formatCurrency(parseFloat(planillaValor)) : 'No especificado'}</p>
-                <p><strong>Fecha:</strong> {planillaFecha ? format(new Date(planillaFecha), 'dd/MM/yyyy') : 'No especificada'}</p>
-              </div>
-            </div>
-          )}
+          {/* DATOS BANCARIOS Y APORTES */}
+          <div className="border-b-2 border-black">
+            <table className="w-full border-collapse">
+              <tbody>
+                {/* Bank Account Row */}
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-100 w-1/4">NUMERO CUENTA DE AHORROS</td>
+                  <td className="border border-black p-2" colSpan={3}>
+                    <span className="font-semibold">BANCO:</span> {userProfile.bank_name || '-'}{' '}
+                    <span className="font-semibold ml-4">NUMERO:</span> {userProfile.bank_account || '-'}
+                  </td>
+                </tr>
+                
+                {/* Header row for aportes */}
+                <tr className="bg-gray-200">
+                  <td className="border border-black p-2 font-bold text-center">CONCEPTO</td>
+                  <td className="border border-black p-2 font-bold text-center">NUMERO DE PLANILLA</td>
+                  <td className="border border-black p-2 font-bold text-center">VALOR</td>
+                  <td className="border border-black p-2 font-bold text-center">FECHA DE PAGO</td>
+                </tr>
+                
+                {/* Salud */}
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">PAGO APORTES SALUD</td>
+                  <td className="border border-black p-2 text-center">{saludNumero || '-'}</td>
+                  <td className="border border-black p-2 text-right">
+                    {saludValor ? formatCurrency(parseFloat(saludValor)) : '-'}
+                  </td>
+                  <td className="border border-black p-2 text-center">
+                    {saludFecha || '-'}
+                  </td>
+                </tr>
+                
+                {/* Pensión */}
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">PAGO APORTES PENSIÓN</td>
+                  <td className="border border-black p-2 text-center">{pensionNumero || '-'}</td>
+                  <td className="border border-black p-2 text-right">
+                    {pensionValor ? formatCurrency(parseFloat(pensionValor)) : '-'}
+                  </td>
+                  <td className="border border-black p-2 text-center">
+                    {pensionFecha || '-'}
+                  </td>
+                </tr>
+                
+                {/* ARL */}
+                <tr>
+                  <td className="border border-black p-2 font-semibold bg-gray-50">PAGO APORTES ARL</td>
+                  <td className="border border-black p-2 text-center">{arlNumero || '-'}</td>
+                  <td className="border border-black p-2 text-right">
+                    {arlValor ? formatCurrency(parseFloat(arlValor)) : '-'}
+                  </td>
+                  <td className="border border-black p-2 text-center">
+                    {arlFecha || '-'}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-          {/* Desglose de Aportes Section */}
-          {hasDesgloseData && (
-            <div className="mt-4 border-t pt-4">
-              <h3 className="font-bold mb-3">DESGLOSE DE APORTES:</h3>
-              <table className="w-full border-collapse border border-gray-400 text-xs">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-gray-400 p-2 text-left font-bold">CONCEPTO</th>
-                    <th className="border border-gray-400 p-2 text-left font-bold">NUMERO DE PLANILLA</th>
-                    <th className="border border-gray-400 p-2 text-right font-bold">VALOR</th>
-                    <th className="border border-gray-400 p-2 text-center font-bold">FECHA DE PAGO</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="border border-gray-400 p-2 font-semibold">PAGO APORTES SALUD</td>
-                    <td className="border border-gray-400 p-2">{saludNumero || '-'}</td>
-                    <td className="border border-gray-400 p-2 text-right">
-                      {saludValor ? formatCurrency(parseFloat(saludValor)) : '-'}
-                    </td>
-                    <td className="border border-gray-400 p-2 text-center">
-                      {saludFecha ? format(new Date(saludFecha), 'dd/MM/yyyy') : '-'}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-400 p-2 font-semibold">PAGO APORTES PENSIÓN</td>
-                    <td className="border border-gray-400 p-2">{pensionNumero || '-'}</td>
-                    <td className="border border-gray-400 p-2 text-right">
-                      {pensionValor ? formatCurrency(parseFloat(pensionValor)) : '-'}
-                    </td>
-                    <td className="border border-gray-400 p-2 text-center">
-                      {pensionFecha ? format(new Date(pensionFecha), 'dd/MM/yyyy') : '-'}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-400 p-2 font-semibold">PAGO APORTES ARL</td>
-                    <td className="border border-gray-400 p-2">{arlNumero || '-'}</td>
-                    <td className="border border-gray-400 p-2 text-right">
-                      {arlValor ? formatCurrency(parseFloat(arlValor)) : '-'}
-                    </td>
-                    <td className="border border-gray-400 p-2 text-center">
-                      {arlFecha ? format(new Date(arlFecha), 'dd/MM/yyyy') : '-'}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Signature Area */}
-          <div className="mt-6 text-center border-t pt-4">
-            <p>Actividad económica RUT 6201: 202110330</p>
-            <div className="mt-8">
-              {signatureUrl ? (
-                <div className="flex flex-col items-center">
-                  <div className="w-48 h-24 border border-gray-300 rounded flex items-center justify-center">
-                    <img 
-                      src={signatureUrl} 
-                      alt="Firma" 
-                      className="max-w-full max-h-full"
-                    />
+          {/* FIRMA DEL CONTRATISTA */}
+          <div className="p-6">
+            <div className="text-center">
+              <div className="mb-8">
+                {signatureUrl ? (
+                  <div className="flex flex-col items-center">
+                    <div className="w-48 h-20 flex items-center justify-center">
+                      <img 
+                        src={signatureUrl} 
+                        alt="Firma del contratista" 
+                        className="max-w-full max-h-full"
+                      />
+                    </div>
                   </div>
-                  <p className="mt-2"><strong>(FIRMA DEL CONTRATISTA)</strong></p>
-                </div>
-              ) : (
-                <div>
-                  <div className="border-t border-black w-48 mx-auto"></div>
-                  <p className="mt-2"><strong>(FIRMA DEL CONTRATISTA)</strong></p>
-                  <p className="text-xs text-red-500 mt-1">(Sin firma registrada en el perfil)</p>
-                </div>
-              )}
-              <p>C.C. {userProfile?.document_number || '[Número de Cédula]'} de Bogotá</p>
+                ) : (
+                  <div className="h-20 flex items-end justify-center">
+                    <div className="w-64 border-b-2 border-black"></div>
+                  </div>
+                )}
+              </div>
+              
+              <p className="font-bold">FIRMA DEL CONTRATISTA</p>
+              <p className="mt-1">{userProfile.name}</p>
+              <p>C.C. {userProfile.document_number || '-'}</p>
             </div>
           </div>
         </div>
