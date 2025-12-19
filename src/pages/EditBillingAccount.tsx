@@ -20,6 +20,12 @@ import { BillingDocumentPreview } from "@/components/billing/BillingDocumentPrev
 import { BillingCompletionProgress } from "@/components/billing/BillingCompletionProgress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import SignatureCanvas from "react-signature-canvas";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CertificationForm } from "@/components/billing/CertificationForm";
+import { CertificationPreview } from "@/components/billing/CertificationPreview";
+import { InvoiceForm } from "@/components/billing/InvoiceForm";
+import { InvoicePreview } from "@/components/billing/InvoicePreview";
+import { BillingProgressTracker } from "@/components/billing/BillingProgressTracker";
 
 interface EditBillingAccountDialogProps {
   open: boolean;
@@ -102,12 +108,37 @@ export function EditBillingAccountDialog({
   const [arlValor, setArlValor] = useState<string>("");
   const [arlFecha, setArlFecha] = useState<string>("");
 
+  // Tab activa y estados para Certificación y Cuenta de Cobro
+  const [activeTab, setActiveTab] = useState<string>("informe");
+  
+  // Certificación fields
+  const [novedades, setNovedades] = useState<string>("");
+  const [certificationDate, setCertificationDate] = useState<string>("");
+  
+  // Cuenta de Cobro / Invoice fields
+  const [invoiceCity, setInvoiceCity] = useState<string>("");
+  const [invoiceDate, setInvoiceDate] = useState<string>("");
+  const [invoiceNumber, setInvoiceNumber] = useState<string>("");
+  const [amountInWords, setAmountInWords] = useState<string>("");
+  const [declarationSingleEmployer, setDeclarationSingleEmployer] = useState<boolean>(true);
+  const [declaration80PercentIncome, setDeclaration80PercentIncome] = useState<boolean>(true);
+  const [benefitPrepaidHealth, setBenefitPrepaidHealth] = useState<boolean>(false);
+  const [benefitVoluntaryPension, setBenefitVoluntaryPension] = useState<boolean>(false);
+  const [benefitHousingInterest, setBenefitHousingInterest] = useState<boolean>(false);
+  const [benefitHealthContributions, setBenefitHealthContributions] = useState<boolean>(true);
+  const [benefitEconomicDependents, setBenefitEconomicDependents] = useState<boolean>(false);
+
   const canEdit = billingAccount?.status === 'borrador' || billingAccount?.status === 'rechazada';
-  const hasProfileSignature = !!profileSignatureUrl;
-  const canSubmitForReview = selectedContract && amount && startDate && endDate && 
+  
+  // Calcular completitud de cada sección
+  const informeComplete = !!(selectedContract && amount && startDate && endDate && 
                             activities.filter(a => a.status === 'saved').length > 0 && 
-                            uploads.social_security.uploaded &&
-                            hasProfileSignature &&
+                            (uploads.social_security.uploaded || existingPlanillaPath || pendingPlanillaFile));
+  const certificacionComplete = !!(novedades && certificationDate);
+  const cuentaCobroComplete = !!(invoiceCity && invoiceDate && invoiceNumber && amountInWords);
+  const hasProfileSignature = !!profileSignatureUrl;
+  const allFormsComplete = informeComplete && certificacionComplete && cuentaCobroComplete;
+  const canSubmitForReview = allFormsComplete && hasProfileSignature &&
                             (billingAccount?.status === 'borrador' || billingAccount?.status === 'rechazada');
 
   useEffect(() => {
@@ -198,6 +229,23 @@ export function EditBillingAccountDialog({
       setArlNumero((billing as any).arl_planilla_numero || "");
       setArlValor((billing as any).arl_planilla_valor?.toString() || "");
       setArlFecha((billing as any).arl_planilla_fecha || "");
+      
+      // Load Certificación fields
+      setNovedades((billing as any).novedades || "");
+      setCertificationDate((billing as any).certification_date || "");
+      
+      // Load Invoice fields
+      setInvoiceCity((billing as any).invoice_city || "");
+      setInvoiceDate((billing as any).invoice_date || "");
+      setInvoiceNumber((billing as any).invoice_number || "");
+      setAmountInWords((billing as any).amount_in_words || "");
+      setDeclarationSingleEmployer((billing as any).declaration_single_employer ?? true);
+      setDeclaration80PercentIncome((billing as any).declaration_80_percent_income ?? true);
+      setBenefitPrepaidHealth((billing as any).benefit_prepaid_health ?? false);
+      setBenefitVoluntaryPension((billing as any).benefit_voluntary_pension ?? false);
+      setBenefitHousingInterest((billing as any).benefit_housing_interest ?? false);
+      setBenefitHealthContributions((billing as any).benefit_health_contributions ?? true);
+      setBenefitEconomicDependents((billing as any).benefit_economic_dependents ?? false);
 
       // Load activities
       const { data: activitiesData, error: activitiesError } = await supabase
@@ -497,6 +545,24 @@ export function EditBillingAccountDialog({
           arl_planilla_numero: arlNumero || null,
           arl_planilla_valor: arlValor ? parseFloat(arlValor) : null,
           arl_planilla_fecha: arlFecha || null,
+          // Certificación fields
+          novedades: novedades || null,
+          certification_date: certificationDate || null,
+          certificacion_complete: certificacionComplete,
+          // Invoice fields
+          invoice_city: invoiceCity || null,
+          invoice_date: invoiceDate || null,
+          invoice_number: invoiceNumber || null,
+          amount_in_words: amountInWords || null,
+          declaration_single_employer: declarationSingleEmployer,
+          declaration_80_percent_income: declaration80PercentIncome,
+          benefit_prepaid_health: benefitPrepaidHealth,
+          benefit_voluntary_pension: benefitVoluntaryPension,
+          benefit_housing_interest: benefitHousingInterest,
+          benefit_health_contributions: benefitHealthContributions,
+          benefit_economic_dependents: benefitEconomicDependents,
+          cuenta_cobro_complete: cuentaCobroComplete,
+          informe_complete: informeComplete,
           status: 'borrador'
         })
         .eq('id', billingAccount.id);
@@ -599,6 +665,24 @@ export function EditBillingAccountDialog({
           planilla_numero: planillaNumero || null,
           planilla_valor: planillaValor ? parseFloat(planillaValor) : null,
           planilla_fecha: planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : null,
+          // Certificación fields
+          novedades: novedades || null,
+          certification_date: certificationDate || null,
+          certificacion_complete: true,
+          // Invoice fields
+          invoice_city: invoiceCity || null,
+          invoice_date: invoiceDate || null,
+          invoice_number: invoiceNumber || null,
+          amount_in_words: amountInWords || null,
+          declaration_single_employer: declarationSingleEmployer,
+          declaration_80_percent_income: declaration80PercentIncome,
+          benefit_prepaid_health: benefitPrepaidHealth,
+          benefit_voluntary_pension: benefitVoluntaryPension,
+          benefit_housing_interest: benefitHousingInterest,
+          benefit_health_contributions: benefitHealthContributions,
+          benefit_economic_dependents: benefitEconomicDependents,
+          cuenta_cobro_complete: true,
+          informe_complete: true,
           status: 'pendiente_revision'
         })
         .eq('id', billingAccount.id);
@@ -695,9 +779,35 @@ export function EditBillingAccountDialog({
         </DialogHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Form */}
+          {/* Left Column - Form with Tabs */}
           <div className="space-y-6">
-          {/* Progress Indicator */}
+            {/* Progress Tracker */}
+            <BillingProgressTracker
+              informeComplete={informeComplete}
+              certificacionComplete={certificacionComplete}
+              cuentaCobroComplete={cuentaCobroComplete}
+              currentTab={activeTab}
+            />
+            
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="informe" className="text-xs sm:text-sm">
+                  {informeComplete && <CheckCircle className="h-3 w-3 mr-1 text-green-600" />}
+                  Informe
+                </TabsTrigger>
+                <TabsTrigger value="certificacion" className="text-xs sm:text-sm">
+                  {certificacionComplete && <CheckCircle className="h-3 w-3 mr-1 text-green-600" />}
+                  Certificación
+                </TabsTrigger>
+                <TabsTrigger value="cuenta-cobro" className="text-xs sm:text-sm">
+                  {cuentaCobroComplete && <CheckCircle className="h-3 w-3 mr-1 text-green-600" />}
+                  Cuenta
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Tab: Informe de Actividades */}
+              <TabsContent value="informe" className="space-y-6 mt-4">
+          {/* Progress Indicator (legacy - keeping for backward compat) */}
           <BillingCompletionProgress
             contractId={selectedContract || null}
             amount={amount || null}
@@ -1389,6 +1499,56 @@ export function EditBillingAccountDialog({
               </div>
             </CardContent>
           </Card>
+              </TabsContent>
+              
+              {/* Tab: Certificación */}
+              <TabsContent value="certificacion" className="space-y-6 mt-4">
+                <CertificationForm
+                  contractDetails={selectedContractData}
+                  userProfile={creatorProfile || userProfile}
+                  startDate={startDate}
+                  endDate={endDate}
+                  amount={amount}
+                  novedades={novedades}
+                  onNovedadesChange={setNovedades}
+                  certificationDate={certificationDate}
+                  onCertificationDateChange={setCertificationDate}
+                  isComplete={certificacionComplete}
+                />
+              </TabsContent>
+              
+              {/* Tab: Cuenta de Cobro */}
+              <TabsContent value="cuenta-cobro" className="space-y-6 mt-4">
+                <InvoiceForm
+                  contractDetails={selectedContractData}
+                  userProfile={creatorProfile || userProfile}
+                  invoiceNumber={invoiceNumber}
+                  onInvoiceNumberChange={setInvoiceNumber}
+                  invoiceCity={invoiceCity}
+                  onInvoiceCityChange={setInvoiceCity}
+                  invoiceDate={invoiceDate}
+                  onInvoiceDateChange={setInvoiceDate}
+                  amount={amount}
+                  amountInWords={amountInWords}
+                  onAmountInWordsChange={setAmountInWords}
+                  declarationSingleEmployer={declarationSingleEmployer}
+                  onDeclarationSingleEmployerChange={setDeclarationSingleEmployer}
+                  declaration80PercentIncome={declaration80PercentIncome}
+                  onDeclaration80PercentIncomeChange={setDeclaration80PercentIncome}
+                  benefitPrepaidHealth={benefitPrepaidHealth}
+                  onBenefitPrepaidHealthChange={setBenefitPrepaidHealth}
+                  benefitVoluntaryPension={benefitVoluntaryPension}
+                  onBenefitVoluntaryPensionChange={setBenefitVoluntaryPension}
+                  benefitHousingInterest={benefitHousingInterest}
+                  onBenefitHousingInterestChange={setBenefitHousingInterest}
+                  benefitHealthContributions={benefitHealthContributions}
+                  onBenefitHealthContributionsChange={setBenefitHealthContributions}
+                  benefitEconomicDependents={benefitEconomicDependents}
+                  onBenefitEconomicDependentsChange={setBenefitEconomicDependents}
+                  isComplete={cuentaCobroComplete}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
 
           {/* Right Column - Document Preview */}
@@ -1398,31 +1558,67 @@ export function EditBillingAccountDialog({
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Vista Previa del Documento</CardTitle>
-                    <CardDescription>Visualización del documento generado</CardDescription>
+                    <CardDescription>
+                      {activeTab === 'informe' && 'Informe de Actividades'}
+                      {activeTab === 'certificacion' && 'Certificación del Supervisor'}
+                      {activeTab === 'cuenta-cobro' && 'Cuenta de Cobro'}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <BillingDocumentPreview
-                      userProfile={creatorProfile || userProfile}
-                      selectedContract={selectedContractData}
-                      amount={amount}
-                      startDate={startDate}
-                      endDate={endDate}
-                      activities={activities}
-                      planillaNumero={planillaNumero}
-                      planillaValor={planillaValor}
-                      planillaFecha={planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : undefined}
-                      signatureUrl={profileSignatureUrl}
-                      reviewComments={reviewComments}
-                      saludNumero={saludNumero}
-                      saludValor={saludValor}
-                      saludFecha={saludFecha}
-                      pensionNumero={pensionNumero}
-                      pensionValor={pensionValor}
-                      pensionFecha={pensionFecha}
-                      arlNumero={arlNumero}
-                      arlValor={arlValor}
-                      arlFecha={arlFecha}
-                    />
+                    {activeTab === 'informe' && (
+                      <BillingDocumentPreview
+                        userProfile={creatorProfile || userProfile}
+                        selectedContract={selectedContractData}
+                        amount={amount}
+                        startDate={startDate}
+                        endDate={endDate}
+                        activities={activities}
+                        planillaNumero={planillaNumero}
+                        planillaValor={planillaValor}
+                        planillaFecha={planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : undefined}
+                        signatureUrl={profileSignatureUrl}
+                        reviewComments={reviewComments}
+                        saludNumero={saludNumero}
+                        saludValor={saludValor}
+                        saludFecha={saludFecha}
+                        pensionNumero={pensionNumero}
+                        pensionValor={pensionValor}
+                        pensionFecha={pensionFecha}
+                        arlNumero={arlNumero}
+                        arlValor={arlValor}
+                        arlFecha={arlFecha}
+                      />
+                    )}
+                    {activeTab === 'certificacion' && (
+                      <CertificationPreview
+                        contractDetails={selectedContractData}
+                        userProfile={creatorProfile || userProfile}
+                        startDate={startDate}
+                        endDate={endDate}
+                        amount={amount}
+                        novedades={novedades}
+                        certificationDate={certificationDate}
+                        supervisorName={selectedContractData?.supervisor_asignado}
+                      />
+                    )}
+                    {activeTab === 'cuenta-cobro' && (
+                      <InvoicePreview
+                        contractDetails={selectedContractData}
+                        userProfile={creatorProfile || userProfile}
+                        invoiceNumber={invoiceNumber}
+                        invoiceCity={invoiceCity}
+                        invoiceDate={invoiceDate}
+                        amount={amount}
+                        amountInWords={amountInWords}
+                        declarationSingleEmployer={declarationSingleEmployer}
+                        declaration80PercentIncome={declaration80PercentIncome}
+                        benefitPrepaidHealth={benefitPrepaidHealth}
+                        benefitVoluntaryPension={benefitVoluntaryPension}
+                        benefitHousingInterest={benefitHousingInterest}
+                        benefitHealthContributions={benefitHealthContributions}
+                        benefitEconomicDependents={benefitEconomicDependents}
+                      />
+                    )}
                   </CardContent>
                 </Card>
               </ScrollArea>
