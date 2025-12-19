@@ -106,13 +106,13 @@ export function BillingDocumentPreview({
       <Card className="mt-4">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            Vista Previa - Cuenta de Cobro
+            Vista Previa - INFORME DE ACTIVIDADES
             <Badge variant="outline">Automática</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Complete los campos básicos para ver la vista previa del documento de cuenta de cobro.
+            Complete los campos básicos para ver la vista previa del informe de actividades.
           </p>
         </CardContent>
       </Card>
@@ -123,7 +123,7 @@ export function BillingDocumentPreview({
     <Card className="mt-4">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          Vista Previa - Cuenta de Cobro
+          Vista Previa - INFORME DE ACTIVIDADES
           <Badge variant="outline">Generación Automática</Badge>
         </CardTitle>
       </CardHeader>
