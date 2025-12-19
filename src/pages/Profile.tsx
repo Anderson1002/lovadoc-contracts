@@ -47,6 +47,9 @@ interface ProfileFormData {
   address: string;
   bank_account: string;
   bank_name: string;
+  city: string;
+  rut_activity_code: string;
+  rut_activity_date: string;
 }
 
 export default function Profile() {
@@ -126,7 +129,10 @@ export default function Profile() {
           phone: profile.phone || "",
           address: profile.address || "",
           bank_account: profile.bank_account || "",
-          bank_name: profile.bank_name || ""
+          bank_name: profile.bank_name || "",
+          city: profile.city || "",
+          rut_activity_code: profile.rut_activity_code || "",
+          rut_activity_date: profile.rut_activity_date || ""
         });
 
         // Load existing signature URL
@@ -271,7 +277,10 @@ export default function Profile() {
           phone: data.phone || null,
           address: data.address || null,
           bank_account: data.bank_account || null,
-          bank_name: data.bank_name || null
+          bank_name: data.bank_name || null,
+          city: data.city || null,
+          rut_activity_code: data.rut_activity_code || null,
+          rut_activity_date: data.rut_activity_date || null
         })
         .eq('id', userProfile.id);
 
@@ -287,7 +296,10 @@ export default function Profile() {
         phone: data.phone,
         address: data.address,
         bank_account: data.bank_account,
-        bank_name: data.bank_name
+        bank_name: data.bank_name,
+        city: data.city,
+        rut_activity_code: data.rut_activity_code,
+        rut_activity_date: data.rut_activity_date
       });
 
       setIsEditing(false);
@@ -555,7 +567,40 @@ export default function Profile() {
                             />
                           </div>
 
-                          <div className="space-y-2 md:col-span-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="city" className="text-base font-semibold">Ciudad</Label>
+                            <Input
+                              id="city"
+                              {...register("city")}
+                              placeholder="Ej: Villavicencio"
+                              disabled={!isEditing}
+                              className="text-lg"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="rut_activity_code" className="text-base font-semibold">Actividad Económica RUT</Label>
+                            <Input
+                              id="rut_activity_code"
+                              {...register("rut_activity_code")}
+                              placeholder="Ej: 8511 - Educación"
+                              disabled={!isEditing}
+                              className="text-lg"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="rut_activity_date" className="text-base font-semibold">Fecha del RUT</Label>
+                            <Input
+                              id="rut_activity_date"
+                              type="date"
+                              {...register("rut_activity_date")}
+                              disabled={!isEditing}
+                              className="text-lg"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
                             <Label htmlFor="avatar" className="text-base font-semibold">URL del Avatar</Label>
                             <Input
                               id="avatar"
