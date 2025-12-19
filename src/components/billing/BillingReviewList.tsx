@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Eye, CheckCircle, XCircle, Calendar, DollarSign, FileText, MessageCircle } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { BillingDocumentPreview } from "@/components/billing/BillingDocumentPreview";
 
 interface BillingReviewListProps {
@@ -474,8 +474,8 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
             <BillingDocumentPreview
               userProfile={previewBilling.created_by_profile}
               selectedContract={previewBilling.contracts}
-              startDate={new Date(previewBilling.billing_start_date)}
-              endDate={new Date(previewBilling.billing_end_date)}
+              startDate={previewBilling.billing_start_date ? parseLocalDate(previewBilling.billing_start_date) : new Date()}
+              endDate={previewBilling.billing_end_date ? parseLocalDate(previewBilling.billing_end_date) : new Date()}
               activities={previewBilling.transformedActivities || []}
               amount={previewBilling.amount.toString()}
               reviewComments={previewBilling.reviewComments}

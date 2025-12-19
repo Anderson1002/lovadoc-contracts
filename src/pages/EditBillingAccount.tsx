@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Loader2, Trash2, Check, ChevronsUpDown, Eye, Download, RefreshCw } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { formatCurrency, formatCurrencyInput } from "@/lib/utils";
+import { formatCurrency, formatCurrencyInput, parseLocalDate } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -179,13 +179,13 @@ export function EditBillingAccountDialog({
       // Set form data
       setSelectedContract(billing.contract_id);
       setAmount(billing.amount?.toString() || '');
-      setStartDate(billing.billing_start_date ? new Date(billing.billing_start_date) : undefined);
-      setEndDate(billing.billing_end_date ? new Date(billing.billing_end_date) : undefined);
+      setStartDate(billing.billing_start_date ? parseLocalDate(billing.billing_start_date) : undefined);
+      setEndDate(billing.billing_end_date ? parseLocalDate(billing.billing_end_date) : undefined);
       
       // Load planilla data
       setPlanillaNumero((billing as any).planilla_numero || "");
       setPlanillaValor((billing as any).planilla_valor?.toString() || "");
-      setPlanillaFecha((billing as any).planilla_fecha ? new Date((billing as any).planilla_fecha) : undefined);
+      setPlanillaFecha((billing as any).planilla_fecha ? parseLocalDate((billing as any).planilla_fecha) : undefined);
 
       // Load desglose de aportes
       setSaludNumero((billing as any).salud_planilla_numero || "");
