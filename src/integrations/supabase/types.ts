@@ -90,20 +90,36 @@ export type Database = {
         Row: {
           account_number: string
           amount: number
+          amount_in_words: string | null
           arl_planilla_fecha: string | null
           arl_planilla_numero: string | null
           arl_planilla_valor: number | null
+          benefit_economic_dependents: boolean | null
+          benefit_health_contributions: boolean | null
+          benefit_housing_interest: boolean | null
+          benefit_prepaid_health: boolean | null
+          benefit_voluntary_pension: boolean | null
           billing_end_date: string | null
           billing_month: string
           billing_start_date: string | null
+          certificacion_complete: boolean | null
+          certification_date: string | null
           comentario_supervisor: string | null
           contract_id: string
           created_at: string
           created_by: string
+          cuenta_cobro_complete: boolean | null
+          declaration_80_percent_income: boolean | null
+          declaration_single_employer: boolean | null
           enviado_el: string | null
           firma_url: string | null
           id: string
+          informe_complete: boolean | null
+          invoice_city: string | null
+          invoice_date: string | null
+          invoice_number: string | null
           notes: string | null
+          novedades: string | null
           pension_planilla_fecha: string | null
           pension_planilla_numero: string | null
           pension_planilla_valor: number | null
@@ -119,25 +135,42 @@ export type Database = {
           salud_planilla_valor: number | null
           state_code: string | null
           status: string
+          supervisor_signature_url: string | null
           updated_at: string
         }
         Insert: {
           account_number: string
           amount: number
+          amount_in_words?: string | null
           arl_planilla_fecha?: string | null
           arl_planilla_numero?: string | null
           arl_planilla_valor?: number | null
+          benefit_economic_dependents?: boolean | null
+          benefit_health_contributions?: boolean | null
+          benefit_housing_interest?: boolean | null
+          benefit_prepaid_health?: boolean | null
+          benefit_voluntary_pension?: boolean | null
           billing_end_date?: string | null
           billing_month: string
           billing_start_date?: string | null
+          certificacion_complete?: boolean | null
+          certification_date?: string | null
           comentario_supervisor?: string | null
           contract_id: string
           created_at?: string
           created_by: string
+          cuenta_cobro_complete?: boolean | null
+          declaration_80_percent_income?: boolean | null
+          declaration_single_employer?: boolean | null
           enviado_el?: string | null
           firma_url?: string | null
           id?: string
+          informe_complete?: boolean | null
+          invoice_city?: string | null
+          invoice_date?: string | null
+          invoice_number?: string | null
           notes?: string | null
+          novedades?: string | null
           pension_planilla_fecha?: string | null
           pension_planilla_numero?: string | null
           pension_planilla_valor?: number | null
@@ -153,25 +186,42 @@ export type Database = {
           salud_planilla_valor?: number | null
           state_code?: string | null
           status?: string
+          supervisor_signature_url?: string | null
           updated_at?: string
         }
         Update: {
           account_number?: string
           amount?: number
+          amount_in_words?: string | null
           arl_planilla_fecha?: string | null
           arl_planilla_numero?: string | null
           arl_planilla_valor?: number | null
+          benefit_economic_dependents?: boolean | null
+          benefit_health_contributions?: boolean | null
+          benefit_housing_interest?: boolean | null
+          benefit_prepaid_health?: boolean | null
+          benefit_voluntary_pension?: boolean | null
           billing_end_date?: string | null
           billing_month?: string
           billing_start_date?: string | null
+          certificacion_complete?: boolean | null
+          certification_date?: string | null
           comentario_supervisor?: string | null
           contract_id?: string
           created_at?: string
           created_by?: string
+          cuenta_cobro_complete?: boolean | null
+          declaration_80_percent_income?: boolean | null
+          declaration_single_employer?: boolean | null
           enviado_el?: string | null
           firma_url?: string | null
           id?: string
+          informe_complete?: boolean | null
+          invoice_city?: string | null
+          invoice_date?: string | null
+          invoice_number?: string | null
           notes?: string | null
+          novedades?: string | null
           pension_planilla_fecha?: string | null
           pension_planilla_numero?: string | null
           pension_planilla_valor?: number | null
@@ -187,6 +237,7 @@ export type Database = {
           salud_planilla_valor?: number | null
           state_code?: string | null
           status?: string
+          supervisor_signature_url?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -572,9 +623,14 @@ export type Database = {
       }
       contracts: {
         Row: {
+          addition_amount: number | null
+          addition_cdp: string | null
+          addition_number: string | null
+          addition_rp: string | null
           area_responsable: string | null
           bank_certification_mime: string | null
           bank_certification_path: string | null
+          budget_code: string | null
           cdp: string | null
           client_profile_id: string | null
           comentarios_devolucion: string | null
@@ -605,9 +661,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          addition_amount?: number | null
+          addition_cdp?: string | null
+          addition_number?: string | null
+          addition_rp?: string | null
           area_responsable?: string | null
           bank_certification_mime?: string | null
           bank_certification_path?: string | null
+          budget_code?: string | null
           cdp?: string | null
           client_profile_id?: string | null
           comentarios_devolucion?: string | null
@@ -638,9 +699,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          addition_amount?: number | null
+          addition_cdp?: string | null
+          addition_number?: string | null
+          addition_rp?: string | null
           area_responsable?: string | null
           bank_certification_mime?: string | null
           bank_certification_path?: string | null
+          budget_code?: string | null
           cdp?: string | null
           client_profile_id?: string | null
           comentarios_devolucion?: string | null
@@ -875,6 +941,7 @@ export type Database = {
           avatar: string | null
           bank_account: string | null
           bank_name: string | null
+          city: string | null
           created_at: string
           document_number: string | null
           email: string
@@ -885,6 +952,8 @@ export type Database = {
           phone: string | null
           proceso_id: number | null
           role_id: string
+          rut_activity_code: string | null
+          rut_activity_date: string | null
           signature_url: string | null
           tax_regime: string | null
           updated_at: string
@@ -895,6 +964,7 @@ export type Database = {
           avatar?: string | null
           bank_account?: string | null
           bank_name?: string | null
+          city?: string | null
           created_at?: string
           document_number?: string | null
           email: string
@@ -905,6 +975,8 @@ export type Database = {
           phone?: string | null
           proceso_id?: number | null
           role_id: string
+          rut_activity_code?: string | null
+          rut_activity_date?: string | null
           signature_url?: string | null
           tax_regime?: string | null
           updated_at?: string
@@ -915,6 +987,7 @@ export type Database = {
           avatar?: string | null
           bank_account?: string | null
           bank_name?: string | null
+          city?: string | null
           created_at?: string
           document_number?: string | null
           email?: string
@@ -925,6 +998,8 @@ export type Database = {
           phone?: string | null
           proceso_id?: number | null
           role_id?: string
+          rut_activity_code?: string | null
+          rut_activity_date?: string | null
           signature_url?: string | null
           tax_regime?: string | null
           updated_at?: string
