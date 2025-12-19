@@ -468,7 +468,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle>Vista Previa - Cuenta de Cobro</DialogTitle>
+            <DialogTitle>Vista Previa - INFORME DE ACTIVIDADES</DialogTitle>
           </DialogHeader>
           {previewBilling && (
             <BillingDocumentPreview
