@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { BillingDocumentPreview } from "@/components/billing/BillingDocumentPreview";
 import { BillingCompletionProgress } from "@/components/billing/BillingCompletionProgress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import SignatureCanvas from "react-signature-canvas";
 
 interface EditBillingAccountDialogProps {
@@ -1391,38 +1392,40 @@ export function EditBillingAccountDialog({
           </div>
 
           {/* Right Column - Document Preview */}
-          <div className="space-y-6">
+          <div className="lg:sticky lg:top-0 lg:self-start">
             {billingAccount && (
-              <Card className="sticky top-0">
-                <CardHeader>
-                  <CardTitle className="text-lg">Vista Previa del Documento</CardTitle>
-                  <CardDescription>Visualización del documento generado</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <BillingDocumentPreview
-                    userProfile={creatorProfile || userProfile}
-                    selectedContract={selectedContractData}
-                    amount={amount}
-                    startDate={startDate}
-                    endDate={endDate}
-                    activities={activities}
-                    planillaNumero={planillaNumero}
-                    planillaValor={planillaValor}
-                    planillaFecha={planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : undefined}
-                    signatureUrl={profileSignatureUrl}
-                    reviewComments={reviewComments}
-                    saludNumero={saludNumero}
-                    saludValor={saludValor}
-                    saludFecha={saludFecha}
-                    pensionNumero={pensionNumero}
-                    pensionValor={pensionValor}
-                    pensionFecha={pensionFecha}
-                    arlNumero={arlNumero}
-                    arlValor={arlValor}
-                    arlFecha={arlFecha}
-                  />
-                </CardContent>
-              </Card>
+              <ScrollArea className="h-[calc(90vh-120px)] pr-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Vista Previa del Documento</CardTitle>
+                    <CardDescription>Visualización del documento generado</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <BillingDocumentPreview
+                      userProfile={creatorProfile || userProfile}
+                      selectedContract={selectedContractData}
+                      amount={amount}
+                      startDate={startDate}
+                      endDate={endDate}
+                      activities={activities}
+                      planillaNumero={planillaNumero}
+                      planillaValor={planillaValor}
+                      planillaFecha={planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : undefined}
+                      signatureUrl={profileSignatureUrl}
+                      reviewComments={reviewComments}
+                      saludNumero={saludNumero}
+                      saludValor={saludValor}
+                      saludFecha={saludFecha}
+                      pensionNumero={pensionNumero}
+                      pensionValor={pensionValor}
+                      pensionFecha={pensionFecha}
+                      arlNumero={arlNumero}
+                      arlValor={arlValor}
+                      arlFecha={arlFecha}
+                    />
+                  </CardContent>
+                </Card>
+              </ScrollArea>
             )}
           </div>
         </div>
