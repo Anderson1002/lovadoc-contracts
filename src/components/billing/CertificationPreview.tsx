@@ -14,12 +14,15 @@ interface CertificationPreviewProps {
   novedades: string;
   certificationDate: string;
   supervisorName?: string;
-  // Nuevos campos para formato oficial
+  // Campos para formato oficial
   valorEjecutadoAntes?: string;
   riskMatrixCompliance?: boolean;
   socialSecurityVerified?: boolean;
   anexosLista?: string;
   activities?: any[];
+  // Nuevos campos
+  certificationMonth?: string;
+  reportDeliveryDate?: string;
 }
 
 export function CertificationPreview({
@@ -35,12 +38,20 @@ export function CertificationPreview({
   riskMatrixCompliance = false,
   socialSecurityVerified = true,
   anexosLista = "",
-  activities = []
+  activities = [],
+  certificationMonth = "",
+  reportDeliveryDate = ""
 }: CertificationPreviewProps) {
   const formatDate = (date: Date | string | undefined) => {
     if (!date) return '_______________';
     const d = typeof date === 'string' ? new Date(date) : date;
     return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
+  };
+
+  const formatDateShort = (date: string | undefined) => {
+    if (!date) return '___/___/______';
+    const d = new Date(date);
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   // Cálculos financieros
@@ -53,11 +64,21 @@ export function CertificationPreview({
   const saldoPorEjecutar = valorTotal - totalEjecutado;
   const porcentajeEjecutado = valorTotal > 0 ? (totalEjecutado / valorTotal) * 100 : 0;
 
+  const currentYear = new Date().getFullYear();
+  const contractNumber = contractDetails?.contract_number_original || contractDetails?.contract_number || '___';
+  const contractObject = contractDetails?.description || '[OBJETO DEL CONTRATO]';
+
+  // Texto de novedades por defecto
+  const novedadesTexto = novedades || 'Durante el presente período no se han presentado novedades o situaciones anormales que afecten el desarrollo del contrato.';
+
+  // Anexos por defecto
+  const anexosTexto = anexosLista || '1. Informe ejecución actividades\n2. Planilla pago seguridad social';
+
   const handleExportPDF = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Header table (simulating the official format)
+    // Header table (official format)
     autoTable(doc, {
       startY: 10,
       body: [[
@@ -72,113 +93,129 @@ export function CertificationPreview({
     
     let yPosition = (doc as any).lastAutoTable.finalY + 10;
     
-    // Certification text
-    doc.setFontSize(9);
-    const certText = `El supervisor del Contrato de Prestación de Servicios No. ${contractDetails?.contract_number_original || contractDetails?.contract_number || '___'} – ${new Date().getFullYear()} CERTIFICA: Que ${userProfile?.name || '_______________'}, identificado(a) con cédula de ciudadanía No. ${userProfile?.document_number || '_______________'}, ha cumplido a satisfacción con la ejecución del contrato para el período comprendido entre ${formatDate(startDate)} y ${formatDate(endDate)}.`;
-    
-    const splitCertText = doc.splitTextToSize(certText, pageWidth - 28);
-    doc.text(splitCertText, 14, yPosition);
-    yPosition += splitCertText.length * 4 + 8;
-    
-    // Financial table (15 fields)
-    const financialData = [
-      ['NÚMERO CONTRATO', contractDetails?.contract_number_original || contractDetails?.contract_number || 'N/A'],
-      ['NÚMERO CDP', contractDetails?.cdp || 'N/A'],
-      ['NÚMERO RP', contractDetails?.rp || 'N/A'],
-      ['FECHA RP', contractDetails?.fecha_rp ? formatDate(contractDetails.fecha_rp) : 'N/A'],
-      ['RUBRO PRESUPUESTAL', contractDetails?.budget_code || 'N/A'],
-      ['VALOR INICIAL CONTRATO', formatCurrency(valorInicial)],
-    ];
-    
-    if (valorAdicion > 0) {
-      financialData.push(
-        ['NÚMERO ADICIÓN', contractDetails?.addition_number || 'N/A'],
-        ['CDP ADICIÓN', contractDetails?.addition_cdp || 'N/A'],
-        ['RP ADICIÓN', contractDetails?.addition_rp || 'N/A'],
-        ['VALOR ADICIÓN', formatCurrency(valorAdicion)]
-      );
-    }
-    
-    financialData.push(
-      ['VALOR TOTAL CONTRATO', formatCurrency(valorTotal)],
-      ['VALOR EJECUTADO ANTES DE ESTE PAGO', formatCurrency(valorAntes)],
-      ['VALOR DEL PAGO ACTUAL', formatCurrency(valorPagoActual)],
-      ['TOTAL EJECUTADO', formatCurrency(totalEjecutado)],
-      ['SALDO POR EJECUTAR', formatCurrency(saldoPorEjecutar)],
-      ['PORCENTAJE EJECUTADO', `${porcentajeEjecutado.toFixed(2)}%`]
-    );
-    
-    autoTable(doc, {
-      startY: yPosition,
-      body: financialData,
-      theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2 },
-      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 80 }, 1: { cellWidth: 100 } }
-    });
-    
-    yPosition = (doc as any).lastAutoTable.finalY + 10;
-    
-    // Section 1: Services received
+    // Main certification title
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');
-    doc.text('1. SERVICIOS Y/O PRODUCTOS RECIBIDOS A SATISFACCIÓN:', 14, yPosition);
-    doc.setFont(undefined, 'normal');
+    doc.text(`El supervisor del Contrato de Prestación de Servicios No. ${contractNumber} – ${currentYear}`, 14, yPosition);
     yPosition += 5;
+    doc.text('CERTIFICA:', 14, yPosition);
+    yPosition += 6;
+    doc.setFont(undefined, 'normal');
     
-    if (activities.length > 0) {
-      const activitiesText = activities.map((a, i) => `${i + 1}. ${a.activityName || a.activity_name}`).join('\n');
-      const splitActivities = doc.splitTextToSize(activitiesText, pageWidth - 28);
-      doc.text(splitActivities, 14, yPosition);
-      yPosition += splitActivities.length * 4 + 5;
-    } else {
-      doc.text('Ver informe de actividades adjunto.', 14, yPosition);
-      yPosition += 8;
-    }
+    // Main certification text with object in bold
+    const certPart1 = `Que ${userProfile?.name || '_______________'}, identificada(o) con la cédula de ciudadanía No. ${userProfile?.document_number || '_______________'} de ${userProfile?.city || '_______________'}, cumplió a satisfacción con las actividades relacionadas con el objeto: "`;
+    const certPart2 = contractObject.toUpperCase();
+    const certPart3 = `", del Contrato de Prestación de Servicios No. ${contractNumber} – ${currentYear}, correspondiente al periodo del mes de ${certificationMonth || '_______________'} del año ${currentYear}, y cumple con el pago de la Seguridad Social Integral.`;
+    
+    // Write text with bold object
+    doc.setFontSize(9);
+    let xPos = 14;
+    const splitPart1 = doc.splitTextToSize(certPart1, pageWidth - 28);
+    doc.text(splitPart1, xPos, yPosition);
+    yPosition += splitPart1.length * 4;
+    
+    doc.setFont(undefined, 'bold');
+    const splitPart2 = doc.splitTextToSize(certPart2, pageWidth - 28);
+    doc.text(splitPart2, xPos, yPosition);
+    yPosition += splitPart2.length * 4;
+    
+    doc.setFont(undefined, 'normal');
+    const splitPart3 = doc.splitTextToSize(certPart3, pageWidth - 28);
+    doc.text(splitPart3, xPos, yPosition);
+    yPosition += splitPart3.length * 4 + 6;
+    
+    // Section 1: Services received
+    doc.setFont(undefined, 'bold');
+    doc.text(`1. SERVICIOS Y/O PRODUCTOS RECIBIDOS A SATISFACCIÓN CORRESPONDIENTES AL PERIODO DEL MES DE ${certificationMonth || '___'} DE ${currentYear}.`, 14, yPosition, { maxWidth: pageWidth - 28 });
+    yPosition += 8;
+    doc.setFont(undefined, 'normal');
+    
+    const section1Text = `Las actividades desarrolladas por el contratista en el periodo descrito anteriormente, relacionadas con cada una de las actividades específicas establecidas en los estudios previos y del contrato se verifica el cumplimiento a satisfacción de la obligación establecida.`;
+    const splitSection1 = doc.splitTextToSize(section1Text, pageWidth - 28);
+    doc.text(splitSection1, 14, yPosition);
+    yPosition += splitSection1.length * 4 + 4;
+    
+    // NOTA 1
+    doc.setFont(undefined, 'bold');
+    doc.text('NOTA 1:', 14, yPosition);
+    doc.setFont(undefined, 'normal');
+    const nota1Text = ` Forma parte del presente documento el informe de actividades previamente entregado por el contratista el ${formatDateShort(reportDeliveryDate)} el cual deberá contener como mínimo: 1. Detalle del cumplimiento de cada una de las obligaciones con sus debidos soportes y evidencias.`;
+    const splitNota1 = doc.splitTextToSize(nota1Text, pageWidth - 35);
+    doc.text(splitNota1, 28, yPosition);
+    yPosition += splitNota1.length * 4 + 3;
+    
+    // NOTA 2
+    doc.setFont(undefined, 'bold');
+    doc.text('NOTA 2:', 14, yPosition);
+    doc.setFont(undefined, 'normal');
+    const nota2Text = ` El informe de ejecución del contratista junto con los soportes del caso deben reposar igualmente en el expediente contractual electrónico. Si existen entregables físicos deberán reposar en la carpeta contractual.`;
+    const splitNota2 = doc.splitTextToSize(nota2Text, pageWidth - 35);
+    doc.text(splitNota2, 28, yPosition);
+    yPosition += splitNota2.length * 4 + 6;
     
     // Section 2: Novedades
     doc.setFont(undefined, 'bold');
-    doc.text('2. NOVEDADES O SITUACIONES ANORMALES PRESENTADAS DURANTE LA EJECUCIÓN:', 14, yPosition);
+    doc.text('2. NOVEDADES O SITUACIONES ANORMALES PRESENTADAS DURANTE EL DESARROLLO DEL CONTRATO.', 14, yPosition, { maxWidth: pageWidth - 28 });
+    yPosition += 6;
     doc.setFont(undefined, 'normal');
-    yPosition += 5;
-    
-    const novedadesText = novedades || 'Ninguna';
-    const splitNovedades = doc.splitTextToSize(novedadesText, pageWidth - 28);
+    const splitNovedades = doc.splitTextToSize(novedadesTexto, pageWidth - 28);
     doc.text(splitNovedades, 14, yPosition);
-    yPosition += splitNovedades.length * 4 + 8;
+    yPosition += splitNovedades.length * 4 + 6;
+    
+    // Check if we need a new page
+    if (yPosition > 240) {
+      doc.addPage();
+      yPosition = 20;
+    }
     
     // Section 3: Social Security
     doc.setFont(undefined, 'bold');
-    doc.text('3. CUMPLIMIENTO DE OBLIGACIONES DE SEGURIDAD SOCIAL:', 14, yPosition);
-    doc.setFont(undefined, 'normal');
-    yPosition += 5;
+    const section3Title = '3. CUMPLIMIENTO DE OBLIGACIONES DEL CONTRATISTA RELACIONADAS CON EL PAGO DE SEGURIDAD SOCIAL INTEGRAL Y APORTES PARAFISCALES';
+    const splitSection3Title = doc.splitTextToSize(section3Title, pageWidth - 28);
+    doc.text(splitSection3Title, 14, yPosition);
+    yPosition += splitSection3Title.length * 4 + 2;
     
-    const ssText = 'De conformidad con lo establecido en el artículo 50 de la Ley 789 de 2002, el artículo 1 de la Ley 828 de 2003 y el artículo 23 de la Ley 1150 de 2007, se verificó que el contratista se encuentra al día con los aportes al Sistema de Seguridad Social Integral (Salud, Pensión y ARL) según la Ley 100 de 1993.';
-    const splitSS = doc.splitTextToSize(ssText, pageWidth - 28);
-    doc.text(splitSS, 14, yPosition);
-    yPosition += splitSS.length * 4 + 3;
-    doc.text(socialSecurityVerified ? '✓ Verificado' : '○ Pendiente de verificación', 14, yPosition);
-    yPosition += 8;
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'normal');
+    const section3Subtitle = '(Ley 100 de 1993 y sus decretos reglamentarios, en el artículo 50 de la Ley 789 de 2002, Leyes 828 de 2003, 1122 de 2007, 1150 de 2007 y 1562 de 2012, Decretos 1072 de 2015 y 1273 de 2018 y demás normas concordantes).';
+    const splitSection3Sub = doc.splitTextToSize(section3Subtitle, pageWidth - 28);
+    doc.text(splitSection3Sub, 14, yPosition);
+    yPosition += splitSection3Sub.length * 3 + 3;
+    
+    doc.setFontSize(9);
+    const section3Text = 'Se verificó el cumplimiento de las obligaciones del contratista con los sistemas de Seguridad Social Integral en salud, pensiones y riesgos laborales, información que se puede constatar en la planilla o certificación de pago correspondiente al periodo aquí relacionado.';
+    const splitSection3 = doc.splitTextToSize(section3Text, pageWidth - 28);
+    doc.text(splitSection3, 14, yPosition);
+    yPosition += splitSection3.length * 4 + 6;
     
     // Section 4: Risk Matrix
     doc.setFont(undefined, 'bold');
-    doc.text('4. ACTIVIDADES DE TRATAMIENTO Y MONITOREO A LA MATRIZ DE RIESGO:', 14, yPosition);
+    doc.text('4. ACTIVIDADES DE TRATAMIENTO Y MONITOREO A LA MATRIZ DE RIESGO DEL CONTRATO.', 14, yPosition, { maxWidth: pageWidth - 28 });
+    yPosition += 6;
     doc.setFont(undefined, 'normal');
-    yPosition += 5;
-    doc.text(riskMatrixCompliance ? '✓ El contratista ha cumplido con las actividades de la matriz de riesgos.' : '○ Pendiente de verificación.', 14, yPosition);
-    yPosition += 8;
+    
+    const section4Text = 'Se ha realizado el monitoreo por parte de la supervisión, de acuerdo con el tratamiento y/o control de los riesgos establecido en la matriz de los estudios previos del contrato, evidenciándose que no hay materialización de los mismos. Lo anterior se verifica a través del informe mensual de actividades del contratista de acuerdo con las obligaciones específicas pactadas, las cuales han tenido satisfactorio cumplimiento a la fecha.';
+    const splitSection4 = doc.splitTextToSize(section4Text, pageWidth - 28);
+    doc.text(splitSection4, 14, yPosition);
+    yPosition += splitSection4.length * 4 + 6;
+    
+    // Check if we need a new page
+    if (yPosition > 250) {
+      doc.addPage();
+      yPosition = 20;
+    }
     
     // Section 5: Anexos
     doc.setFont(undefined, 'bold');
-    doc.text('5. ANEXOS:', 14, yPosition);
+    doc.text('5. ANEXOS', 14, yPosition);
+    yPosition += 6;
     doc.setFont(undefined, 'normal');
-    yPosition += 5;
     
-    const anexos = anexosLista || '- Informe de actividades\n- Planilla de seguridad social\n- Cuenta de cobro';
-    const splitAnexos = doc.splitTextToSize(anexos, pageWidth - 28);
+    const splitAnexos = doc.splitTextToSize(anexosTexto, pageWidth - 28);
     doc.text(splitAnexos, 14, yPosition);
     yPosition += splitAnexos.length * 4 + 15;
     
-    // Check if we need a new page
+    // Check if we need a new page for signature
     if (yPosition > 250) {
       doc.addPage();
       yPosition = 20;
@@ -202,7 +239,7 @@ export function CertificationPreview({
     yPosition += 5;
     doc.text(`Fecha de Certificación: ${formatDate(certificationDate)}`, pageWidth / 2, yPosition, { align: 'center' });
     
-    doc.save(`Certificacion_${contractDetails?.contract_number || 'contrato'}.pdf`);
+    doc.save(`Certificacion_${contractNumber}.pdf`);
   };
 
   if (!contractDetails || !startDate || !endDate) {
@@ -249,123 +286,69 @@ export function CertificationPreview({
             </div>
           </div>
           
-          {/* Certification Text */}
-          <div className="text-xs text-justify">
-            <p>
-              El supervisor del Contrato de Prestación de Servicios No. <strong>{contractDetails?.contract_number_original || contractDetails?.contract_number}</strong> – {new Date().getFullYear()} CERTIFICA: 
-              Que <strong>{userProfile?.name}</strong>, identificado(a) con cédula de ciudadanía No. <strong>{userProfile?.document_number}</strong>, 
-              ha cumplido a satisfacción con la ejecución del contrato para el período comprendido entre <strong>{formatDate(startDate)}</strong> y <strong>{formatDate(endDate)}</strong>.
+          {/* Certification Title */}
+          <div className="text-xs">
+            <p className="font-bold">
+              El supervisor del Contrato de Prestación de Servicios No. {contractNumber} – {currentYear}
             </p>
+            <p className="font-bold">CERTIFICA:</p>
           </div>
           
-          {/* Financial Table */}
-          <div className="border rounded">
-            <table className="w-full text-xs">
-              <tbody>
-                <tr className="border-b">
-                  <td className="p-1 border-r font-semibold bg-muted">NÚMERO CONTRATO</td>
-                  <td className="p-1">{contractDetails?.contract_number_original || contractDetails?.contract_number}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-1 border-r font-semibold bg-muted">NÚMERO CDP</td>
-                  <td className="p-1">{contractDetails?.cdp || 'N/A'}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-1 border-r font-semibold bg-muted">NÚMERO RP</td>
-                  <td className="p-1">{contractDetails?.rp || 'N/A'}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-1 border-r font-semibold bg-muted">RUBRO PRESUPUESTAL</td>
-                  <td className="p-1">{contractDetails?.budget_code || 'N/A'}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-1 border-r font-semibold bg-muted">VALOR INICIAL CONTRATO</td>
-                  <td className="p-1">{formatCurrency(valorInicial)}</td>
-                </tr>
-                {valorAdicion > 0 && (
-                  <>
-                    <tr className="border-b">
-                      <td className="p-1 border-r font-semibold bg-muted">VALOR ADICIÓN</td>
-                      <td className="p-1">{formatCurrency(valorAdicion)}</td>
-                    </tr>
-                  </>
-                )}
-                <tr className="border-b">
-                  <td className="p-1 border-r font-semibold bg-muted">VALOR TOTAL CONTRATO</td>
-                  <td className="p-1 font-bold">{formatCurrency(valorTotal)}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-1 border-r font-semibold bg-muted">VALOR EJECUTADO ANTES</td>
-                  <td className="p-1">{formatCurrency(valorAntes)}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-1 border-r font-semibold bg-muted">VALOR PAGO ACTUAL</td>
-                  <td className="p-1">{formatCurrency(valorPagoActual)}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-1 border-r font-semibold bg-muted">TOTAL EJECUTADO</td>
-                  <td className="p-1 font-bold">{formatCurrency(totalEjecutado)}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="p-1 border-r font-semibold bg-muted">SALDO POR EJECUTAR</td>
-                  <td className="p-1">{formatCurrency(saldoPorEjecutar)}</td>
-                </tr>
-                <tr>
-                  <td className="p-1 border-r font-semibold bg-muted">% EJECUTADO</td>
-                  <td className="p-1 font-bold text-primary">{porcentajeEjecutado.toFixed(2)}%</td>
-                </tr>
-              </tbody>
-            </table>
+          {/* Certification Text with object in bold */}
+          <div className="text-xs text-justify">
+            <p>
+              Que <strong>{userProfile?.name}</strong>, identificada(o) con la cédula de ciudadanía No. <strong>{userProfile?.document_number}</strong> de {userProfile?.city || '_______________'}, 
+              cumplió a satisfacción con las actividades relacionadas con el objeto: "<strong className="uppercase">{contractObject}</strong>", 
+              del Contrato de Prestación de Servicios No. {contractNumber} – {currentYear}, correspondiente al periodo del mes de <strong>{certificationMonth || '_______________'}</strong> del año {currentYear}, 
+              y cumple con el pago de la Seguridad Social Integral.
+            </p>
           </div>
           
           {/* Section 1: Services */}
           <div>
-            <p className="font-semibold text-xs text-primary">1. SERVICIOS Y/O PRODUCTOS RECIBIDOS A SATISFACCIÓN:</p>
-            <div className="text-xs mt-1 pl-2">
-              {activities.length > 0 ? (
-                <ul className="list-disc list-inside">
-                  {activities.slice(0, 5).map((act, idx) => (
-                    <li key={idx}>{act.activityName || act.activity_name}</li>
-                  ))}
-                  {activities.length > 5 && <li>...y {activities.length - 5} más</li>}
-                </ul>
-              ) : (
-                <p className="text-muted-foreground">Ver informe de actividades adjunto.</p>
-              )}
-            </div>
+            <p className="font-bold text-xs text-primary">
+              1. SERVICIOS Y/O PRODUCTOS RECIBIDOS A SATISFACCIÓN CORRESPONDIENTES AL PERIODO DEL MES DE {certificationMonth || '___'} DE {currentYear}.
+            </p>
+            <p className="text-xs mt-2 text-justify">
+              Las actividades desarrolladas por el contratista en el periodo descrito anteriormente, relacionadas con cada una de las actividades específicas establecidas en los estudios previos y del contrato se verifica el cumplimiento a satisfacción de la obligación establecida.
+            </p>
+            <p className="text-xs mt-2">
+              <strong>NOTA 1:</strong> Forma parte del presente documento el informe de actividades previamente entregado por el contratista el <strong>{formatDateShort(reportDeliveryDate)}</strong> el cual deberá contener como mínimo: 1. Detalle del cumplimiento de cada una de las obligaciones con sus debidos soportes y evidencias.
+            </p>
+            <p className="text-xs mt-2">
+              <strong>NOTA 2:</strong> El informe de ejecución del contratista junto con los soportes del caso deben reposar igualmente en el expediente contractual electrónico. Si existen entregables físicos deberán reposar en la carpeta contractual.
+            </p>
           </div>
           
           {/* Section 2: Novedades */}
           <div>
-            <p className="font-semibold text-xs text-primary">2. NOVEDADES O SITUACIONES ANORMALES:</p>
-            <p className="text-xs mt-1 pl-2">{novedades || 'Ninguna'}</p>
+            <p className="font-bold text-xs text-primary">2. NOVEDADES O SITUACIONES ANORMALES PRESENTADAS DURANTE EL DESARROLLO DEL CONTRATO.</p>
+            <p className="text-xs mt-1 text-justify">{novedadesTexto}</p>
           </div>
           
           {/* Section 3: Social Security */}
           <div>
-            <p className="font-semibold text-xs text-primary">3. CUMPLIMIENTO DE OBLIGACIONES DE SEGURIDAD SOCIAL:</p>
-            <p className="text-xs mt-1 pl-2 text-muted-foreground">
-              De conformidad con el artículo 50 de la Ley 789 de 2002 y la Ley 100 de 1993...
+            <p className="font-bold text-xs text-primary">3. CUMPLIMIENTO DE OBLIGACIONES DEL CONTRATISTA RELACIONADAS CON EL PAGO DE SEGURIDAD SOCIAL INTEGRAL Y APORTES PARAFISCALES</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              (Ley 100 de 1993 y sus decretos reglamentarios, en el artículo 50 de la Ley 789 de 2002, Leyes 828 de 2003, 1122 de 2007, 1150 de 2007 y 1562 de 2012, Decretos 1072 de 2015 y 1273 de 2018 y demás normas concordantes).
             </p>
-            <p className="text-xs pl-2 mt-1">
-              {socialSecurityVerified ? '✓ Verificado' : '○ Pendiente'}
+            <p className="text-xs mt-2 text-justify">
+              Se verificó el cumplimiento de las obligaciones del contratista con los sistemas de Seguridad Social Integral en salud, pensiones y riesgos laborales, información que se puede constatar en la planilla o certificación de pago correspondiente al periodo aquí relacionado.
             </p>
           </div>
           
           {/* Section 4: Risk Matrix */}
           <div>
-            <p className="font-semibold text-xs text-primary">4. MATRIZ DE RIESGO:</p>
-            <p className="text-xs mt-1 pl-2">
-              {riskMatrixCompliance ? '✓ Cumple con las actividades de la matriz de riesgos' : '○ Pendiente de verificación'}
+            <p className="font-bold text-xs text-primary">4. ACTIVIDADES DE TRATAMIENTO Y MONITOREO A LA MATRIZ DE RIESGO DEL CONTRATO.</p>
+            <p className="text-xs mt-1 text-justify">
+              Se ha realizado el monitoreo por parte de la supervisión, de acuerdo con el tratamiento y/o control de los riesgos establecido en la matriz de los estudios previos del contrato, evidenciándose que no hay materialización de los mismos. Lo anterior se verifica a través del informe mensual de actividades del contratista de acuerdo con las obligaciones específicas pactadas, las cuales han tenido satisfactorio cumplimiento a la fecha.
             </p>
           </div>
           
           {/* Section 5: Anexos */}
           <div>
-            <p className="font-semibold text-xs text-primary">5. ANEXOS:</p>
-            <p className="text-xs mt-1 pl-2 whitespace-pre-line">
-              {anexosLista || '- Informe de actividades\n- Planilla de seguridad social\n- Cuenta de cobro'}
-            </p>
+            <p className="font-bold text-xs text-primary">5. ANEXOS</p>
+            <p className="text-xs mt-1 whitespace-pre-line">{anexosTexto}</p>
           </div>
           
           {/* Signature (only supervisor) */}

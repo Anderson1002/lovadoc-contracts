@@ -105,6 +105,7 @@ export type Database = {
           billing_start_date: string | null
           certificacion_complete: boolean | null
           certification_date: string | null
+          certification_month: string | null
           comentario_supervisor: string | null
           contract_id: string
           created_at: string
@@ -130,6 +131,7 @@ export type Database = {
           planilla_valor: number | null
           porcentaje_ejecutado: number | null
           rejection_reason: string | null
+          report_delivery_date: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           risk_matrix_compliance: boolean | null
@@ -163,6 +165,7 @@ export type Database = {
           billing_start_date?: string | null
           certificacion_complete?: boolean | null
           certification_date?: string | null
+          certification_month?: string | null
           comentario_supervisor?: string | null
           contract_id: string
           created_at?: string
@@ -188,6 +191,7 @@ export type Database = {
           planilla_valor?: number | null
           porcentaje_ejecutado?: number | null
           rejection_reason?: string | null
+          report_delivery_date?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           risk_matrix_compliance?: boolean | null
@@ -221,6 +225,7 @@ export type Database = {
           billing_start_date?: string | null
           certificacion_complete?: boolean | null
           certification_date?: string | null
+          certification_month?: string | null
           comentario_supervisor?: string | null
           contract_id?: string
           created_at?: string
@@ -246,6 +251,7 @@ export type Database = {
           planilla_valor?: number | null
           porcentaje_ejecutado?: number | null
           rejection_reason?: string | null
+          report_delivery_date?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           risk_matrix_compliance?: boolean | null

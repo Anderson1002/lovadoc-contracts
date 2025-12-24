@@ -4,8 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCircle, ClipboardCheck } from "lucide-react";
+import { CheckCircle, ClipboardCheck, CalendarIcon } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface CertificationFormProps {
   contractDetails: any;
@@ -18,7 +24,7 @@ interface CertificationFormProps {
   certificationDate: string;
   onCertificationDateChange: (value: string) => void;
   isComplete: boolean;
-  // Nuevos campos para formato oficial
+  // Campos para formato oficial
   valorEjecutadoAntes: string;
   onValorEjecutadoAntesChange: (value: string) => void;
   riskMatrixCompliance: boolean;
@@ -28,7 +34,17 @@ interface CertificationFormProps {
   anexosLista: string;
   onAnexosListaChange: (value: string) => void;
   activities?: any[];
+  // Nuevos campos
+  certificationMonth: string;
+  onCertificationMonthChange: (value: string) => void;
+  reportDeliveryDate: string;
+  onReportDeliveryDateChange: (value: string) => void;
 }
+
+const MONTHS = [
+  "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+  "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
+];
 
 export function CertificationForm({
   contractDetails,
@@ -49,7 +65,11 @@ export function CertificationForm({
   onSocialSecurityVerifiedChange,
   anexosLista,
   onAnexosListaChange,
-  activities = []
+  activities = [],
+  certificationMonth,
+  onCertificationMonthChange,
+  reportDeliveryDate,
+  onReportDeliveryDateChange
 }: CertificationFormProps) {
   const formatDate = (date: Date | string | undefined) => {
     if (!date) return 'No especificada';
@@ -66,6 +86,8 @@ export function CertificationForm({
   const totalEjecutado = valorAntes + valorPagoActual;
   const saldoPorEjecutar = valorTotal - totalEjecutado;
   const porcentajeEjecutado = valorTotal > 0 ? (totalEjecutado / valorTotal) * 100 : 0;
+
+  const currentYear = new Date().getFullYear();
 
   return (
     <Card className={isComplete ? "border-green-600/50" : ""}>
@@ -97,16 +119,16 @@ export function CertificationForm({
                 <p className="font-medium">{contractDetails.contract_number_original || contractDetails.contract_number}</p>
               </div>
               <div>
+                <span className="text-muted-foreground">Objeto del Contrato:</span>
+                <p className="font-medium text-xs">{contractDetails.description || 'No especificado'}</p>
+              </div>
+              <div>
                 <span className="text-muted-foreground">CDP:</span>
                 <p className="font-medium">{contractDetails.cdp || 'No especificado'}</p>
               </div>
               <div>
                 <span className="text-muted-foreground">RP:</span>
                 <p className="font-medium">{contractDetails.rp || 'No especificado'}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Rubro Presupuestal:</span>
-                <p className="font-medium">{contractDetails.budget_code || 'No especificado'}</p>
               </div>
             </div>
           </div>
@@ -125,9 +147,60 @@ export function CertificationForm({
                 <span className="text-muted-foreground">Documento:</span>
                 <p className="font-medium">{userProfile.document_number || 'No especificado'}</p>
               </div>
+              <div>
+                <span className="text-muted-foreground">Ciudad de expedición:</span>
+                <p className="font-medium">{userProfile.city || 'No especificado'}</p>
+              </div>
             </div>
           </div>
         )}
+
+        {/* Período de Certificación - Mes seleccionable */}
+        <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg space-y-4">
+          <h4 className="font-medium text-sm text-primary">PERÍODO DE CERTIFICACIÓN</h4>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="certificationMonth">Mes del Período *</Label>
+              <Select value={certificationMonth} onValueChange={onCertificationMonthChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione el mes" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTHS.map((month) => (
+                    <SelectItem key={month} value={month}>{month}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Mes correspondiente al período que se certifica
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reportDeliveryDate">Fecha Entrega del Informe *</Label>
+              <Input
+                type="date"
+                value={reportDeliveryDate}
+                onChange={(e) => onReportDeliveryDateChange(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Fecha en que el contratista entregó el informe
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-sm pt-2 border-t">
+            <div>
+              <span className="text-muted-foreground">Desde:</span>
+              <p className="font-medium">{formatDate(startDate)}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Hasta:</span>
+              <p className="font-medium">{formatDate(endDate)}</p>
+            </div>
+          </div>
+        </div>
 
         {/* Tabla Financiera Completa */}
         <div className="p-4 bg-muted rounded-lg space-y-3">
@@ -201,61 +274,32 @@ export function CertificationForm({
           </div>
         </div>
 
-        {/* Execution Period */}
-        <div className="p-4 bg-muted rounded-lg space-y-3">
-          <h4 className="font-medium text-sm text-primary">PERÍODO DE EJECUCIÓN CERTIFICADO</h4>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <span className="text-muted-foreground">Desde:</span>
-              <p className="font-medium">{formatDate(startDate)}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Hasta:</span>
-              <p className="font-medium">{formatDate(endDate)}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Sección 1: Servicios recibidos (resumen de actividades) */}
-        {activities.length > 0 && (
-          <div className="space-y-2">
-            <Label className="text-base font-semibold">1. Servicios y/o Productos Recibidos a Satisfacción</Label>
-            <div className="p-3 bg-muted rounded-lg text-sm">
-              <p className="text-muted-foreground mb-2">{activities.length} actividad(es) registrada(s):</p>
-              <ul className="list-disc list-inside space-y-1">
-                {activities.slice(0, 5).map((act, idx) => (
-                  <li key={idx} className="text-sm">{act.activityName || act.activity_name}</li>
-                ))}
-                {activities.length > 5 && (
-                  <li className="text-muted-foreground">...y {activities.length - 5} más</li>
-                )}
-              </ul>
-            </div>
-          </div>
-        )}
-
-        {/* Sección 2: Novedades */}
+        {/* Sección 2: Novedades - con texto por defecto */}
         <div className="space-y-2">
-          <Label className="text-base font-semibold">2. Novedades o Situaciones Anormales Presentadas</Label>
+          <Label className="text-base font-semibold">2. Novedades o Situaciones Anormales Presentadas Durante el Desarrollo del Contrato</Label>
           <Textarea
             value={novedades}
             onChange={(e) => onNovedadesChange(e.target.value)}
-            placeholder="Describa cualquier novedad ocurrida durante el período de ejecución. Si no hubo novedades, escriba 'Ninguna'."
-            rows={4}
+            placeholder="Durante el presente período no se han presentado novedades o situaciones anormales que afecten el desarrollo del contrato."
+            rows={3}
           />
           <p className="text-xs text-muted-foreground">
-            Indique cualquier situación relevante: incapacidades, suspensiones, modificaciones, etc.
+            Si no hubo novedades, deje el texto por defecto. Indique cualquier situación relevante: incapacidades, suspensiones, etc.
           </p>
         </div>
 
         {/* Sección 3: Seguridad Social */}
         <div className="space-y-2">
-          <Label className="text-base font-semibold">3. Cumplimiento de Obligaciones de Seguridad Social</Label>
-          <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-sm">
+          <Label className="text-base font-semibold">3. Cumplimiento de Obligaciones del Contratista Relacionadas con el Pago de Seguridad Social</Label>
+          <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-xs">
             <p className="text-blue-700 dark:text-blue-300 mb-3">
-              De conformidad con lo establecido en el artículo 50 de la Ley 789 de 2002, el artículo 1 de la Ley 828 de 2003 
-              y el artículo 23 de la Ley 1150 de 2007, se verificó que el contratista se encuentra al día con los aportes al 
-              Sistema de Seguridad Social Integral (Salud, Pensión y ARL) según la Ley 100 de 1993.
+              (Ley 100 de 1993 y sus decretos reglamentarios, en el artículo 50 de la Ley 789 de 2002, Leyes 828 de 2003, 
+              1122 de 2007, 1150 de 2007 y 1562 de 2012, Decretos 1072 de 2015 y 1273 de 2018 y demás normas concordantes).
+            </p>
+            <p className="text-muted-foreground mb-3">
+              Se verificó el cumplimiento de las obligaciones del contratista con los sistemas de Seguridad Social Integral 
+              en salud, pensiones y riesgos laborales, información que se puede constatar en la planilla o certificación de 
+              pago correspondiente al periodo aquí relacionado.
             </p>
             <div className="flex items-center space-x-2">
               <Checkbox
@@ -264,7 +308,7 @@ export function CertificationForm({
                 onCheckedChange={(checked) => onSocialSecurityVerifiedChange(checked === true)}
               />
               <label htmlFor="socialSecurityVerified" className="text-sm font-medium cursor-pointer">
-                Verifico que el contratista está al día con sus aportes de seguridad social
+                Verifico el cumplimiento de las obligaciones de seguridad social
               </label>
             </div>
           </div>
@@ -272,8 +316,14 @@ export function CertificationForm({
 
         {/* Sección 4: Matriz de Riesgos */}
         <div className="space-y-2">
-          <Label className="text-base font-semibold">4. Actividades de Tratamiento y Monitoreo a la Matriz de Riesgo</Label>
-          <div className="p-3 bg-muted rounded-lg">
+          <Label className="text-base font-semibold">4. Actividades de Tratamiento y Monitoreo a la Matriz de Riesgo del Contrato</Label>
+          <div className="p-3 bg-muted rounded-lg text-xs">
+            <p className="text-muted-foreground mb-3">
+              Se ha realizado el monitoreo por parte de la supervisión, de acuerdo con el tratamiento y/o control de los 
+              riesgos establecido en la matriz de los estudios previos del contrato, evidenciándose que no hay materialización 
+              de los mismos. Lo anterior se verifica a través del informe mensual de actividades del contratista de acuerdo 
+              con las obligaciones específicas pactadas, las cuales han tenido satisfactorio cumplimiento a la fecha.
+            </p>
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="riskMatrixCompliance"
@@ -281,7 +331,7 @@ export function CertificationForm({
                 onCheckedChange={(checked) => onRiskMatrixComplianceChange(checked === true)}
               />
               <label htmlFor="riskMatrixCompliance" className="text-sm cursor-pointer">
-                El contratista ha cumplido con las actividades de tratamiento y monitoreo establecidas en la matriz de riesgos del contrato
+                Confirmo el monitoreo y cumplimiento de la matriz de riesgos
               </label>
             </div>
           </div>
@@ -293,11 +343,11 @@ export function CertificationForm({
           <Textarea
             value={anexosLista}
             onChange={(e) => onAnexosListaChange(e.target.value)}
-            placeholder="Liste los documentos anexos separados por líneas. Ejemplo:&#10;- Informe de actividades&#10;- Planilla de seguridad social&#10;- Cuenta de cobro"
-            rows={4}
+            placeholder="1. Informe ejecución actividades&#10;2. Planilla pago seguridad social"
+            rows={3}
           />
           <p className="text-xs text-muted-foreground">
-            Indique todos los documentos que se adjuntan a esta certificación
+            Liste los documentos anexos numerados (ej: 1. Informe..., 2. Planilla...)
           </p>
         </div>
 
