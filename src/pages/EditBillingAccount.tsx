@@ -114,6 +114,11 @@ export function EditBillingAccountDialog({
   // Certificación fields
   const [novedades, setNovedades] = useState<string>("");
   const [certificationDate, setCertificationDate] = useState<string>("");
+  // Nuevos campos para formato oficial de certificación
+  const [valorEjecutadoAntes, setValorEjecutadoAntes] = useState<string>("0");
+  const [riskMatrixCompliance, setRiskMatrixCompliance] = useState<boolean>(false);
+  const [socialSecurityVerified, setSocialSecurityVerified] = useState<boolean>(true);
+  const [anexosLista, setAnexosLista] = useState<string>("");
   
   // Cuenta de Cobro / Invoice fields
   const [invoiceCity, setInvoiceCity] = useState<string>("");
@@ -233,6 +238,11 @@ export function EditBillingAccountDialog({
       // Load Certificación fields
       setNovedades((billing as any).novedades || "");
       setCertificationDate((billing as any).certification_date || "");
+      // Nuevos campos formato oficial
+      setValorEjecutadoAntes((billing as any).valor_ejecutado_antes?.toString() || "0");
+      setRiskMatrixCompliance((billing as any).risk_matrix_compliance ?? false);
+      setSocialSecurityVerified((billing as any).social_security_verified ?? true);
+      setAnexosLista((billing as any).anexos_lista || "");
       
       // Load Invoice fields
       setInvoiceCity((billing as any).invoice_city || "");
@@ -549,6 +559,10 @@ export function EditBillingAccountDialog({
           novedades: novedades || null,
           certification_date: certificationDate || null,
           certificacion_complete: certificacionComplete,
+          valor_ejecutado_antes: valorEjecutadoAntes ? parseFloat(valorEjecutadoAntes) : 0,
+          risk_matrix_compliance: riskMatrixCompliance,
+          social_security_verified: socialSecurityVerified,
+          anexos_lista: anexosLista || null,
           // Invoice fields
           invoice_city: invoiceCity || null,
           invoice_date: invoiceDate || null,
@@ -669,6 +683,10 @@ export function EditBillingAccountDialog({
           novedades: novedades || null,
           certification_date: certificationDate || null,
           certificacion_complete: true,
+          valor_ejecutado_antes: valorEjecutadoAntes ? parseFloat(valorEjecutadoAntes) : 0,
+          risk_matrix_compliance: riskMatrixCompliance,
+          social_security_verified: socialSecurityVerified,
+          anexos_lista: anexosLista || null,
           // Invoice fields
           invoice_city: invoiceCity || null,
           invoice_date: invoiceDate || null,
@@ -1514,6 +1532,15 @@ export function EditBillingAccountDialog({
                   certificationDate={certificationDate}
                   onCertificationDateChange={setCertificationDate}
                   isComplete={certificacionComplete}
+                  valorEjecutadoAntes={valorEjecutadoAntes}
+                  onValorEjecutadoAntesChange={setValorEjecutadoAntes}
+                  riskMatrixCompliance={riskMatrixCompliance}
+                  onRiskMatrixComplianceChange={setRiskMatrixCompliance}
+                  socialSecurityVerified={socialSecurityVerified}
+                  onSocialSecurityVerifiedChange={setSocialSecurityVerified}
+                  anexosLista={anexosLista}
+                  onAnexosListaChange={setAnexosLista}
+                  activities={activities}
                 />
               </TabsContent>
               
@@ -1599,6 +1626,11 @@ export function EditBillingAccountDialog({
                         novedades={novedades}
                         certificationDate={certificationDate}
                         supervisorName={selectedContractData?.supervisor_asignado}
+                        valorEjecutadoAntes={valorEjecutadoAntes}
+                        riskMatrixCompliance={riskMatrixCompliance}
+                        socialSecurityVerified={socialSecurityVerified}
+                        anexosLista={anexosLista}
+                        activities={activities}
                       />
                     )}
                     {activeTab === 'cuenta-cobro' && (

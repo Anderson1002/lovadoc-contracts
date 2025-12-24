@@ -83,6 +83,11 @@ export function CreateBillingAccountDialog({
   // Certification form fields
   const [novedades, setNovedades] = useState('');
   const [certificationDate, setCertificationDate] = useState('');
+  // Nuevos campos para formato oficial de certificación
+  const [valorEjecutadoAntes, setValorEjecutadoAntes] = useState('0');
+  const [riskMatrixCompliance, setRiskMatrixCompliance] = useState(false);
+  const [socialSecurityVerified, setSocialSecurityVerified] = useState(true);
+  const [anexosLista, setAnexosLista] = useState('');
   
   // Invoice form fields
   const [invoiceCity, setInvoiceCity] = useState('');
@@ -1828,6 +1833,15 @@ export function CreateBillingAccountDialog({
                   certificationDate={certificationDate}
                   onCertificationDateChange={setCertificationDate}
                   isComplete={certificacionComplete}
+                  valorEjecutadoAntes={valorEjecutadoAntes}
+                  onValorEjecutadoAntesChange={setValorEjecutadoAntes}
+                  riskMatrixCompliance={riskMatrixCompliance}
+                  onRiskMatrixComplianceChange={setRiskMatrixCompliance}
+                  socialSecurityVerified={socialSecurityVerified}
+                  onSocialSecurityVerifiedChange={setSocialSecurityVerified}
+                  anexosLista={anexosLista}
+                  onAnexosListaChange={setAnexosLista}
+                  activities={activities}
                 />
               </TabsContent>
 
