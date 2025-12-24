@@ -88,6 +88,8 @@ export function CreateBillingAccountDialog({
   const [riskMatrixCompliance, setRiskMatrixCompliance] = useState(false);
   const [socialSecurityVerified, setSocialSecurityVerified] = useState(true);
   const [anexosLista, setAnexosLista] = useState('');
+  const [certificationMonth, setCertificationMonth] = useState('');
+  const [reportDeliveryDate, setReportDeliveryDate] = useState('');
   
   // Invoice form fields
   const [invoiceCity, setInvoiceCity] = useState('');
@@ -1842,6 +1844,10 @@ export function CreateBillingAccountDialog({
                   anexosLista={anexosLista}
                   onAnexosListaChange={setAnexosLista}
                   activities={activities}
+                  certificationMonth={certificationMonth}
+                  onCertificationMonthChange={setCertificationMonth}
+                  reportDeliveryDate={reportDeliveryDate}
+                  onReportDeliveryDateChange={setReportDeliveryDate}
                 />
               </TabsContent>
 

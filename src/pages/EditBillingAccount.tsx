@@ -119,6 +119,8 @@ export function EditBillingAccountDialog({
   const [riskMatrixCompliance, setRiskMatrixCompliance] = useState<boolean>(false);
   const [socialSecurityVerified, setSocialSecurityVerified] = useState<boolean>(true);
   const [anexosLista, setAnexosLista] = useState<string>("");
+  const [certificationMonth, setCertificationMonth] = useState<string>("");
+  const [reportDeliveryDate, setReportDeliveryDate] = useState<string>("");
   
   // Cuenta de Cobro / Invoice fields
   const [invoiceCity, setInvoiceCity] = useState<string>("");
@@ -1541,6 +1543,10 @@ export function EditBillingAccountDialog({
                   anexosLista={anexosLista}
                   onAnexosListaChange={setAnexosLista}
                   activities={activities}
+                  certificationMonth={certificationMonth}
+                  onCertificationMonthChange={setCertificationMonth}
+                  reportDeliveryDate={reportDeliveryDate}
+                  onReportDeliveryDateChange={setReportDeliveryDate}
                 />
               </TabsContent>
               
@@ -1631,6 +1637,8 @@ export function EditBillingAccountDialog({
                         socialSecurityVerified={socialSecurityVerified}
                         anexosLista={anexosLista}
                         activities={activities}
+                        certificationMonth={certificationMonth}
+                        reportDeliveryDate={reportDeliveryDate}
                       />
                     )}
                     {activeTab === 'cuenta-cobro' && (
