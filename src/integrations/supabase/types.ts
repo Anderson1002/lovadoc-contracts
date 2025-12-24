@@ -91,6 +91,7 @@ export type Database = {
           account_number: string
           amount: number
           amount_in_words: string | null
+          anexos_lista: string | null
           arl_planilla_fecha: string | null
           arl_planilla_numero: string | null
           arl_planilla_valor: number | null
@@ -127,21 +128,28 @@ export type Database = {
           planilla_file_url: string | null
           planilla_numero: string | null
           planilla_valor: number | null
+          porcentaje_ejecutado: number | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          risk_matrix_compliance: boolean | null
+          saldo_por_ejecutar: number | null
           salud_planilla_fecha: string | null
           salud_planilla_numero: string | null
           salud_planilla_valor: number | null
+          social_security_verified: boolean | null
           state_code: string | null
           status: string
           supervisor_signature_url: string | null
+          total_ejecutado: number | null
           updated_at: string
+          valor_ejecutado_antes: number | null
         }
         Insert: {
           account_number: string
           amount: number
           amount_in_words?: string | null
+          anexos_lista?: string | null
           arl_planilla_fecha?: string | null
           arl_planilla_numero?: string | null
           arl_planilla_valor?: number | null
@@ -178,21 +186,28 @@ export type Database = {
           planilla_file_url?: string | null
           planilla_numero?: string | null
           planilla_valor?: number | null
+          porcentaje_ejecutado?: number | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          risk_matrix_compliance?: boolean | null
+          saldo_por_ejecutar?: number | null
           salud_planilla_fecha?: string | null
           salud_planilla_numero?: string | null
           salud_planilla_valor?: number | null
+          social_security_verified?: boolean | null
           state_code?: string | null
           status?: string
           supervisor_signature_url?: string | null
+          total_ejecutado?: number | null
           updated_at?: string
+          valor_ejecutado_antes?: number | null
         }
         Update: {
           account_number?: string
           amount?: number
           amount_in_words?: string | null
+          anexos_lista?: string | null
           arl_planilla_fecha?: string | null
           arl_planilla_numero?: string | null
           arl_planilla_valor?: number | null
@@ -229,16 +244,22 @@ export type Database = {
           planilla_file_url?: string | null
           planilla_numero?: string | null
           planilla_valor?: number | null
+          porcentaje_ejecutado?: number | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          risk_matrix_compliance?: boolean | null
+          saldo_por_ejecutar?: number | null
           salud_planilla_fecha?: string | null
           salud_planilla_numero?: string | null
           salud_planilla_valor?: number | null
+          social_security_verified?: boolean | null
           state_code?: string | null
           status?: string
           supervisor_signature_url?: string | null
+          total_ejecutado?: number | null
           updated_at?: string
+          valor_ejecutado_antes?: number | null
         }
         Relationships: [
           {
