@@ -149,7 +149,7 @@ export function CertificationForm({
               </div>
               <div>
                 <span className="text-muted-foreground">Ciudad de expedición:</span>
-                <p className="font-medium">{userProfile.city || 'No especificado'}</p>
+                <p className="font-medium">{userProfile.document_issue_city || 'No especificado'}</p>
               </div>
             </div>
           </div>

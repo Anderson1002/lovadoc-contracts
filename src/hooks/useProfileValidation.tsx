@@ -20,7 +20,7 @@ export function useProfileValidation() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('document_number, phone, address, bank_name, bank_account')
+        .select('document_number, document_issue_city, phone, address, bank_name, bank_account')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -31,6 +31,7 @@ export function useProfileValidation() {
 
       const missing: string[] = [];
       if (!profile.document_number) missing.push('Número de documento');
+      if (!profile.document_issue_city) missing.push('Ciudad de expedición del documento');
       if (!profile.phone) missing.push('Teléfono');
       if (!profile.address) missing.push('Dirección');
       if (!profile.bank_name) missing.push('Banco');

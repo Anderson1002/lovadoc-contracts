@@ -970,6 +970,7 @@ export type Database = {
           bank_name: string | null
           city: string | null
           created_at: string
+          document_issue_city: string | null
           document_number: string | null
           email: string
           id: string
@@ -993,6 +994,7 @@ export type Database = {
           bank_name?: string | null
           city?: string | null
           created_at?: string
+          document_issue_city?: string | null
           document_number?: string | null
           email: string
           id?: string
@@ -1016,6 +1018,7 @@ export type Database = {
           bank_name?: string | null
           city?: string | null
           created_at?: string
+          document_issue_city?: string | null
           document_number?: string | null
           email?: string
           id?: string

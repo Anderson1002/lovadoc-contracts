@@ -103,7 +103,7 @@ export function CertificationPreview({
     doc.setFont(undefined, 'normal');
     
     // Main certification text with object in bold
-    const certPart1 = `Que ${userProfile?.name || '_______________'}, identificada(o) con la cédula de ciudadanía No. ${userProfile?.document_number || '_______________'} de ${userProfile?.city || '_______________'}, cumplió a satisfacción con las actividades relacionadas con el objeto: "`;
+    const certPart1 = `Que ${userProfile?.name || '_______________'}, identificada(o) con la cédula de ciudadanía No. ${userProfile?.document_number || '_______________'} de ${userProfile?.document_issue_city || '_______________'}, cumplió a satisfacción con las actividades relacionadas con el objeto: "`;
     const certPart2 = contractObject.toUpperCase();
     const certPart3 = `", del Contrato de Prestación de Servicios No. ${contractNumber} – ${currentYear}, correspondiente al periodo del mes de ${certificationMonth || '_______________'} del año ${currentYear}, y cumple con el pago de la Seguridad Social Integral.`;
     
@@ -297,7 +297,7 @@ export function CertificationPreview({
           {/* Certification Text with object in bold */}
           <div className="text-xs text-justify">
             <p>
-              Que <strong>{userProfile?.name}</strong>, identificada(o) con la cédula de ciudadanía No. <strong>{userProfile?.document_number}</strong> de {userProfile?.city || '_______________'}, 
+              Que <strong>{userProfile?.name}</strong>, identificada(o) con la cédula de ciudadanía No. <strong>{userProfile?.document_number}</strong> de {userProfile?.document_issue_city || '_______________'}, 
               cumplió a satisfacción con las actividades relacionadas con el objeto: "<strong className="uppercase">{contractObject}</strong>", 
               del Contrato de Prestación de Servicios No. {contractNumber} – {currentYear}, correspondiente al periodo del mes de <strong>{certificationMonth || '_______________'}</strong> del año {currentYear}, 
               y cumple con el pago de la Seguridad Social Integral.
