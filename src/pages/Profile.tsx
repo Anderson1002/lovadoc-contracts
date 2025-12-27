@@ -43,6 +43,7 @@ interface ProfileFormData {
   email: string;
   avatar: string;
   document_number: string;
+  document_issue_city: string;
   phone: string;
   address: string;
   bank_account: string;
@@ -126,6 +127,7 @@ export default function Profile() {
           email: profile.email,
           avatar: profile.avatar || "",
           document_number: profile.document_number || "",
+          document_issue_city: profile.document_issue_city || "",
           phone: profile.phone || "",
           address: profile.address || "",
           bank_account: profile.bank_account || "",
@@ -274,6 +276,7 @@ export default function Profile() {
           email: data.email,
           avatar: data.avatar || null,
           document_number: data.document_number || null,
+          document_issue_city: data.document_issue_city || null,
           phone: data.phone || null,
           address: data.address || null,
           bank_account: data.bank_account || null,
@@ -293,6 +296,7 @@ export default function Profile() {
         email: data.email,
         avatar: data.avatar,
         document_number: data.document_number,
+        document_issue_city: data.document_issue_city,
         phone: data.phone,
         address: data.address,
         bank_account: data.bank_account,
@@ -506,6 +510,18 @@ export default function Profile() {
                             {errors.document_number && (
                               <p className="text-destructive text-sm">{errors.document_number.message}</p>
                             )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="document_issue_city" className="text-base font-semibold">Ciudad de Expedición del Documento</Label>
+                            <Input
+                              id="document_issue_city"
+                              {...register("document_issue_city")}
+                              placeholder="Ej: Bogotá, Medellín, Cali"
+                              disabled={!isEditing}
+                              className="text-lg"
+                            />
+                            <p className="text-xs text-muted-foreground">Ciudad donde fue expedido su documento de identidad</p>
                           </div>
 
                           <div className="space-y-2">
