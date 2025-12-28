@@ -101,23 +101,81 @@ export function CertificationPreview({
     const hospitalLogoBase64 = await getBase64FromUrl(logoHospital);
     const gobernacionLogoBase64 = await getBase64FromUrl(logoGobernacion);
     
-    // Header table (official format) with space for logos
+    // Header table with logos on sides
     autoTable(doc, {
       startY: 10,
       body: [[
-        { content: '', styles: { halign: 'center', minCellHeight: 20 } },
-        { content: 'TIPO DE DOCUMENTO: FORMATO\nPROCESO: GESTIÓN JURÍDICA\nNOMBRE: CERTIFICACIÓN DE CUMPLIMIENTO\nCÓDIGO: GJ-F-1561    VERSIÓN: 4\nFECHA DE APROBACIÓN: 2024-01-01', styles: { halign: 'center', fontSize: 7 } },
-        { content: '', styles: { halign: 'center', minCellHeight: 20 } }
+        { content: '', styles: { halign: 'center', minCellHeight: 28 } },
+        { content: '', styles: { halign: 'center', minCellHeight: 28 } },
+        { content: '', styles: { halign: 'center', minCellHeight: 28 } }
       ]],
       theme: 'grid',
-      styles: { cellPadding: 3 },
-      columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 95 }, 2: { cellWidth: 45 } },
+      styles: { cellPadding: 0 },
+      columnStyles: { 0: { cellWidth: 45 }, 1: { cellWidth: 100 }, 2: { cellWidth: 45 } },
       didDrawCell: (data) => {
+        // Logo Hospital (columna izquierda)
         if (data.row.index === 0 && data.column.index === 0) {
-          doc.addImage(hospitalLogoBase64, 'JPEG', data.cell.x + 5, data.cell.y + 2, 40, 16);
+          doc.addImage(hospitalLogoBase64, 'JPEG', data.cell.x + 2, data.cell.y + 4, 40, 20);
         }
+        // Logo Gobernación (columna derecha)
         if (data.row.index === 0 && data.column.index === 2) {
-          doc.addImage(gobernacionLogoBase64, 'JPEG', data.cell.x + 2, data.cell.y + 2, 40, 16);
+          doc.addImage(gobernacionLogoBase64, 'JPEG', data.cell.x + 2, data.cell.y + 4, 40, 20);
+        }
+        // Tabla central con estructura de 4 filas
+        if (data.row.index === 0 && data.column.index === 1) {
+          const cellX = data.cell.x;
+          const cellY = data.cell.y;
+          const cellWidth = data.cell.width;
+          const cellHeight = data.cell.height;
+          const rowHeight = cellHeight / 4;
+          
+          doc.setFontSize(6);
+          doc.setDrawColor(0);
+          doc.setLineWidth(0.1);
+          
+          // Fila 1: Encabezados
+          doc.setFillColor(240, 240, 240);
+          doc.rect(cellX, cellY, cellWidth / 2, rowHeight, 'FD');
+          doc.rect(cellX + cellWidth / 2, cellY, cellWidth / 2, rowHeight, 'FD');
+          
+          doc.setFont(undefined, 'bold');
+          doc.text('Tipo de Documento', cellX + 2, cellY + rowHeight / 2 + 1);
+          doc.text('Proceso, Servicio o actividad que lo Genera:', cellX + cellWidth / 2 + 2, cellY + rowHeight / 2 + 1);
+          
+          // Fila 2: Valores
+          doc.setFillColor(255, 255, 255);
+          doc.rect(cellX, cellY + rowHeight, cellWidth / 2, rowHeight, 'FD');
+          doc.rect(cellX + cellWidth / 2, cellY + rowHeight, cellWidth / 2, rowHeight, 'FD');
+          
+          doc.setFont(undefined, 'normal');
+          doc.text('FORMATO', cellX + cellWidth / 4, cellY + rowHeight + rowHeight / 2 + 1, { align: 'center' });
+          doc.text('GESTIÓN JURÍDICA', cellX + cellWidth * 3 / 4, cellY + rowHeight + rowHeight / 2 + 1, { align: 'center' });
+          
+          // Fila 3: Sub-encabezados (3 columnas)
+          const col3Width = cellWidth / 3;
+          doc.setFillColor(240, 240, 240);
+          doc.rect(cellX, cellY + rowHeight * 2, col3Width, rowHeight, 'FD');
+          doc.rect(cellX + col3Width, cellY + rowHeight * 2, col3Width, rowHeight, 'FD');
+          doc.rect(cellX + col3Width * 2, cellY + rowHeight * 2, col3Width, rowHeight, 'FD');
+          
+          doc.setFont(undefined, 'bold');
+          doc.text('Nombre', cellX + col3Width / 2, cellY + rowHeight * 2 + rowHeight / 2 + 1, { align: 'center' });
+          doc.text('Código y Versión', cellX + col3Width + col3Width / 2, cellY + rowHeight * 2 + rowHeight / 2 + 1, { align: 'center' });
+          doc.text('Fecha aprobación', cellX + col3Width * 2 + col3Width / 2, cellY + rowHeight * 2 + rowHeight / 2 + 1, { align: 'center' });
+          
+          // Fila 4: Valores finales (3 columnas)
+          doc.setFillColor(255, 255, 255);
+          doc.rect(cellX, cellY + rowHeight * 3, col3Width, rowHeight, 'FD');
+          doc.rect(cellX + col3Width, cellY + rowHeight * 3, col3Width, rowHeight, 'FD');
+          doc.rect(cellX + col3Width * 2, cellY + rowHeight * 3, col3Width, rowHeight, 'FD');
+          
+          doc.setFont(undefined, 'normal');
+          doc.setFontSize(5);
+          doc.text('FORMATO INFORME', cellX + col3Width / 2, cellY + rowHeight * 3 + 3, { align: 'center' });
+          doc.text('SUPERVISOR DEL CONTRATO', cellX + col3Width / 2, cellY + rowHeight * 3 + 6, { align: 'center' });
+          doc.setFontSize(6);
+          doc.text('GJ-F-1561-V4', cellX + col3Width + col3Width / 2, cellY + rowHeight * 3 + rowHeight / 2 + 1, { align: 'center' });
+          doc.text('24/01/2025', cellX + col3Width * 2 + col3Width / 2, cellY + rowHeight * 3 + rowHeight / 2 + 1, { align: 'center' });
         }
       }
     });
@@ -304,11 +362,39 @@ export function CertificationPreview({
             <div className="p-2 border-r flex items-center justify-center">
               <img src={logoHospital} alt="Hospital San Rafael de Facatativá E.S.E." className="h-14 object-contain" />
             </div>
-            <div className="p-2 border-r">
-              <p>TIPO DE DOCUMENTO: FORMATO</p>
-              <p>PROCESO: GESTIÓN JURÍDICA</p>
-              <p className="font-semibold">CERTIFICACIÓN DE CUMPLIMIENTO</p>
-              <p>CÓDIGO: GJ-F-1561 VERSIÓN: 4</p>
+            <div className="p-0 border-r">
+              <table className="w-full h-full text-[10px] border-collapse">
+                <tbody>
+                  {/* Fila 1: Encabezados principales */}
+                  <tr>
+                    <td className="border-b border-r p-1 bg-muted font-semibold w-1/2">
+                      Tipo de Documento
+                    </td>
+                    <td className="border-b p-1 bg-muted font-semibold" colSpan={2}>
+                      Proceso, Servicio o actividad que lo Genera:
+                    </td>
+                  </tr>
+                  {/* Fila 2: Valores principales */}
+                  <tr>
+                    <td className="border-b border-r p-1 text-center">FORMATO</td>
+                    <td className="border-b p-1 text-center" colSpan={2}>GESTIÓN JURÍDICA</td>
+                  </tr>
+                  {/* Fila 3: Sub-encabezados */}
+                  <tr>
+                    <td className="border-b border-r p-1 bg-muted font-semibold">Nombre</td>
+                    <td className="border-b border-r p-1 bg-muted font-semibold">Código y Versión</td>
+                    <td className="border-b p-1 bg-muted font-semibold">Fecha aprobación</td>
+                  </tr>
+                  {/* Fila 4: Valores finales */}
+                  <tr>
+                    <td className="border-r p-1 text-center text-[9px]">
+                      FORMATO INFORME SUPERVISOR DEL CONTRATO
+                    </td>
+                    <td className="border-r p-1 text-center">GJ-F-1561-V4</td>
+                    <td className="p-1 text-center">24/01/2025</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
             <div className="p-2 flex items-center justify-center">
               <img src={logoGobernacion} alt="Gobernación de Cundinamarca" className="h-14 object-contain" />
