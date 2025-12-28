@@ -6,6 +6,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logoHospital from "@/assets/logo-hospital.jpg";
 import logoGobernacion from "@/assets/logo-gobernacion.jpg";
+import logoCertificaciones from "@/assets/logo-certificaciones.png";
 
 interface CertificationPreviewProps {
   contractDetails: any;
@@ -357,14 +358,27 @@ export function CertificationPreview({
     yPosition += 4;
     doc.text('Supervisor del Contrato', pageWidth / 2 - 30, yPosition);
     
-    // Footer
+    // Footer con dirección a la izquierda y logos a la derecha
+    const certLogoBase64 = await getBase64FromUrl(logoCertificaciones);
     yPosition += 15;
-    doc.setFontSize(7);
-    doc.text('Hospital San Rafael de Facatativá E.S.E.', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 3;
-    doc.text('Carrera 3 #1-55 / Facatativá, Cundinamarca - Tel: (601) 842 0222', pageWidth / 2, yPosition, { align: 'center' });
+    
+    // Línea superior del footer
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(14, yPosition, pageWidth - 14, yPosition);
     yPosition += 5;
-    doc.text(`Fecha de Certificación: ${formatDate(certificationDate)}`, pageWidth / 2, yPosition, { align: 'center' });
+    
+    // Texto a la izquierda
+    doc.setFontSize(7);
+    doc.setFont(undefined, 'italic');
+    doc.text('Sede Principal Carrera 2 # 1-80 Facatativá – Cundinamarca,', 14, yPosition);
+    yPosition += 3;
+    doc.setTextColor(0, 0, 255);
+    doc.text('www.hospitalfacatativa.gov.co', 14, yPosition);
+    doc.setTextColor(0, 0, 0);
+    
+    // Logo de certificaciones a la derecha
+    doc.addImage(certLogoBase64, 'PNG', pageWidth - 60, yPosition - 7, 45, 12);
     
     doc.save(`Certificacion_${contractNumber}.pdf`);
   };
@@ -585,10 +599,30 @@ export function CertificationPreview({
           </div>
           
           {/* Footer */}
-          <div className="text-center pt-4 border-t mt-4">
-            <p className="text-xs text-muted-foreground">Hospital San Rafael de Facatativá E.S.E.</p>
-            <p className="text-xs text-muted-foreground">Carrera 3 #1-55 / Facatativá, Cundinamarca - Tel: (601) 842 0222</p>
-            <p className="text-xs mt-2">Fecha de Certificación: {formatDate(certificationDate)}</p>
+          <div className="flex justify-between items-center pt-4 border-t mt-4">
+            {/* Lado izquierdo - Dirección */}
+            <div className="text-left">
+              <p className="text-xs text-muted-foreground italic">
+                Sede Principal Carrera 2 # 1-80 Facatativá – Cundinamarca,
+              </p>
+              <a 
+                href="https://www.hospitalfacatativa.gov.co" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-600 underline italic"
+              >
+                www.hospitalfacatativa.gov.co
+              </a>
+            </div>
+            
+            {/* Lado derecho - Logos de certificaciones */}
+            <div className="flex-shrink-0">
+              <img 
+                src={logoCertificaciones} 
+                alt="Certificaciones" 
+                className="h-10 object-contain"
+              />
+            </div>
           </div>
         </div>
       </CardContent>
