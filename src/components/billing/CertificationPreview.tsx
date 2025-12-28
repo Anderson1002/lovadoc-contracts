@@ -213,6 +213,44 @@ export function CertificationPreview({
     doc.text(splitPart3, xPos, yPosition);
     yPosition += splitPart3.length * 4 + 6;
     
+    // Tabla de información financiera del contrato
+    const plazoEjecucion = (() => {
+      let plazo = '';
+      if (contractDetails?.execution_period_months) plazo += `${contractDetails.execution_period_months} mes(es)`;
+      if (contractDetails?.execution_period_days) plazo += ` ${contractDetails.execution_period_days} día(s)`;
+      return plazo.trim() || 'N/A';
+    })();
+    
+    autoTable(doc, {
+      startY: yPosition,
+      body: [
+        ['VALOR INICIAL DEL CONTRATO', formatCurrency(valorInicial)],
+        ['No. CDP', contractDetails?.cdp || 'N/A'],
+        ['No. RP', contractDetails?.rp || 'N/A'],
+        ['CÓDIGO RUBRO PRESUPUESTAL', contractDetails?.budget_code || 'N/A'],
+        ['PLAZO DE EJECUCIÓN', plazoEjecucion],
+        ['OTRO SI MODIFICATORIO No.', contractDetails?.addition_number || 'N/A'],
+        ['No. CDP (Adición)', contractDetails?.addition_cdp || 'N/A'],
+        ['No. RP (Adición)', contractDetails?.addition_rp || 'N/A'],
+        ['VALOR ADICIÓN', formatCurrency(valorAdicion)],
+        ['VALOR CONTRATO INICIAL + ADICIÓN', formatCurrency(valorTotal)],
+        ['VALOR EJECUTADO ANTES DE ESTE PAGO', formatCurrency(valorAntes)],
+        ['VALOR A PAGAR', formatCurrency(valorPagoActual)],
+        ['TOTAL EJECUTADO', formatCurrency(totalEjecutado)],
+        ['SALDO POR EJECUTAR', formatCurrency(saldoPorEjecutar)],
+        ['PORCENTAJE DE EJECUTADO', `${porcentajeEjecutado.toFixed(2)}%`]
+      ],
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 2 },
+      columnStyles: { 
+        0: { cellWidth: 90, fontStyle: 'bold', fillColor: [240, 240, 240] },
+        1: { cellWidth: 90, halign: 'right' }
+      },
+      margin: { left: 14, right: 14 }
+    });
+    
+    yPosition = (doc as any).lastAutoTable.finalY + 6;
+    
     // Section 1: Services received
     doc.setFont(undefined, 'bold');
     doc.text(`1. SERVICIOS Y/O PRODUCTOS RECIBIDOS A SATISFACCIÓN CORRESPONDIENTES AL PERIODO DEL MES DE ${certificationMonth || '___'} DE ${currentYear}.`, 14, yPosition, { maxWidth: pageWidth - 28 });
@@ -416,7 +454,79 @@ export function CertificationPreview({
               cumplió a satisfacción con las actividades relacionadas con el objeto: "<strong className="uppercase">{contractObject}</strong>", 
               del Contrato de Prestación de Servicios No. {contractNumber} – {currentYear}, correspondiente al periodo del mes de <strong>{certificationMonth || '_______________'}</strong> del año {currentYear}, 
               y cumple con el pago de la Seguridad Social Integral.
-            </p>
+          </p>
+          </div>
+          
+          {/* Tabla de información financiera del contrato */}
+          <div className="my-4">
+            <table className="w-full border-collapse text-xs">
+              <tbody>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold w-1/2">VALOR INICIAL DEL CONTRATO</td>
+                  <td className="border p-1.5 text-right">{formatCurrency(valorInicial)}</td>
+                </tr>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold">No. CDP</td>
+                  <td className="border p-1.5 text-right">{contractDetails?.cdp || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold">No. RP</td>
+                  <td className="border p-1.5 text-right">{contractDetails?.rp || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold">CÓDIGO RUBRO PRESUPUESTAL</td>
+                  <td className="border p-1.5 text-right">{contractDetails?.budget_code || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold">PLAZO DE EJECUCIÓN</td>
+                  <td className="border p-1.5 text-right">
+                    {contractDetails?.execution_period_months ? `${contractDetails.execution_period_months} mes(es)` : ''}
+                    {contractDetails?.execution_period_days ? ` ${contractDetails.execution_period_days} día(s)` : ''}
+                    {!contractDetails?.execution_period_months && !contractDetails?.execution_period_days ? 'N/A' : ''}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold">OTRO SI MODIFICATORIO No.</td>
+                  <td className="border p-1.5 text-right">{contractDetails?.addition_number || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold">No. CDP (Adición)</td>
+                  <td className="border p-1.5 text-right">{contractDetails?.addition_cdp || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold">No. RP (Adición)</td>
+                  <td className="border p-1.5 text-right">{contractDetails?.addition_rp || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold">VALOR ADICIÓN</td>
+                  <td className="border p-1.5 text-right">{formatCurrency(valorAdicion)}</td>
+                </tr>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold">VALOR CONTRATO INICIAL + ADICIÓN</td>
+                  <td className="border p-1.5 text-right font-semibold">{formatCurrency(valorTotal)}</td>
+                </tr>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold">VALOR EJECUTADO ANTES DE ESTE PAGO</td>
+                  <td className="border p-1.5 text-right">{formatCurrency(valorAntes)}</td>
+                </tr>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold">VALOR A PAGAR</td>
+                  <td className="border p-1.5 text-right font-semibold text-primary">{formatCurrency(valorPagoActual)}</td>
+                </tr>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold">TOTAL EJECUTADO</td>
+                  <td className="border p-1.5 text-right font-semibold">{formatCurrency(totalEjecutado)}</td>
+                </tr>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold">SALDO POR EJECUTAR</td>
+                  <td className="border p-1.5 text-right">{formatCurrency(saldoPorEjecutar)}</td>
+                </tr>
+                <tr>
+                  <td className="border p-1.5 bg-muted font-semibold">PORCENTAJE DE EJECUTADO</td>
+                  <td className="border p-1.5 text-right font-semibold">{porcentajeEjecutado.toFixed(2)}%</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
           
           {/* Section 1: Services */}
