@@ -97,91 +97,112 @@ export function CertificationPreview({
   const handleExportPDF = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     
     // Cargar logos como base64
     const hospitalLogoBase64 = await getBase64FromUrl(logoHospital);
     const gobernacionLogoBase64 = await getBase64FromUrl(logoGobernacion);
+    const certLogoBase64 = await getBase64FromUrl(logoCertificaciones);
     
-    // Header table with logos on sides
-    autoTable(doc, {
-      startY: 10,
-      body: [[
-        { content: '', styles: { halign: 'center', minCellHeight: 28 } },
-        { content: '', styles: { halign: 'center', minCellHeight: 28 } },
-        { content: '', styles: { halign: 'center', minCellHeight: 28 } }
-      ]],
-      theme: 'grid',
-      styles: { cellPadding: 0 },
-      columnStyles: { 0: { cellWidth: 45 }, 1: { cellWidth: 100 }, 2: { cellWidth: 45 } },
-      didDrawCell: (data) => {
-        // Logo Hospital (columna izquierda)
-        if (data.row.index === 0 && data.column.index === 0) {
-          doc.addImage(hospitalLogoBase64, 'JPEG', data.cell.x + 2, data.cell.y + 4, 40, 20);
-        }
-        // Logo Gobernación (columna derecha)
-        if (data.row.index === 0 && data.column.index === 2) {
-          doc.addImage(gobernacionLogoBase64, 'JPEG', data.cell.x + 2, data.cell.y + 4, 40, 20);
-        }
-        // Tabla central con estructura de 4 filas
-        if (data.row.index === 0 && data.column.index === 1) {
-          const cellX = data.cell.x;
-          const cellY = data.cell.y;
-          const cellWidth = data.cell.width;
-          const cellHeight = data.cell.height;
-          const rowHeight = cellHeight / 4;
-          
-          doc.setFontSize(6);
-          doc.setDrawColor(0);
-          doc.setLineWidth(0.1);
-          
-          // Fila 1: Encabezados
-          doc.setFillColor(240, 240, 240);
-          doc.rect(cellX, cellY, cellWidth / 2, rowHeight, 'FD');
-          doc.rect(cellX + cellWidth / 2, cellY, cellWidth / 2, rowHeight, 'FD');
-          
-          doc.setFont(undefined, 'bold');
-          doc.text('Tipo de Documento', cellX + 2, cellY + rowHeight / 2 + 1);
-          doc.text('Proceso, Servicio o actividad que lo Genera:', cellX + cellWidth / 2 + 2, cellY + rowHeight / 2 + 1);
-          
-          // Fila 2: Valores
-          doc.setFillColor(255, 255, 255);
-          doc.rect(cellX, cellY + rowHeight, cellWidth / 2, rowHeight, 'FD');
-          doc.rect(cellX + cellWidth / 2, cellY + rowHeight, cellWidth / 2, rowHeight, 'FD');
-          
-          doc.setFont(undefined, 'normal');
-          doc.text('FORMATO', cellX + cellWidth / 4, cellY + rowHeight + rowHeight / 2 + 1, { align: 'center' });
-          doc.text('GESTIÓN JURÍDICA', cellX + cellWidth * 3 / 4, cellY + rowHeight + rowHeight / 2 + 1, { align: 'center' });
-          
-          // Fila 3: Sub-encabezados (3 columnas)
-          const col3Width = cellWidth / 3;
-          doc.setFillColor(240, 240, 240);
-          doc.rect(cellX, cellY + rowHeight * 2, col3Width, rowHeight, 'FD');
-          doc.rect(cellX + col3Width, cellY + rowHeight * 2, col3Width, rowHeight, 'FD');
-          doc.rect(cellX + col3Width * 2, cellY + rowHeight * 2, col3Width, rowHeight, 'FD');
-          
-          doc.setFont(undefined, 'bold');
-          doc.text('Nombre', cellX + col3Width / 2, cellY + rowHeight * 2 + rowHeight / 2 + 1, { align: 'center' });
-          doc.text('Código y Versión', cellX + col3Width + col3Width / 2, cellY + rowHeight * 2 + rowHeight / 2 + 1, { align: 'center' });
-          doc.text('Fecha aprobación', cellX + col3Width * 2 + col3Width / 2, cellY + rowHeight * 2 + rowHeight / 2 + 1, { align: 'center' });
-          
-          // Fila 4: Valores finales (3 columnas)
-          doc.setFillColor(255, 255, 255);
-          doc.rect(cellX, cellY + rowHeight * 3, col3Width, rowHeight, 'FD');
-          doc.rect(cellX + col3Width, cellY + rowHeight * 3, col3Width, rowHeight, 'FD');
-          doc.rect(cellX + col3Width * 2, cellY + rowHeight * 3, col3Width, rowHeight, 'FD');
-          
-          doc.setFont(undefined, 'normal');
-          doc.setFontSize(5);
-          doc.text('FORMATO INFORME', cellX + col3Width / 2, cellY + rowHeight * 3 + 3, { align: 'center' });
-          doc.text('SUPERVISOR DEL CONTRATO', cellX + col3Width / 2, cellY + rowHeight * 3 + 6, { align: 'center' });
-          doc.setFontSize(6);
-          doc.text('GJ-F-1561-V4', cellX + col3Width + col3Width / 2, cellY + rowHeight * 3 + rowHeight / 2 + 1, { align: 'center' });
-          doc.text('24/01/2025', cellX + col3Width * 2 + col3Width / 2, cellY + rowHeight * 3 + rowHeight / 2 + 1, { align: 'center' });
-        }
+    // Función para dibujar el header en cada página
+    const drawHeader = () => {
+      // Logo Hospital (izquierda)
+      doc.addImage(hospitalLogoBase64, 'JPEG', 14, 8, 35, 18);
+      
+      // Tabla central
+      const centerX = 52;
+      const centerWidth = 106;
+      const cellHeight = 7;
+      
+      doc.setFontSize(6);
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.1);
+      
+      // Fila 1: Encabezados
+      doc.setFillColor(240, 240, 240);
+      doc.rect(centerX, 8, centerWidth / 2, cellHeight, 'FD');
+      doc.rect(centerX + centerWidth / 2, 8, centerWidth / 2, cellHeight, 'FD');
+      doc.setFont(undefined, 'bold');
+      doc.text('Tipo de Documento', centerX + 2, 13);
+      doc.text('Proceso, Servicio o actividad:', centerX + centerWidth / 2 + 2, 13);
+      
+      // Fila 2: Valores
+      doc.setFillColor(255, 255, 255);
+      doc.rect(centerX, 8 + cellHeight, centerWidth / 2, cellHeight, 'FD');
+      doc.rect(centerX + centerWidth / 2, 8 + cellHeight, centerWidth / 2, cellHeight, 'FD');
+      doc.setFont(undefined, 'normal');
+      doc.text('FORMATO', centerX + centerWidth / 4, 13 + cellHeight, { align: 'center' });
+      doc.text('GESTIÓN JURÍDICA', centerX + centerWidth * 3 / 4, 13 + cellHeight, { align: 'center' });
+      
+      // Fila 3: Sub-encabezados
+      const col3Width = centerWidth / 3;
+      doc.setFillColor(240, 240, 240);
+      doc.rect(centerX, 8 + cellHeight * 2, col3Width, cellHeight, 'FD');
+      doc.rect(centerX + col3Width, 8 + cellHeight * 2, col3Width, cellHeight, 'FD');
+      doc.rect(centerX + col3Width * 2, 8 + cellHeight * 2, col3Width, cellHeight, 'FD');
+      doc.setFont(undefined, 'bold');
+      doc.text('Nombre', centerX + col3Width / 2, 13 + cellHeight * 2, { align: 'center' });
+      doc.text('Código y Versión', centerX + col3Width + col3Width / 2, 13 + cellHeight * 2, { align: 'center' });
+      doc.text('Fecha aprobación', centerX + col3Width * 2 + col3Width / 2, 13 + cellHeight * 2, { align: 'center' });
+      
+      // Fila 4: Valores finales
+      doc.setFillColor(255, 255, 255);
+      doc.rect(centerX, 8 + cellHeight * 3, col3Width, cellHeight, 'FD');
+      doc.rect(centerX + col3Width, 8 + cellHeight * 3, col3Width, cellHeight, 'FD');
+      doc.rect(centerX + col3Width * 2, 8 + cellHeight * 3, col3Width, cellHeight, 'FD');
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(5);
+      doc.text('FORMATO INFORME', centerX + col3Width / 2, 11 + cellHeight * 3, { align: 'center' });
+      doc.text('SUPERVISOR DEL CONTRATO', centerX + col3Width / 2, 14 + cellHeight * 3, { align: 'center' });
+      doc.setFontSize(6);
+      doc.text('GJ-F-1561-V4', centerX + col3Width + col3Width / 2, 13 + cellHeight * 3, { align: 'center' });
+      doc.text('24/01/2025', centerX + col3Width * 2 + col3Width / 2, 13 + cellHeight * 3, { align: 'center' });
+      
+      // Logo Gobernación (derecha)
+      doc.addImage(gobernacionLogoBase64, 'JPEG', pageWidth - 49, 8, 35, 18);
+    };
+    
+    // Función para dibujar el footer en cada página
+    const drawFooter = () => {
+      // Línea superior del footer
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.5);
+      doc.line(14, pageHeight - 18, pageWidth - 14, pageHeight - 18);
+      
+      // Texto a la izquierda
+      doc.setFontSize(7);
+      doc.setFont(undefined, 'italic');
+      doc.setTextColor(0, 0, 0);
+      doc.text('Sede Principal Carrera 2 # 1-80 Facatativá – Cundinamarca,', 14, pageHeight - 13);
+      doc.setTextColor(0, 0, 255);
+      doc.text('www.hospitalfacatativa.gov.co', 14, pageHeight - 9);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont(undefined, 'normal');
+      
+      // Logo de certificaciones a la derecha
+      doc.addImage(certLogoBase64, 'PNG', pageWidth - 60, pageHeight - 17, 45, 12);
+    };
+    
+    // Márgenes para contenido (dejando espacio para header y footer)
+    const marginTop = 38;
+    const marginBottom = 25;
+    const contentHeight = pageHeight - marginTop - marginBottom;
+    
+    // Dibujar header y footer en la primera página
+    drawHeader();
+    drawFooter();
+    
+    let yPosition = marginTop;
+    
+    // Función helper para verificar y agregar nueva página si es necesario
+    const checkNewPage = (requiredSpace: number = 20) => {
+      if (yPosition > pageHeight - marginBottom - requiredSpace) {
+        doc.addPage();
+        drawHeader();
+        drawFooter();
+        yPosition = marginTop;
       }
-    });
-    
-    let yPosition = (doc as any).lastAutoTable.finalY + 10;
+    };
     
     // Main certification title
     doc.setFontSize(9);
@@ -247,12 +268,18 @@ export function CertificationPreview({
         0: { cellWidth: 90, fontStyle: 'bold', fillColor: [240, 240, 240] },
         1: { cellWidth: 90, halign: 'right' }
       },
-      margin: { left: 14, right: 14 }
+      margin: { left: 14, right: 14, top: marginTop, bottom: marginBottom },
+      didDrawPage: () => {
+        drawHeader();
+        drawFooter();
+      }
     });
     
     yPosition = (doc as any).lastAutoTable.finalY + 6;
     
     // Section 1: Services received
+    checkNewPage(30);
+    doc.setFontSize(9);
     doc.setFont(undefined, 'bold');
     doc.text(`1. SERVICIOS Y/O PRODUCTOS RECIBIDOS A SATISFACCIÓN CORRESPONDIENTES AL PERIODO DEL MES DE ${certificationMonth || '___'} DE ${currentYear}.`, 14, yPosition, { maxWidth: pageWidth - 28 });
     yPosition += 8;
@@ -264,6 +291,7 @@ export function CertificationPreview({
     yPosition += splitSection1.length * 4 + 4;
     
     // NOTA 1
+    checkNewPage(20);
     doc.setFont(undefined, 'bold');
     doc.text('NOTA 1:', 14, yPosition);
     doc.setFont(undefined, 'normal');
@@ -273,6 +301,7 @@ export function CertificationPreview({
     yPosition += splitNota1.length * 4 + 3;
     
     // NOTA 2
+    checkNewPage(20);
     doc.setFont(undefined, 'bold');
     doc.text('NOTA 2:', 14, yPosition);
     doc.setFont(undefined, 'normal');
@@ -282,6 +311,7 @@ export function CertificationPreview({
     yPosition += splitNota2.length * 4 + 6;
     
     // Section 2: Novedades
+    checkNewPage(25);
     doc.setFont(undefined, 'bold');
     doc.text('2. NOVEDADES O SITUACIONES ANORMALES PRESENTADAS DURANTE EL DESARROLLO DEL CONTRATO.', 14, yPosition, { maxWidth: pageWidth - 28 });
     yPosition += 6;
@@ -290,13 +320,8 @@ export function CertificationPreview({
     doc.text(splitNovedades, 14, yPosition);
     yPosition += splitNovedades.length * 4 + 6;
     
-    // Check if we need a new page
-    if (yPosition > 240) {
-      doc.addPage();
-      yPosition = 20;
-    }
-    
     // Section 3: Social Security
+    checkNewPage(40);
     doc.setFont(undefined, 'bold');
     const section3Title = '3. CUMPLIMIENTO DE OBLIGACIONES DEL CONTRATISTA RELACIONADAS CON EL PAGO DE SEGURIDAD SOCIAL INTEGRAL Y APORTES PARAFISCALES';
     const splitSection3Title = doc.splitTextToSize(section3Title, pageWidth - 28);
@@ -317,6 +342,7 @@ export function CertificationPreview({
     yPosition += splitSection3.length * 4 + 6;
     
     // Section 4: Risk Matrix
+    checkNewPage(35);
     doc.setFont(undefined, 'bold');
     doc.text('4. ACTIVIDADES DE TRATAMIENTO Y MONITOREO A LA MATRIZ DE RIESGO DEL CONTRATO.', 14, yPosition, { maxWidth: pageWidth - 28 });
     yPosition += 6;
@@ -327,13 +353,8 @@ export function CertificationPreview({
     doc.text(splitSection4, 14, yPosition);
     yPosition += splitSection4.length * 4 + 6;
     
-    // Check if we need a new page
-    if (yPosition > 250) {
-      doc.addPage();
-      yPosition = 20;
-    }
-    
     // Section 5: Anexos
+    checkNewPage(25);
     doc.setFont(undefined, 'bold');
     doc.text('5. ANEXOS', 14, yPosition);
     yPosition += 6;
@@ -343,13 +364,8 @@ export function CertificationPreview({
     doc.text(splitAnexos, 14, yPosition);
     yPosition += splitAnexos.length * 4 + 15;
     
-    // Check if we need a new page for signature
-    if (yPosition > 250) {
-      doc.addPage();
-      yPosition = 20;
-    }
-    
     // Signature (only supervisor)
+    checkNewPage(30);
     doc.text('_________________________________', pageWidth / 2 - 30, yPosition);
     yPosition += 5;
     doc.setFont(undefined, 'bold');
@@ -357,28 +373,6 @@ export function CertificationPreview({
     doc.setFont(undefined, 'normal');
     yPosition += 4;
     doc.text('Supervisor del Contrato', pageWidth / 2 - 30, yPosition);
-    
-    // Footer con dirección a la izquierda y logos a la derecha
-    const certLogoBase64 = await getBase64FromUrl(logoCertificaciones);
-    yPosition += 15;
-    
-    // Línea superior del footer
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.5);
-    doc.line(14, yPosition, pageWidth - 14, yPosition);
-    yPosition += 5;
-    
-    // Texto a la izquierda
-    doc.setFontSize(7);
-    doc.setFont(undefined, 'italic');
-    doc.text('Sede Principal Carrera 2 # 1-80 Facatativá – Cundinamarca,', 14, yPosition);
-    yPosition += 3;
-    doc.setTextColor(0, 0, 255);
-    doc.text('www.hospitalfacatativa.gov.co', 14, yPosition);
-    doc.setTextColor(0, 0, 0);
-    
-    // Logo de certificaciones a la derecha
-    doc.addImage(certLogoBase64, 'PNG', pageWidth - 60, yPosition - 7, 45, 12);
     
     doc.save(`Certificacion_${contractNumber}.pdf`);
   };
