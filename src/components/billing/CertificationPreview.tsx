@@ -4,6 +4,8 @@ import { Download } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import logoHospital from "@/assets/logo-hospital.jpg";
+import logoGobernacion from "@/assets/logo-gobernacion.jpg";
 
 interface CertificationPreviewProps {
   contractDetails: any;
@@ -74,21 +76,50 @@ export function CertificationPreview({
   // Anexos por defecto
   const anexosTexto = anexosLista || '1. Informe ejecución actividades\n2. Planilla pago seguridad social';
 
+  // Función helper para convertir imagen a base64
+  const getBase64FromUrl = (url: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg'));
+      };
+      img.src = url;
+    });
+  };
+
   const handleExportPDF = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Header table (official format)
+    // Cargar logos como base64
+    const hospitalLogoBase64 = await getBase64FromUrl(logoHospital);
+    const gobernacionLogoBase64 = await getBase64FromUrl(logoGobernacion);
+    
+    // Header table (official format) with space for logos
     autoTable(doc, {
       startY: 10,
       body: [[
-        { content: 'HOSPITAL SAN RAFAEL\nDE FACATATIVÁ E.S.E.', styles: { halign: 'center', fontSize: 8, fontStyle: 'bold' } },
+        { content: '', styles: { halign: 'center', minCellHeight: 20 } },
         { content: 'TIPO DE DOCUMENTO: FORMATO\nPROCESO: GESTIÓN JURÍDICA\nNOMBRE: CERTIFICACIÓN DE CUMPLIMIENTO\nCÓDIGO: GJ-F-1561    VERSIÓN: 4\nFECHA DE APROBACIÓN: 2024-01-01', styles: { halign: 'center', fontSize: 7 } },
-        { content: 'GOBERNACIÓN DE\nCUNDINAMARCA', styles: { halign: 'center', fontSize: 8, fontStyle: 'bold' } }
+        { content: '', styles: { halign: 'center', minCellHeight: 20 } }
       ]],
       theme: 'grid',
       styles: { cellPadding: 3 },
-      columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 95 }, 2: { cellWidth: 45 } }
+      columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 95 }, 2: { cellWidth: 45 } },
+      didDrawCell: (data) => {
+        if (data.row.index === 0 && data.column.index === 0) {
+          doc.addImage(hospitalLogoBase64, 'JPEG', data.cell.x + 5, data.cell.y + 2, 40, 16);
+        }
+        if (data.row.index === 0 && data.column.index === 2) {
+          doc.addImage(gobernacionLogoBase64, 'JPEG', data.cell.x + 2, data.cell.y + 2, 40, 16);
+        }
+      }
     });
     
     let yPosition = (doc as any).lastAutoTable.finalY + 10;
@@ -270,9 +301,8 @@ export function CertificationPreview({
         <div className="border rounded-lg p-4 bg-white dark:bg-card text-sm space-y-4">
           {/* Header - Official Format */}
           <div className="grid grid-cols-3 border rounded text-center text-xs">
-            <div className="p-2 border-r">
-              <p className="font-bold">HOSPITAL SAN RAFAEL</p>
-              <p className="font-bold">DE FACATATIVÁ E.S.E.</p>
+            <div className="p-2 border-r flex items-center justify-center">
+              <img src={logoHospital} alt="Hospital San Rafael de Facatativá E.S.E." className="h-14 object-contain" />
             </div>
             <div className="p-2 border-r">
               <p>TIPO DE DOCUMENTO: FORMATO</p>
@@ -280,9 +310,8 @@ export function CertificationPreview({
               <p className="font-semibold">CERTIFICACIÓN DE CUMPLIMIENTO</p>
               <p>CÓDIGO: GJ-F-1561 VERSIÓN: 4</p>
             </div>
-            <div className="p-2">
-              <p className="font-bold">GOBERNACIÓN DE</p>
-              <p className="font-bold">CUNDINAMARCA</p>
+            <div className="p-2 flex items-center justify-center">
+              <img src={logoGobernacion} alt="Gobernación de Cundinamarca" className="h-14 object-contain" />
             </div>
           </div>
           
