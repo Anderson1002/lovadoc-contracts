@@ -108,6 +108,14 @@ export function BillingDocumentPreview({
     const tableMarginRight = marginRight + safeInset;
     const contentWidth = pageWidth - tableMarginLeft - tableMarginRight;
 
+    // “break-word” para jsPDF-AutoTable (evita que textos largos empujen la tabla fuera del margen)
+    const makePdfSafeText = (value: string) => {
+      const text = (value ?? "").toString();
+      return text.replace(/[^\s]{30,}/g, (chunk) => chunk.replace(/(.{25})/g, "$1\u200b"));
+    };
+
+    const contratoObjetoPdf = makePdfSafeText(selectedContract.description || "-");
+
     // Calculate values
     const mesNombre = format(startDate, "MMMM", { locale: es }).toUpperCase();
     const año = format(startDate, "yyyy");
@@ -169,7 +177,7 @@ export function BillingDocumentPreview({
             content: "OBJETO DEL CONTRATO",
             styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
           },
-          selectedContract.description || "-",
+          contratoObjetoPdf,
         ],
         [
           {
@@ -277,7 +285,7 @@ export function BillingDocumentPreview({
         lineColor: [0, 0, 0],
         lineWidth: 0.3,
         overflow: "linebreak",
-        cellWidth: "wrap",
+        cellWidth: "auto",
       },
       columnStyles: {
         0: { cellWidth: 60 },
@@ -322,7 +330,7 @@ export function BillingDocumentPreview({
         lineColor: [0, 0, 0],
         lineWidth: 0.3,
         overflow: "linebreak",
-        cellWidth: "wrap",
+        cellWidth: "auto",
       },
       columnStyles: {
         0: { cellWidth: 10, halign: "center" },
@@ -415,7 +423,7 @@ export function BillingDocumentPreview({
         lineColor: [0, 0, 0],
         lineWidth: 0.3,
         overflow: "linebreak",
-        cellWidth: "wrap",
+        cellWidth: "auto",
       },
       columnStyles: {
         0: { cellWidth: col0Width },
@@ -459,7 +467,7 @@ export function BillingDocumentPreview({
             lineColor: [0, 0, 0],
             lineWidth: 0.3,
             overflow: "linebreak",
-            cellWidth: "wrap",
+            cellWidth: "auto",
           },
           columnStyles: {
             0: { cellWidth: col0Width },
@@ -494,7 +502,7 @@ export function BillingDocumentPreview({
             lineColor: [0, 0, 0],
             lineWidth: 0.3,
             overflow: "linebreak",
-            cellWidth: "wrap",
+            cellWidth: "auto",
           },
           columnStyles: {
             0: { cellWidth: col0Width },
@@ -526,7 +534,7 @@ export function BillingDocumentPreview({
           lineColor: [0, 0, 0],
           lineWidth: 0.3,
           overflow: "linebreak",
-          cellWidth: "wrap",
+          cellWidth: "auto",
         },
         columnStyles: {
           0: { cellWidth: col0Width },
