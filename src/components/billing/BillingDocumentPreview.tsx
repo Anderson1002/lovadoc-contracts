@@ -153,6 +153,10 @@ export function BillingDocumentPreview({
     });
 
     // DATOS BÁSICOS DEL CONTRATO
+    // Anchos fijos (30% / 70%) para evitar que la columna de valores empuje la tabla fuera del margen.
+    const contractLabelColWidth = Math.round(contentWidth * 0.3 * 100) / 100;
+    const contractValueColWidth = Math.round((contentWidth - contractLabelColWidth) * 100) / 100;
+
     autoTable(doc, {
       startY: 35,
       margin: { left: tableMarginLeft, right: tableMarginRight },
@@ -288,8 +292,8 @@ export function BillingDocumentPreview({
         cellWidth: "auto",
       },
       columnStyles: {
-        0: { cellWidth: 60 },
-        1: { cellWidth: contentWidth - 60 },
+        0: { cellWidth: contractLabelColWidth },
+        1: { cellWidth: contractValueColWidth },
       },
     });
 
@@ -655,7 +659,7 @@ export function BillingDocumentPreview({
               <h2 className="font-bold text-center">DATOS BÁSICOS DEL CONTRATO</h2>
             </div>
             
-            <table className="w-full border-collapse">
+            <table className="datos-contrato w-full border-collapse">
               <tbody>
                 <tr>
                   <td className="border border-black p-2 font-semibold bg-gray-50 w-1/3">No. CONTRATO</td>
