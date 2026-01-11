@@ -142,15 +142,24 @@ export function BillingDocumentPreview({
 
     const formatDisplayDate = (date: Date) => format(date, "dd/MM/yyyy");
 
-    // Header
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text("INFORME DE ACTIVIDADES", pageWidth / 2, 20, { align: "center" });
-
-    doc.setFontSize(11);
-    doc.text(`PERÍODO: DEL MES DE ${mesNombre} ${año}`, pageWidth / 2, 28, {
-      align: "center",
+    // Header dentro del flujo de márgenes (no con posiciones absolutas)
+    // Usamos autoTable sin bordes para el header, así respeta tableMarginLeft/Right
+    autoTable(doc, {
+      startY: 15,
+      margin: { left: tableMarginLeft, right: tableMarginRight },
+      tableWidth: contentWidth,
+      body: [
+        [{ content: "INFORME DE ACTIVIDADES", styles: { halign: "center", fontSize: 16, fontStyle: "bold" } }],
+        [{ content: `PERÍODO: DEL MES DE ${mesNombre} ${año}`, styles: { halign: "center", fontSize: 11, fontStyle: "bold" } }],
+      ],
+      theme: "plain",
+      styles: {
+        cellPadding: 1,
+        overflow: "linebreak",
+      },
     });
+
+    const headerEndY = (doc as any).lastAutoTable?.finalY || 30;
 
     // DATOS BÁSICOS DEL CONTRATO
     // Anchos fijos (30% / 70%) para evitar que la columna de valores empuje la tabla fuera del margen.
@@ -158,7 +167,7 @@ export function BillingDocumentPreview({
     const contractValueColWidth = Math.round((contentWidth - contractLabelColWidth) * 100) / 100;
 
     autoTable(doc, {
-      startY: 35,
+      startY: headerEndY + 5,
       margin: { left: tableMarginLeft, right: tableMarginRight },
       tableWidth: contentWidth,
       head: [[
