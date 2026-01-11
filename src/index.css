@@ -137,12 +137,23 @@
 @media print {
   @page {
     size: A4;
-    margin: 2cm;
+    margin: 20mm;
   }
 
   *,
   *::before,
   *::after {
+    box-sizing: border-box;
+  }
+
+  /* Espaciador físico superior para evitar que el engine PDF ignore el margen top */
+  .pdf-top-spacer {
+    height: 20mm;
+    display: block;
+  }
+
+  .pdf-content {
+    width: 100%;
     box-sizing: border-box;
   }
 
@@ -161,4 +172,9 @@
     word-break: break-word;
     overflow-wrap: break-word;
   }
+}
+
+/* Ocultar espaciador en pantalla (solo visible en print/PDF) */
+.pdf-top-spacer {
+  display: none;
 }

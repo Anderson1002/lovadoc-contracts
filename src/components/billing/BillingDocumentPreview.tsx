@@ -651,7 +651,10 @@ export function BillingDocumentPreview({
         )}
         
         {/* Main Document - Formal Format */}
-        <div className="border-2 border-black bg-white text-black font-sans text-sm">
+        <div className="pdf-content border-2 border-black bg-white text-black font-sans text-sm">
+          {/* Espaciador físico superior para PDF (no usa margin, usa altura real) */}
+          <div className="pdf-top-spacer" aria-hidden="true"></div>
+          
           {/* Header */}
           <div className="text-center py-4 border-b-2 border-black">
             <h1 className="font-bold text-xl tracking-wide">INFORME DE ACTIVIDADES</h1>
