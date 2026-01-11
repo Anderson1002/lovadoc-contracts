@@ -98,8 +98,9 @@ export function BillingDocumentPreview({
 
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const marginLeft = 14;
-    const marginRight = 14;
+    // Usamos márgenes más amplios para garantizar que nunca “toque” el borde al exportar.
+    const marginLeft = 20;
+    const marginRight = 20;
     const contentWidth = pageWidth - marginLeft - marginRight;
     
     // Calculate values
@@ -161,7 +162,7 @@ export function BillingDocumentPreview({
         [{ content: 'SALDO POR EJECUTAR', styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }, formatCurrency(saldoPorEjecutar)],
       ],
       theme: 'grid',
-      styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3, overflow: 'linebreak' },
+      styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3, overflow: 'linebreak', cellWidth: 'wrap' },
       columnStyles: { 
         0: { cellWidth: 60 },
         1: { cellWidth: contentWidth - 60 }
@@ -190,7 +191,7 @@ export function BillingDocumentPreview({
       ]],
       body: activitiesData,
       theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3, overflow: 'linebreak' },
+      styles: { fontSize: 8, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3, overflow: 'linebreak', cellWidth: 'wrap' },
       columnStyles: { 
         0: { cellWidth: 10, halign: 'center' },
         1: { cellWidth: 40 },
@@ -240,7 +241,7 @@ export function BillingDocumentPreview({
         ],
       ],
       theme: 'grid',
-      styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3, overflow: 'linebreak' },
+      styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3, overflow: 'linebreak', cellWidth: 'wrap' },
       columnStyles: { 
         0: { cellWidth: col0Width },
         1: { cellWidth: col1Width },
@@ -274,7 +275,7 @@ export function BillingDocumentPreview({
             ],
           ],
           theme: 'grid',
-          styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3 },
+          styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3, overflow: 'linebreak', cellWidth: 'wrap' },
           columnStyles: { 
             0: { cellWidth: col0Width },
             1: { cellWidth: contentWidth - col0Width }
@@ -297,7 +298,7 @@ export function BillingDocumentPreview({
             ],
           ],
           theme: 'grid',
-          styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3 },
+          styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3, overflow: 'linebreak', cellWidth: 'wrap' },
           columnStyles: { 
             0: { cellWidth: col0Width },
             1: { cellWidth: contentWidth - col0Width }
@@ -316,7 +317,7 @@ export function BillingDocumentPreview({
           ],
         ],
         theme: 'grid',
-        styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3 },
+        styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3, overflow: 'linebreak', cellWidth: 'wrap' },
         columnStyles: { 
           0: { cellWidth: col0Width },
           1: { cellWidth: contentWidth - col0Width }
