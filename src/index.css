@@ -132,3 +132,33 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Print/PDF export hardening (A4 + no horizontal overflow) */
+@media print {
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  .datos-contrato {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  .datos-contrato td:first-child {
+    width: 30%;
+  }
+
+  .datos-contrato td:last-child {
+    width: 70%;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+}
