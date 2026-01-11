@@ -132,3 +132,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ---------- PDF export (DOM -> PDF) ----------
+   Encapsula el informe en A4 fijo para que NUNCA crezca horizontalmente por el contenido. */
+.pdf-page {
+  width: 210mm;
+  padding: 20mm;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #fff;
+  color: #000;
+}
+
+.pdf-page table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+}
+
+.pdf-page td,
+.pdf-page th {
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
