@@ -98,6 +98,9 @@ export function BillingDocumentPreview({
 
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const marginLeft = 14;
+    const marginRight = 14;
+    const contentWidth = pageWidth - marginLeft - marginRight;
     
     // Calculate values
     const mesNombre = format(startDate, 'MMMM', { locale: es }).toUpperCase();
@@ -136,6 +139,8 @@ export function BillingDocumentPreview({
     // DATOS BÁSICOS DEL CONTRATO
     autoTable(doc, {
       startY: 35,
+      margin: { left: marginLeft, right: marginRight },
+      tableWidth: contentWidth,
       head: [[{ content: 'DATOS BÁSICOS DEL CONTRATO', colSpan: 2, styles: { halign: 'center', fillColor: [200, 200, 200] } }]],
       body: [
         [{ content: 'No. CONTRATO', styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }, selectedContract.contract_number_original || selectedContract.contract_number],
@@ -156,8 +161,11 @@ export function BillingDocumentPreview({
         [{ content: 'SALDO POR EJECUTAR', styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } }, formatCurrency(saldoPorEjecutar)],
       ],
       theme: 'grid',
-      styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3 },
-      columnStyles: { 0: { cellWidth: 70 } },
+      styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3, overflow: 'linebreak' },
+      columnStyles: { 
+        0: { cellWidth: 60 },
+        1: { cellWidth: contentWidth - 60 }
+      },
     });
 
     // ACTIVIDADES
@@ -172,6 +180,8 @@ export function BillingDocumentPreview({
 
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 5,
+      margin: { left: marginLeft, right: marginRight },
+      tableWidth: contentWidth,
       head: [[
         { content: 'N°', styles: { halign: 'center', fillColor: [200, 200, 200] } },
         { content: 'ACTIVIDADES DEL CONTRATO', styles: { halign: 'center', fillColor: [200, 200, 200] } },
@@ -180,18 +190,25 @@ export function BillingDocumentPreview({
       ]],
       body: activitiesData,
       theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3 },
+      styles: { fontSize: 8, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3, overflow: 'linebreak' },
       columnStyles: { 
-        0: { cellWidth: 12, halign: 'center' },
-        1: { cellWidth: 45 },
-        2: { cellWidth: 85 },
-        3: { cellWidth: 40 }
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 40 },
+        2: { cellWidth: contentWidth - 85 },
+        3: { cellWidth: 35 }
       },
     });
 
     // DATOS BANCARIOS Y APORTES
+    const col0Width = 50;
+    const col1Width = (contentWidth - col0Width) / 3;
+    const col2Width = (contentWidth - col0Width) / 3;
+    const col3Width = (contentWidth - col0Width) / 3;
+    
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 5,
+      margin: { left: marginLeft, right: marginRight },
+      tableWidth: contentWidth,
       body: [
         [
           { content: 'NUMERO CUENTA DE AHORROS', styles: { fontStyle: 'bold', fillColor: [230, 230, 230] } },
@@ -223,8 +240,13 @@ export function BillingDocumentPreview({
         ],
       ],
       theme: 'grid',
-      styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3 },
-      columnStyles: { 0: { cellWidth: 55 } },
+      styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3, overflow: 'linebreak' },
+      columnStyles: { 
+        0: { cellWidth: col0Width },
+        1: { cellWidth: col1Width },
+        2: { cellWidth: col2Width },
+        3: { cellWidth: col3Width }
+      },
     });
 
     // FIRMA DEL CONTRATISTA
@@ -243,47 +265,62 @@ export function BillingDocumentPreview({
 
         autoTable(doc, {
           startY: signatureY,
+          margin: { left: marginLeft, right: marginRight },
+          tableWidth: contentWidth,
           body: [
             [
               { content: 'FIRMA DEL CONTRATISTA', styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } },
-              { content: '', colSpan: 3, styles: { minCellHeight: 25 } }
+              { content: '', styles: { minCellHeight: 25 } }
             ],
           ],
           theme: 'grid',
           styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3 },
-          columnStyles: { 0: { cellWidth: 55 } },
+          columnStyles: { 
+            0: { cellWidth: col0Width },
+            1: { cellWidth: contentWidth - col0Width }
+          },
         });
 
         const signatureCellY = signatureY + 5;
-        const signatureCellX = 75;
+        const signatureCellX = marginLeft + col0Width + 10;
         doc.addImage(img, 'PNG', signatureCellX, signatureCellY, 50, 18);
 
       } catch {
         autoTable(doc, {
           startY: signatureY,
+          margin: { left: marginLeft, right: marginRight },
+          tableWidth: contentWidth,
           body: [
             [
               { content: 'FIRMA DEL CONTRATISTA', styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } },
-              { content: '________________________', colSpan: 3, styles: { halign: 'center', minCellHeight: 20 } }
+              { content: '________________________', styles: { halign: 'center', minCellHeight: 20 } }
             ],
           ],
           theme: 'grid',
           styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3 },
-          columnStyles: { 0: { cellWidth: 55 } },
+          columnStyles: { 
+            0: { cellWidth: col0Width },
+            1: { cellWidth: contentWidth - col0Width }
+          },
         });
       }
     } else {
       autoTable(doc, {
         startY: signatureY,
+        margin: { left: marginLeft, right: marginRight },
+        tableWidth: contentWidth,
         body: [
           [
             { content: 'FIRMA DEL CONTRATISTA', styles: { fontStyle: 'bold', fillColor: [245, 245, 245] } },
-            { content: '________________________', colSpan: 3, styles: { halign: 'center', minCellHeight: 20 } }
+            { content: '________________________', styles: { halign: 'center', minCellHeight: 20 } }
           ],
         ],
         theme: 'grid',
         styles: { fontSize: 9, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.3 },
-        columnStyles: { 0: { cellWidth: 55 } },
+        columnStyles: { 
+          0: { cellWidth: col0Width },
+          1: { cellWidth: contentWidth - col0Width }
+        },
       });
     }
 
