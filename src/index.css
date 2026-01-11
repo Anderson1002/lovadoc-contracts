@@ -133,28 +133,47 @@
   }
 }
 
-/* PDF header table (used in preview and in print/PDF) */
-.pdf-header {
+/* PDF TABLA ÚNICA - Layout institucional (Word-like) */
+.pdf-main {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 8mm;
+  table-layout: fixed;
+}
+
+.pdf-main td:first-child {
+  width: 30%;
+}
+
+.pdf-main td:last-child {
+  width: 70%;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .pdf-title {
   text-align: center;
   font-weight: bold;
   font-size: 16px;
-  padding: 6mm 0 2mm 0;
+  padding: 10mm 0 4mm 0;
 }
 
 .pdf-periodo {
   text-align: center;
   font-weight: bold;
   font-size: 11px;
-  padding-bottom: 4mm;
+  padding-bottom: 6mm;
 }
 
-/* Print/PDF export hardening (no horizontal overflow) */
+.pdf-section {
+  background: #d9d9d9;
+  font-weight: bold;
+  text-align: center;
+  padding: 4mm 0;
+  border: 1px solid black;
+}
+
+/* Print/PDF export hardening */
 @media print {
   *,
   *::before,
@@ -162,16 +181,17 @@
     box-sizing: border-box;
   }
 
-  .datos-contrato {
-    table-layout: fixed;
+  .pdf-main {
     width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
   }
 
-  .datos-contrato td:first-child {
+  .pdf-main td:first-child {
     width: 30%;
   }
 
-  .datos-contrato td:last-child {
+  .pdf-main td:last-child {
     width: 70%;
     white-space: normal;
     word-break: break-word;

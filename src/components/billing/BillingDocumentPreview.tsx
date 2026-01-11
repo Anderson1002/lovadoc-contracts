@@ -142,170 +142,112 @@ export function BillingDocumentPreview({
 
     const formatDisplayDate = (date: Date) => format(date, "dd/MM/yyyy");
 
-    // Encabezado en TABLA (no texto suelto) para evitar que algunos visores ignoren el margen superior del primer bloque
+    // TABLA PRINCIPAL ÚNICA - Encabezado + Datos del contrato en una sola tabla (layout institucional)
+    const contractLabelColWidth = Math.round(contentWidth * 0.3 * 100) / 100;
+    const contractValueColWidth = Math.round((contentWidth - contractLabelColWidth) * 100) / 100;
+
     autoTable(doc, {
       startY: 0,
       margin: { left: tableMarginLeft, right: tableMarginRight },
       tableWidth: contentWidth,
       body: [
+        // TÍTULO
         [
           {
             content: "INFORME DE ACTIVIDADES",
+            colSpan: 2,
             styles: {
               halign: "center",
               fontStyle: "bold",
               fontSize: 16,
-              cellPadding: { top: 6, right: 0, bottom: 2, left: 0 },
+              cellPadding: { top: 10, right: 0, bottom: 4, left: 0 },
             },
           },
         ],
+        // PERÍODO
         [
           {
             content: `PERÍODO: DEL MES DE ${mesNombre} ${año}`,
+            colSpan: 2,
             styles: {
               halign: "center",
               fontStyle: "bold",
               fontSize: 11,
-              cellPadding: { top: 0, right: 0, bottom: 4, left: 0 },
+              cellPadding: { top: 0, right: 0, bottom: 6, left: 0 },
             },
           },
         ],
-      ],
-      theme: "plain",
-      styles: {
-        overflow: "linebreak",
-      },
-    });
-
-    const headerEndY = (doc as any).lastAutoTable?.finalY || 0;
-
-    // DATOS BÁSICOS DEL CONTRATO
-    // Anchos fijos (30% / 70%) para evitar que la columna de valores empuje la tabla fuera del margen.
-    const contractLabelColWidth = Math.round(contentWidth * 0.3 * 100) / 100;
-    const contractValueColWidth = Math.round((contentWidth - contractLabelColWidth) * 100) / 100;
-
-    autoTable(doc, {
-      startY: headerEndY + 8,
-      margin: { left: tableMarginLeft, right: tableMarginRight },
-      tableWidth: contentWidth,
-      head: [[
-        {
-          content: "DATOS BÁSICOS DEL CONTRATO",
-          colSpan: 2,
-          styles: { halign: "center", fillColor: [200, 200, 200] },
-        },
-      ]],
-      body: [
+        // SECCIÓN: DATOS BÁSICOS DEL CONTRATO
         [
           {
-            content: "No. CONTRATO",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+            content: "DATOS BÁSICOS DEL CONTRATO",
+            colSpan: 2,
+            styles: { halign: "center", fillColor: [200, 200, 200], fontStyle: "bold", cellPadding: 4 },
           },
+        ],
+        // Filas del contrato
+        [
+          { content: "No. CONTRATO", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           selectedContract.contract_number_original || selectedContract.contract_number,
         ],
         [
-          {
-            content: "OBJETO DEL CONTRATO",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "OBJETO DEL CONTRATO", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           contratoObjetoPdf,
         ],
         [
-          {
-            content: "NOMBRE DEL CONTRATISTA",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "NOMBRE DEL CONTRATISTA", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           userProfile.name,
         ],
         [
-          {
-            content: "No. DE IDENTIFICACIÓN",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "No. DE IDENTIFICACIÓN", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           userProfile.document_number || "-",
         ],
         [
-          {
-            content: "DIRECCIÓN",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "DIRECCIÓN", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           userProfile.address || "-",
         ],
         [
-          {
-            content: "TELÉFONO DE CONTACTO",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "TELÉFONO DE CONTACTO", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           userProfile.phone || "-",
         ],
         [
-          {
-            content: "PLAZO DE EJECUCIÓN",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "PLAZO DE EJECUCIÓN", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           plazoEjecucion,
         ],
         [
-          {
-            content: "FECHA ACTA DE INICIO",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "FECHA ACTA DE INICIO", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           formatDisplayDate(contractStartDate),
         ],
         [
-          {
-            content: "FECHA DE TERMINACIÓN",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "FECHA DE TERMINACIÓN", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           formatDisplayDate(contractEndDate),
         ],
         [
-          {
-            content: "VALOR INICIAL DEL CONTRATO",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "VALOR INICIAL DEL CONTRATO", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           formatCurrency(valorInicial),
         ],
         [
-          {
-            content: "VALOR ADICIÓN",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "VALOR ADICIÓN", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           valorAdicion > 0 ? formatCurrency(valorAdicion) : "-",
         ],
         [
-          {
-            content: "VALOR CONTRATO INICIAL + ADICIÓN",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "VALOR CONTRATO INICIAL + ADICIÓN", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           formatCurrency(valorContratoTotal),
         ],
         [
-          {
-            content: "VALOR EJECUTADO ANTES DE ESTE PAGO",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "VALOR EJECUTADO ANTES DE ESTE PAGO", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           valorEjecutadoAntes > 0 ? formatCurrency(valorEjecutadoAntes) : "-",
         ],
         [
-          {
-            content: "VALOR A PAGAR",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "VALOR A PAGAR", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           { content: formatCurrency(valorPago), styles: { fontStyle: "bold" } },
         ],
         [
-          {
-            content: "TOTAL EJECUTADO",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "TOTAL EJECUTADO", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           formatCurrency(totalEjecutado),
         ],
         [
-          {
-            content: "SALDO POR EJECUTAR",
-            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
-          },
+          { content: "SALDO POR EJECUTAR", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           formatCurrency(saldoPorEjecutar),
         ],
       ],
@@ -321,6 +263,12 @@ export function BillingDocumentPreview({
       columnStyles: {
         0: { cellWidth: contractLabelColWidth },
         1: { cellWidth: contractValueColWidth },
+      },
+      // Quitar bordes del título y período
+      didParseCell: (data) => {
+        if (data.row.index < 2) {
+          data.cell.styles.lineWidth = 0;
+        }
       },
     });
 
@@ -668,95 +616,88 @@ export function BillingDocumentPreview({
           </div>
         )}
         
-        {/* Main Document - Formal Format */}
-        <div className="border-2 border-black bg-white text-black font-sans text-sm">
-          {/* PDF header (en tabla) */}
-          <table className="pdf-header">
+        {/* Main Document - TABLA PRINCIPAL ÚNICA (layout institucional) */}
+        <div className="bg-white text-black font-sans text-sm">
+          <table className="pdf-main">
             <tbody>
+              {/* TÍTULO */}
               <tr>
-                <td className="pdf-title">INFORME DE ACTIVIDADES</td>
+                <td className="pdf-title" colSpan={2}>INFORME DE ACTIVIDADES</td>
+              </tr>
+              {/* PERÍODO */}
+              <tr>
+                <td className="pdf-periodo" colSpan={2}>PERÍODO: DEL MES DE {mesNombre} {año}</td>
+              </tr>
+              {/* SECCIÓN: DATOS BÁSICOS DEL CONTRATO */}
+              <tr>
+                <td className="pdf-section" colSpan={2}>DATOS BÁSICOS DEL CONTRATO</td>
               </tr>
               <tr>
-                <td className="pdf-periodo">PERÍODO: DEL MES DE {mesNombre} {año}</td>
+                <td className="border border-black p-2 font-semibold bg-gray-50 w-1/3">No. CONTRATO</td>
+                <td className="border border-black p-2">{selectedContract.contract_number_original || selectedContract.contract_number}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">OBJETO DEL CONTRATO</td>
+                <td className="border border-black p-2">{selectedContract.description || '-'}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">NOMBRE DEL CONTRATISTA</td>
+                <td className="border border-black p-2">{userProfile.name}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">No. DE IDENTIFICACIÓN</td>
+                <td className="border border-black p-2">{userProfile.document_number || '-'}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">DIRECCIÓN</td>
+                <td className="border border-black p-2">{userProfile.address || '-'}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">TELÉFONO DE CONTACTO</td>
+                <td className="border border-black p-2">{userProfile.phone || '-'}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">PLAZO DE EJECUCIÓN</td>
+                <td className="border border-black p-2">{plazoEjecucion}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">FECHA ACTA DE INICIO</td>
+                <td className="border border-black p-2">{formatDisplayDate(contractStartDate)}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">FECHA DE TERMINACIÓN</td>
+                <td className="border border-black p-2">{formatDisplayDate(contractEndDate)}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">VALOR INICIAL DEL CONTRATO</td>
+                <td className="border border-black p-2">{formatCurrency(valorInicial)}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">VALOR ADICIÓN</td>
+                <td className="border border-black p-2">{valorAdicion > 0 ? formatCurrency(valorAdicion) : '-'}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">VALOR CONTRATO INICIAL + ADICIÓN</td>
+                <td className="border border-black p-2">{formatCurrency(valorContratoTotal)}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">VALOR EJECUTADO ANTES DE ESTE PAGO</td>
+                <td className="border border-black p-2">{valorEjecutadoAntes > 0 ? formatCurrency(valorEjecutadoAntes) : '-'}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">VALOR A PAGAR</td>
+                <td className="border border-black p-2 font-bold">{formatCurrency(valorPago)}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">TOTAL EJECUTADO</td>
+                <td className="border border-black p-2">{formatCurrency(totalEjecutado)}</td>
+              </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">SALDO POR EJECUTAR</td>
+                <td className="border border-black p-2">{formatCurrency(saldoPorEjecutar)}</td>
               </tr>
             </tbody>
           </table>
-
-          {/* DATOS BÁSICOS DEL CONTRATO */}
-          <div className="border-b-2 border-black">
-            <div className="bg-gray-200 px-3 py-2 border-b border-black">
-              <h2 className="font-bold text-center">DATOS BÁSICOS DEL CONTRATO</h2>
-            </div>
-            
-            <table className="datos-contrato w-full border-collapse">
-              <tbody>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50 w-1/3">No. CONTRATO</td>
-                  <td className="border border-black p-2">{selectedContract.contract_number_original || selectedContract.contract_number}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">OBJETO DEL CONTRATO</td>
-                  <td className="border border-black p-2">{selectedContract.description || '-'}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">NOMBRE DEL CONTRATISTA</td>
-                  <td className="border border-black p-2">{userProfile.name}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">No. DE IDENTIFICACIÓN</td>
-                  <td className="border border-black p-2">{userProfile.document_number || '-'}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">DIRECCIÓN</td>
-                  <td className="border border-black p-2">{userProfile.address || '-'}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">TELÉFONO DE CONTACTO</td>
-                  <td className="border border-black p-2">{userProfile.phone || '-'}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">PLAZO DE EJECUCIÓN</td>
-                  <td className="border border-black p-2">{plazoEjecucion}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">FECHA ACTA DE INICIO</td>
-                  <td className="border border-black p-2">{formatDisplayDate(contractStartDate)}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">FECHA DE TERMINACIÓN</td>
-                  <td className="border border-black p-2">{formatDisplayDate(contractEndDate)}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">VALOR INICIAL DEL CONTRATO</td>
-                  <td className="border border-black p-2">{formatCurrency(valorInicial)}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">VALOR ADICIÓN</td>
-                  <td className="border border-black p-2">{valorAdicion > 0 ? formatCurrency(valorAdicion) : '-'}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">VALOR CONTRATO INICIAL + ADICIÓN</td>
-                  <td className="border border-black p-2">{formatCurrency(valorContratoTotal)}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">VALOR EJECUTADO ANTES DE ESTE PAGO</td>
-                  <td className="border border-black p-2">{valorEjecutadoAntes > 0 ? formatCurrency(valorEjecutadoAntes) : '-'}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">VALOR A PAGAR</td>
-                  <td className="border border-black p-2 font-bold">{formatCurrency(valorPago)}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">TOTAL EJECUTADO</td>
-                  <td className="border border-black p-2">{formatCurrency(totalEjecutado)}</td>
-                </tr>
-                <tr>
-                  <td className="border border-black p-2 font-semibold bg-gray-50">SALDO POR EJECUTAR</td>
-                  <td className="border border-black p-2">{formatCurrency(saldoPorEjecutar)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
 
           {/* ACTIVIDADES / ACCIONES DESARROLLADAS */}
           <div className="border-b-2 border-black">
