@@ -133,27 +133,32 @@
   }
 }
 
-/* Print/PDF export hardening (A4 + no horizontal overflow) */
-@media print {
-  @page {
-    size: A4;
-    margin: 20mm;
-  }
+/* PDF header table (used in preview and in print/PDF) */
+.pdf-header {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8mm;
+}
 
+.pdf-title {
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  padding: 6mm 0 2mm 0;
+}
+
+.pdf-periodo {
+  text-align: center;
+  font-weight: bold;
+  font-size: 11px;
+  padding-bottom: 4mm;
+}
+
+/* Print/PDF export hardening (no horizontal overflow) */
+@media print {
   *,
   *::before,
   *::after {
-    box-sizing: border-box;
-  }
-
-  /* Espaciador físico superior para evitar que el engine PDF ignore el margen top */
-  .pdf-top-spacer {
-    height: 20mm;
-    display: block;
-  }
-
-  .pdf-content {
-    width: 100%;
     box-sizing: border-box;
   }
 
@@ -174,7 +179,3 @@
   }
 }
 
-/* Ocultar espaciador en pantalla (solo visible en print/PDF) */
-.pdf-top-spacer {
-  display: none;
-}
