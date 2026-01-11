@@ -142,24 +142,42 @@ export function BillingDocumentPreview({
 
     const formatDisplayDate = (date: Date) => format(date, "dd/MM/yyyy");
 
-    // Header dentro del flujo de márgenes (no con posiciones absolutas)
-    // Usamos autoTable sin bordes para el header, así respeta tableMarginLeft/Right
+    // Encabezado en TABLA (no texto suelto) para evitar que algunos visores ignoren el margen superior del primer bloque
     autoTable(doc, {
-      startY: 15,
+      startY: 0,
       margin: { left: tableMarginLeft, right: tableMarginRight },
       tableWidth: contentWidth,
       body: [
-        [{ content: "INFORME DE ACTIVIDADES", styles: { halign: "center", fontSize: 16, fontStyle: "bold" } }],
-        [{ content: `PERÍODO: DEL MES DE ${mesNombre} ${año}`, styles: { halign: "center", fontSize: 11, fontStyle: "bold" } }],
+        [
+          {
+            content: "INFORME DE ACTIVIDADES",
+            styles: {
+              halign: "center",
+              fontStyle: "bold",
+              fontSize: 16,
+              cellPadding: { top: 6, right: 0, bottom: 2, left: 0 },
+            },
+          },
+        ],
+        [
+          {
+            content: `PERÍODO: DEL MES DE ${mesNombre} ${año}`,
+            styles: {
+              halign: "center",
+              fontStyle: "bold",
+              fontSize: 11,
+              cellPadding: { top: 0, right: 0, bottom: 4, left: 0 },
+            },
+          },
+        ],
       ],
       theme: "plain",
       styles: {
-        cellPadding: 1,
         overflow: "linebreak",
       },
     });
 
-    const headerEndY = (doc as any).lastAutoTable?.finalY || 30;
+    const headerEndY = (doc as any).lastAutoTable?.finalY || 0;
 
     // DATOS BÁSICOS DEL CONTRATO
     // Anchos fijos (30% / 70%) para evitar que la columna de valores empuje la tabla fuera del margen.
@@ -167,7 +185,7 @@ export function BillingDocumentPreview({
     const contractValueColWidth = Math.round((contentWidth - contractLabelColWidth) * 100) / 100;
 
     autoTable(doc, {
-      startY: headerEndY + 5,
+      startY: headerEndY + 8,
       margin: { left: tableMarginLeft, right: tableMarginRight },
       tableWidth: contentWidth,
       head: [[
@@ -651,19 +669,18 @@ export function BillingDocumentPreview({
         )}
         
         {/* Main Document - Formal Format */}
-        <div className="pdf-content border-2 border-black bg-white text-black font-sans text-sm">
-          {/* Espaciador físico superior para PDF (no usa margin, usa altura real) */}
-          <div className="pdf-top-spacer" aria-hidden="true"></div>
-          
-          {/* Header */}
-          <div className="text-center py-4 border-b-2 border-black">
-            <h1 className="font-bold text-xl tracking-wide">INFORME DE ACTIVIDADES</h1>
-          </div>
-          
-          {/* Period */}
-          <div className="text-center py-3 border-b-2 border-black bg-gray-50">
-            <p className="font-semibold">PERÍODO: DEL MES DE {mesNombre} {año}</p>
-          </div>
+        <div className="border-2 border-black bg-white text-black font-sans text-sm">
+          {/* PDF header (en tabla) */}
+          <table className="pdf-header">
+            <tbody>
+              <tr>
+                <td className="pdf-title">INFORME DE ACTIVIDADES</td>
+              </tr>
+              <tr>
+                <td className="pdf-periodo">PERÍODO: DEL MES DE {mesNombre} {año}</td>
+              </tr>
+            </tbody>
+          </table>
 
           {/* DATOS BÁSICOS DEL CONTRATO */}
           <div className="border-b-2 border-black">
