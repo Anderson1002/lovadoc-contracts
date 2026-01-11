@@ -1,12 +1,12 @@
-import { useRef } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import html2pdf from "html2pdf.js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Contract {
   id: string;
@@ -93,62 +93,459 @@ export function BillingDocumentPreview({
   arlFecha
 }: BillingDocumentPreviewProps) {
   
-  const reportRef = useRef<HTMLDivElement | null>(null);
-
   const handleExportPDF = async () => {
     if (!selectedContract || !startDate || !endDate) return;
 
-    const reportEl = reportRef.current;
-    if (!reportEl) return;
+    // Forzamos A4 en mm para evitar variaciones de tamaño que terminan “sacando” tablas del margen.
+    const doc = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
 
-    const mesNombreArchivo = format(startDate, "MMMM", { locale: es }).toUpperCase();
-    const añoArchivo = format(startDate, "yyyy");
-    const contractNum =
-      selectedContract.contract_number_original || selectedContract.contract_number;
+    // Márgenes visuales + un “inset” de seguridad para asegurar que NUNCA se dibuje sobre el borde.
+    const marginLeft = 20;
+    const marginRight = 20;
+    const safeInset = 2;
+    const tableMarginLeft = marginLeft + safeInset;
+    const tableMarginRight = marginRight + safeInset;
+    const contentWidth = pageWidth - tableMarginLeft - tableMarginRight;
 
-    const filename = `Informe_Actividades_${contractNum}_${mesNombreArchivo}_${añoArchivo}.pdf`;
+    // “break-word” para jsPDF-AutoTable (evita que textos largos empujen la tabla fuera del margen)
+    const makePdfSafeText = (value: string) => {
+      const text = (value ?? "").toString();
+      return text.replace(/[^\s]{30,}/g, (chunk) => chunk.replace(/(.{25})/g, "$1\u200b"));
+    };
 
-    // Clonamos el DOM del informe y lo encapsulamos en un “A4 fijo” (mm) para que el ancho imprimible
-    // sea determinístico y NUNCA se expanda por el contenido.
-    const clone = reportEl.cloneNode(true) as HTMLElement;
-    clone.classList.add("pdf-page");
-    clone.style.position = "fixed";
-    clone.style.left = "-100000px";
-    clone.style.top = "0";
+    const contratoObjetoPdf = makePdfSafeText(selectedContract.description || "-");
 
-    // En exportación a PDF (html2canvas) NO se aplican estilos @media print,
-    // así que ocultamos manualmente los elementos marcados como print:hidden.
-    clone
-      .querySelectorAll<HTMLElement>(".print\\:hidden")
-      .forEach((el) => (el.style.display = "none"));
+    // Calculate values
+    const mesNombre = format(startDate, "MMMM", { locale: es }).toUpperCase();
+    const año = format(startDate, "yyyy");
 
-    document.body.appendChild(clone);
+    const contractStartDate = selectedContract.start_date
+      ? parseLocalDate(selectedContract.start_date)
+      : startDate;
+    const contractEndDate = selectedContract.end_date
+      ? parseLocalDate(selectedContract.end_date)
+      : endDate;
 
-    try {
-      await (html2pdf() as any)
-        .set({
-          filename,
-          margin: 0,
-          // Evita escalados que alteren el ancho final.
-          html2canvas: {
-            scale: 1,
-            useCORS: true,
-            backgroundColor: "#ffffff",
+    const diffTime = Math.abs(contractEndDate.getTime() - contractStartDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffMonths = Math.ceil(diffDays / 30);
+    const plazoEjecucion = diffMonths > 1 ? `${diffMonths} MESES` : `${diffDays} DÍAS`;
+
+    const valorPago = parseFloat(amount) || 0;
+    const valorInicial = selectedContract.total_amount || 0;
+    const valorAdicion = 0;
+    const valorContratoTotal = valorInicial + valorAdicion;
+    const valorEjecutadoAntes = 0;
+    const totalEjecutado = valorEjecutadoAntes + valorPago;
+    const saldoPorEjecutar = valorContratoTotal - totalEjecutado;
+
+    const formatDisplayDate = (date: Date) => format(date, "dd/MM/yyyy");
+
+    // Header
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("INFORME DE ACTIVIDADES", pageWidth / 2, 20, { align: "center" });
+
+    doc.setFontSize(11);
+    doc.text(`PERÍODO: DEL MES DE ${mesNombre} ${año}`, pageWidth / 2, 28, {
+      align: "center",
+    });
+
+    // DATOS BÁSICOS DEL CONTRATO
+    autoTable(doc, {
+      startY: 35,
+      margin: { left: tableMarginLeft, right: tableMarginRight },
+      tableWidth: contentWidth,
+      head: [[
+        {
+          content: "DATOS BÁSICOS DEL CONTRATO",
+          colSpan: 2,
+          styles: { halign: "center", fillColor: [200, 200, 200] },
+        },
+      ]],
+      body: [
+        [
+          {
+            content: "No. CONTRATO",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
           },
-          jsPDF: {
-            unit: "mm",
-            format: "a4",
-            orientation: "p",
+          selectedContract.contract_number_original || selectedContract.contract_number,
+        ],
+        [
+          {
+            content: "OBJETO DEL CONTRATO",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
           },
-          pagebreak: {
-            mode: ["css", "legacy"],
+          contratoObjetoPdf,
+        ],
+        [
+          {
+            content: "NOMBRE DEL CONTRATISTA",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
           },
-        })
-        .from(clone)
-        .save();
-    } finally {
-      clone.remove();
+          userProfile.name,
+        ],
+        [
+          {
+            content: "No. DE IDENTIFICACIÓN",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          userProfile.document_number || "-",
+        ],
+        [
+          {
+            content: "DIRECCIÓN",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          userProfile.address || "-",
+        ],
+        [
+          {
+            content: "TELÉFONO DE CONTACTO",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          userProfile.phone || "-",
+        ],
+        [
+          {
+            content: "PLAZO DE EJECUCIÓN",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          plazoEjecucion,
+        ],
+        [
+          {
+            content: "FECHA ACTA DE INICIO",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          formatDisplayDate(contractStartDate),
+        ],
+        [
+          {
+            content: "FECHA DE TERMINACIÓN",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          formatDisplayDate(contractEndDate),
+        ],
+        [
+          {
+            content: "VALOR INICIAL DEL CONTRATO",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          formatCurrency(valorInicial),
+        ],
+        [
+          {
+            content: "VALOR ADICIÓN",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          valorAdicion > 0 ? formatCurrency(valorAdicion) : "-",
+        ],
+        [
+          {
+            content: "VALOR CONTRATO INICIAL + ADICIÓN",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          formatCurrency(valorContratoTotal),
+        ],
+        [
+          {
+            content: "VALOR EJECUTADO ANTES DE ESTE PAGO",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          valorEjecutadoAntes > 0 ? formatCurrency(valorEjecutadoAntes) : "-",
+        ],
+        [
+          {
+            content: "VALOR A PAGAR",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          { content: formatCurrency(valorPago), styles: { fontStyle: "bold" } },
+        ],
+        [
+          {
+            content: "TOTAL EJECUTADO",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          formatCurrency(totalEjecutado),
+        ],
+        [
+          {
+            content: "SALDO POR EJECUTAR",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          formatCurrency(saldoPorEjecutar),
+        ],
+      ],
+      theme: "grid",
+      styles: {
+        fontSize: 9,
+        cellPadding: 2,
+        lineColor: [0, 0, 0],
+        lineWidth: 0.3,
+        overflow: "linebreak",
+        cellWidth: "auto",
+      },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: contentWidth - 60 },
+      },
+    });
+
+    // ACTIVIDADES
+    const activitiesData =
+      activities.length > 0
+        ? activities.map((a, i) => [
+            (i + 1).toString(),
+            a.activityName,
+            a.actions,
+            a.evidences.length > 0 ? a.evidences.map((f) => f.name).join(", ") : "-",
+          ])
+        : [["1", "Sin actividades registradas", "-", "-"]];
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 5,
+      margin: { left: tableMarginLeft, right: tableMarginRight },
+      tableWidth: contentWidth,
+      head: [
+        [
+          { content: "N°", styles: { halign: "center", fillColor: [200, 200, 200] } },
+          {
+            content: "ACTIVIDADES DEL CONTRATO",
+            styles: { halign: "center", fillColor: [200, 200, 200] },
+          },
+          {
+            content: "ACCIONES DESARROLLADAS",
+            styles: { halign: "center", fillColor: [200, 200, 200] },
+          },
+          { content: "EVIDENCIAS", styles: { halign: "center", fillColor: [200, 200, 200] } },
+        ],
+      ],
+      body: activitiesData,
+      theme: "grid",
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+        lineColor: [0, 0, 0],
+        lineWidth: 0.3,
+        overflow: "linebreak",
+        cellWidth: "auto",
+      },
+      columnStyles: {
+        0: { cellWidth: 10, halign: "center" },
+        1: { cellWidth: 40 },
+        2: { cellWidth: contentWidth - 85 },
+        3: { cellWidth: 35 },
+      },
+    });
+
+    // DATOS BANCARIOS Y APORTES
+    const col0Width = 50;
+    const col1Width = (contentWidth - col0Width) / 3;
+    const col2Width = (contentWidth - col0Width) / 3;
+    const col3Width = (contentWidth - col0Width) / 3;
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 5,
+      margin: { left: tableMarginLeft, right: tableMarginRight },
+      tableWidth: contentWidth,
+      body: [
+        [
+          {
+            content: "NUMERO CUENTA DE AHORROS",
+            styles: { fontStyle: "bold", fillColor: [230, 230, 230] },
+          },
+          {
+            content: `BANCO: ${userProfile.bank_name || "-"}    NUMERO: ${userProfile.bank_account || "-"}`,
+            colSpan: 3,
+          },
+        ],
+        [
+          {
+            content: "CONCEPTO",
+            styles: { fontStyle: "bold", halign: "center", fillColor: [200, 200, 200] },
+          },
+          {
+            content: "NUMERO DE PLANILLA",
+            styles: { fontStyle: "bold", halign: "center", fillColor: [200, 200, 200] },
+          },
+          {
+            content: "VALOR",
+            styles: { fontStyle: "bold", halign: "center", fillColor: [200, 200, 200] },
+          },
+          {
+            content: "FECHA DE PAGO",
+            styles: { fontStyle: "bold", halign: "center", fillColor: [200, 200, 200] },
+          },
+        ],
+        [
+          {
+            content: "PAGO APORTES SALUD",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          { content: saludNumero || "-", styles: { halign: "center" } },
+          {
+            content: saludValor ? formatCurrency(parseFloat(saludValor)) : "-",
+            styles: { halign: "right" },
+          },
+          { content: saludFecha || "-", styles: { halign: "center" } },
+        ],
+        [
+          {
+            content: "PAGO APORTES PENSIÓN",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          { content: pensionNumero || "-", styles: { halign: "center" } },
+          {
+            content: pensionValor ? formatCurrency(parseFloat(pensionValor)) : "-",
+            styles: { halign: "right" },
+          },
+          { content: pensionFecha || "-", styles: { halign: "center" } },
+        ],
+        [
+          {
+            content: "PAGO APORTES ARL",
+            styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+          },
+          { content: arlNumero || "-", styles: { halign: "center" } },
+          {
+            content: arlValor ? formatCurrency(parseFloat(arlValor)) : "-",
+            styles: { halign: "right" },
+          },
+          { content: arlFecha || "-", styles: { halign: "center" } },
+        ],
+      ],
+      theme: "grid",
+      styles: {
+        fontSize: 9,
+        cellPadding: 2,
+        lineColor: [0, 0, 0],
+        lineWidth: 0.3,
+        overflow: "linebreak",
+        cellWidth: "auto",
+      },
+      columnStyles: {
+        0: { cellWidth: col0Width },
+        1: { cellWidth: col1Width },
+        2: { cellWidth: col2Width },
+        3: { cellWidth: col3Width },
+      },
+    });
+
+    // FIRMA DEL CONTRATISTA
+    const signatureY = (doc as any).lastAutoTable.finalY;
+
+    if (signatureUrl) {
+      try {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject();
+          img.src = signatureUrl;
+        });
+
+        autoTable(doc, {
+          startY: signatureY,
+          margin: { left: tableMarginLeft, right: tableMarginRight },
+          tableWidth: contentWidth,
+          body: [
+            [
+              {
+                content: "FIRMA DEL CONTRATISTA",
+                styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+              },
+              { content: "", styles: { minCellHeight: 25 } },
+            ],
+          ],
+          theme: "grid",
+          styles: {
+            fontSize: 9,
+            cellPadding: 2,
+            lineColor: [0, 0, 0],
+            lineWidth: 0.3,
+            overflow: "linebreak",
+            cellWidth: "auto",
+          },
+          columnStyles: {
+            0: { cellWidth: col0Width },
+            1: { cellWidth: contentWidth - col0Width },
+          },
+        });
+
+        const signatureCellY = signatureY + 5;
+        const signatureCellX = tableMarginLeft + col0Width + 10;
+        doc.addImage(img, "PNG", signatureCellX, signatureCellY, 50, 18);
+      } catch {
+        autoTable(doc, {
+          startY: signatureY,
+          margin: { left: tableMarginLeft, right: tableMarginRight },
+          tableWidth: contentWidth,
+          body: [
+            [
+              {
+                content: "FIRMA DEL CONTRATISTA",
+                styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+              },
+              {
+                content: "________________________",
+                styles: { halign: "center", minCellHeight: 20 },
+              },
+            ],
+          ],
+          theme: "grid",
+          styles: {
+            fontSize: 9,
+            cellPadding: 2,
+            lineColor: [0, 0, 0],
+            lineWidth: 0.3,
+            overflow: "linebreak",
+            cellWidth: "auto",
+          },
+          columnStyles: {
+            0: { cellWidth: col0Width },
+            1: { cellWidth: contentWidth - col0Width },
+          },
+        });
+      }
+    } else {
+      autoTable(doc, {
+        startY: signatureY,
+        margin: { left: tableMarginLeft, right: tableMarginRight },
+        tableWidth: contentWidth,
+        body: [
+          [
+            {
+              content: "FIRMA DEL CONTRATISTA",
+              styles: { fontStyle: "bold", fillColor: [245, 245, 245] },
+            },
+            {
+              content: "________________________",
+              styles: { halign: "center", minCellHeight: 20 },
+            },
+          ],
+        ],
+        theme: "grid",
+        styles: {
+          fontSize: 9,
+          cellPadding: 2,
+          lineColor: [0, 0, 0],
+          lineWidth: 0.3,
+          overflow: "linebreak",
+          cellWidth: "auto",
+        },
+        columnStyles: {
+          0: { cellWidth: col0Width },
+          1: { cellWidth: contentWidth - col0Width },
+        },
+      });
     }
+
+    // Download PDF
+    const contractNum = selectedContract.contract_number_original || selectedContract.contract_number;
+    doc.save(`Informe_Actividades_${contractNum}_${mesNombre}_${año}.pdf`);
   };
   
   if (!selectedContract || !startDate || !endDate) {
@@ -241,8 +638,7 @@ export function BillingDocumentPreview({
         )}
         
         {/* Main Document - Formal Format */}
-        <div ref={reportRef}>
-          <div className="border-2 border-black bg-white text-black font-sans text-sm">
+        <div className="border-2 border-black bg-white text-black font-sans text-sm">
           {/* Header */}
           <div className="text-center py-4 border-b-2 border-black">
             <h1 className="font-bold text-xl tracking-wide">INFORME DE ACTIVIDADES</h1>
@@ -445,7 +841,6 @@ export function BillingDocumentPreview({
                 </tr>
               </tbody>
             </table>
-          </div>
           </div>
         </div>
       </CardContent>
