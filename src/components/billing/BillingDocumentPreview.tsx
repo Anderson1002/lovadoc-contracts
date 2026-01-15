@@ -184,7 +184,13 @@ export function BillingDocumentPreview({
           {
             content: "DATOS BÁSICOS DEL CONTRATO",
             colSpan: 2,
-            styles: { halign: "center", fontStyle: "bold", cellPadding: 4 },
+            styles: {
+              halign: "center",
+              fontStyle: "bold",
+              cellPadding: 4,
+              lineWidth: 0.3,
+              lineColor: [0, 0, 0],
+            },
           },
         ],
         // Filas del contrato
