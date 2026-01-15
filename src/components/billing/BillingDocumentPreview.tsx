@@ -173,7 +173,9 @@ export function BillingDocumentPreview({
               halign: "center",
               fontStyle: "bold",
               fontSize: 11,
-              cellPadding: { top: 0, right: 0, bottom: 6, left: 0 },
+              cellPadding: { top: 4, right: 0, bottom: 4, left: 0 },
+              lineWidth: 0.3,
+              lineColor: [0, 0, 0],
             },
           },
         ],
@@ -182,7 +184,7 @@ export function BillingDocumentPreview({
           {
             content: "DATOS BÁSICOS DEL CONTRATO",
             colSpan: 2,
-            styles: { halign: "center", fillColor: [200, 200, 200], fontStyle: "bold", cellPadding: 4 },
+            styles: { halign: "center", fontStyle: "bold", cellPadding: 4 },
           },
         ],
         // Filas del contrato
@@ -626,11 +628,11 @@ export function BillingDocumentPreview({
               </tr>
               {/* PERÍODO */}
               <tr>
-                <td className="pdf-periodo" colSpan={2}>PERÍODO: DEL MES DE {mesNombre} {año}</td>
+                <td className="pdf-periodo border border-black" colSpan={2}>PERÍODO: DEL MES DE {mesNombre} {año}</td>
               </tr>
               {/* SECCIÓN: DATOS BÁSICOS DEL CONTRATO */}
               <tr>
-                <td className="pdf-section" colSpan={2}>DATOS BÁSICOS DEL CONTRATO</td>
+                <td className="pdf-section border border-black" colSpan={2}>DATOS BÁSICOS DEL CONTRATO</td>
               </tr>
               <tr>
                 <td className="border border-black p-2 font-semibold bg-gray-50 w-1/3">No. CONTRATO</td>
