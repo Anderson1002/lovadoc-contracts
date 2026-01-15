@@ -266,7 +266,7 @@ export function BillingDocumentPreview({
       theme: "grid",
       styles: {
         fontSize: 8,
-        cellPadding: 2,
+        cellPadding: 1,
         lineColor: [0, 0, 0],
         lineWidth: 0.3,
         overflow: "linebreak",
@@ -323,7 +323,7 @@ export function BillingDocumentPreview({
       theme: "grid",
       styles: {
         fontSize: 8,
-        cellPadding: 2,
+        cellPadding: 1,
         lineColor: [0, 0, 0],
         lineWidth: 0.3,
         overflow: "linebreak",
@@ -416,7 +416,7 @@ export function BillingDocumentPreview({
       theme: "grid",
       styles: {
         fontSize: 8,
-        cellPadding: 2,
+        cellPadding: 1,
         lineColor: [0, 0, 0],
         lineWidth: 0.3,
         overflow: "linebreak",
@@ -460,7 +460,7 @@ export function BillingDocumentPreview({
           theme: "grid",
           styles: {
             fontSize: 8,
-            cellPadding: 2,
+            cellPadding: 1,
             lineColor: [0, 0, 0],
             lineWidth: 0.3,
             overflow: "linebreak",
@@ -495,7 +495,7 @@ export function BillingDocumentPreview({
           theme: "grid",
           styles: {
             fontSize: 8,
-            cellPadding: 2,
+            cellPadding: 1,
             lineColor: [0, 0, 0],
             lineWidth: 0.3,
             overflow: "linebreak",
@@ -527,7 +527,7 @@ export function BillingDocumentPreview({
         theme: "grid",
         styles: {
           fontSize: 8,
-          cellPadding: 2,
+          cellPadding: 1,
           lineColor: [0, 0, 0],
           lineWidth: 0.3,
           overflow: "linebreak",
