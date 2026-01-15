@@ -281,6 +281,10 @@ export function BillingDocumentPreview({
         if (data.row.index === 0) {
           data.cell.styles.lineWidth = 0;
         }
+        // Justificar texto de OBJETO DEL CONTRATO (fila 2, columna 1)
+        if (data.row.index === 2 && data.column.index === 1) {
+          data.cell.styles.halign = 'justify';
+        }
         // Aplicar fondo gris a ambas columnas en filas de totales
         // Índices: 14 (VALOR CONTRATO+ADICIÓN), 17 (TOTAL EJECUTADO), 18 (SALDO), 19 (PORCENTAJE)
         const rowsWithGrayBg = [14, 17, 18, 19];
