@@ -263,12 +263,19 @@ export function CertificationPreview({
         ['PORCENTAJE DE EJECUTADO', `${porcentajeEjecutado.toFixed(2)}%`]
       ],
       theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2 },
+      styles: { fontSize: 10, cellPadding: 1 },
       columnStyles: { 
-        0: { cellWidth: 90, fontStyle: 'bold', fillColor: [240, 240, 240] },
+        0: { cellWidth: 90 },
         1: { cellWidth: 90, halign: 'right' }
       },
       margin: { left: 14, right: 14, top: marginTop, bottom: marginBottom },
+      didParseCell: (data) => {
+        // Aplicar fondo gris a las filas de totales: índices 9, 12, 13, 14
+        const rowsWithGrayBg = [9, 12, 13, 14];
+        if (rowsWithGrayBg.includes(data.row.index)) {
+          data.cell.styles.fillColor = [220, 220, 220];
+        }
+      },
       didDrawPage: () => {
         drawHeader();
         drawFooter();
