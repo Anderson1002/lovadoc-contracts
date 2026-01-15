@@ -718,6 +718,10 @@ export function BillingDocumentPreview({
                 <td className="border border-black p-2 font-semibold bg-gray-50">SALDO POR EJECUTAR</td>
                 <td className="border border-black p-2">{formatCurrency(saldoPorEjecutar)}</td>
               </tr>
+              <tr>
+                <td className="border border-black p-2 font-semibold bg-gray-50">PORCENTAJE DE EJECUTADO</td>
+                <td className="border border-black p-2">{valorContratoTotal > 0 ? ((totalEjecutado / valorContratoTotal) * 100).toFixed(2) : 0}%</td>
+              </tr>
             </tbody>
           </table>
 
