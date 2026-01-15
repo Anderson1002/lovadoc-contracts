@@ -237,35 +237,23 @@ export function CertificationPreview({
       }
     };
     
-    // Main certification title
+    // Main certification title (centered)
     doc.setFontSize(9);
     doc.setFont(undefined, 'bold');
-    doc.text(`El supervisor del Contrato de Prestación de Servicios No. ${contractNumber} – ${currentYear}`, contentLeftMargin, yPosition);
+    const titleText = `El supervisor del Contrato de Prestación de Servicios No. ${contractNumber} – ${currentYear}`;
+    doc.text(titleText, pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 5;
-    doc.text('CERTIFICA:', contentLeftMargin, yPosition);
+    doc.text('CERTIFICA:', pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 6;
     doc.setFont(undefined, 'normal');
     
-    // Main certification text with object in bold
-    const certPart1 = `Que ${userProfile?.name || '_______________'}, identificada(o) con la cédula de ciudadanía No. ${userProfile?.document_number || '_______________'} de ${userProfile?.document_issue_city || '_______________'}, cumplió a satisfacción con las actividades relacionadas con el objeto: "`;
-    const certPart2 = contractObject.toUpperCase();
-    const certPart3 = `", del Contrato de Prestación de Servicios No. ${contractNumber} – ${currentYear}, correspondiente al periodo del mes de ${certificationMonth || '_______________'} del año ${currentYear}, y cumple con el pago de la Seguridad Social Integral.`;
+    // Main certification text (justified) - combined as single paragraph
+    const fullCertText = `Que ${userProfile?.name || '_______________'}, identificada(o) con la cédula de ciudadanía No. ${userProfile?.document_number || '_______________'} de ${userProfile?.document_issue_city || '_______________'}, cumplió a satisfacción con las actividades relacionadas con el objeto: "${contractObject.toUpperCase()}", del Contrato de Prestación de Servicios No. ${contractNumber} – ${currentYear}, correspondiente al periodo del mes de ${certificationMonth || '_______________'} del año ${currentYear}, y cumple con el pago de la Seguridad Social Integral.`;
     
-    // Write text with bold object
     doc.setFontSize(9);
-    const splitPart1 = doc.splitTextToSize(certPart1, contentTextWidth);
-    doc.text(splitPart1, contentLeftMargin, yPosition);
-    yPosition += splitPart1.length * 4;
-    
-    doc.setFont(undefined, 'bold');
-    const splitPart2 = doc.splitTextToSize(certPart2, contentTextWidth);
-    doc.text(splitPart2, contentLeftMargin, yPosition);
-    yPosition += splitPart2.length * 4;
-    
-    doc.setFont(undefined, 'normal');
-    const splitPart3 = doc.splitTextToSize(certPart3, contentTextWidth);
-    doc.text(splitPart3, contentLeftMargin, yPosition);
-    yPosition += splitPart3.length * 4 + 6;
+    const splitCertText = doc.splitTextToSize(fullCertText, contentTextWidth);
+    doc.text(splitCertText, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
+    yPosition += splitCertText.length * 4 + 6;
     
     // Tabla de información financiera del contrato
     const plazoEjecucion = (() => {
