@@ -258,11 +258,15 @@ export function BillingDocumentPreview({
           { content: "SALDO POR EJECUTAR", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
           formatCurrency(saldoPorEjecutar),
         ],
+        [
+          { content: "PORCENTAJE DE EJECUTADO", styles: { fontStyle: "bold", fillColor: [245, 245, 245] } },
+          `${((totalEjecutado / valorContratoTotal) * 100).toFixed(2)}%`,
+        ],
       ],
       theme: "grid",
       styles: {
-        fontSize: 9,
-        cellPadding: 2,
+        fontSize: 10,
+        cellPadding: 1,
         lineColor: [0, 0, 0],
         lineWidth: 0.3,
         overflow: "linebreak",
@@ -270,12 +274,18 @@ export function BillingDocumentPreview({
       },
       columnStyles: {
         0: { cellWidth: contractLabelColWidth },
-        1: { cellWidth: contractValueColWidth },
+        1: { cellWidth: contractValueColWidth, halign: 'right' },
       },
-      // Solo quitar bordes del título (fila 0)
       didParseCell: (data) => {
+        // Quitar bordes solo del título (fila 0)
         if (data.row.index === 0) {
           data.cell.styles.lineWidth = 0;
+        }
+        // Aplicar fondo gris a ambas columnas en filas de totales
+        // Índices: 14 (VALOR CONTRATO+ADICIÓN), 17 (TOTAL EJECUTADO), 18 (SALDO), 19 (PORCENTAJE)
+        const rowsWithGrayBg = [14, 17, 18, 19];
+        if (rowsWithGrayBg.includes(data.row.index)) {
+          data.cell.styles.fillColor = [220, 220, 220];
         }
       },
     });
