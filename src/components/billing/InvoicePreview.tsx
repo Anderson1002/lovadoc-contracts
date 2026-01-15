@@ -49,13 +49,14 @@ export function InvoicePreview({
     const pageWidth = doc.internal.pageSize.getWidth();
     
     // Header
-    doc.setFontSize(12);
+    doc.setFontSize(16);
     doc.setFont(undefined, "bold");
     doc.text("CUENTA DE COBRO", pageWidth / 2, 15, { align: "center" });
+    doc.setFontSize(11);
     doc.text("DOCUMENTO EQUIVALENTE", pageWidth / 2, 22, { align: "center" });
     doc.setFont(undefined, "normal");
     
-    doc.setFontSize(10);
+    doc.setFontSize(8);
     doc.text(`No. ${invoiceNumber || '___'}`, pageWidth - 40, 15);
     
     let yPosition = 35;
@@ -83,7 +84,7 @@ export function InvoicePreview({
     yPosition = (doc as any).lastAutoTable.finalY + 10;
     
     // Amount
-    doc.setFontSize(10);
+    doc.setFontSize(8);
     doc.setFont(undefined, "bold");
     doc.text("DEBE A:", 14, yPosition);
     doc.text(userProfile?.name || "_______________", 35, yPosition);
@@ -101,7 +102,7 @@ export function InvoicePreview({
     yPosition += 15;
     
     // Declarations
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont(undefined, "bold");
     doc.text("DECLARO BAJO LA GRAVEDAD DEL JURAMENTO:", 14, yPosition);
     doc.setFont(undefined, "normal");
@@ -155,7 +156,7 @@ export function InvoicePreview({
     yPosition += splitLegal.length * 4 + 15;
     
     // Signature
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.text("_________________________________", 14, yPosition);
     yPosition += 5;
     doc.text("FIRMA DEL CONTRATISTA", 14, yPosition);
