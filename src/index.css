@@ -162,11 +162,11 @@
   text-align: center;
   font-weight: bold;
   font-size: 11px;
-  padding-bottom: 6mm;
+  padding: 4mm 0;
+  border: 1px solid black;
 }
 
 .pdf-section {
-  background: #d9d9d9;
   font-weight: bold;
   text-align: center;
   padding: 4mm 0;
