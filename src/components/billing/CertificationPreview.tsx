@@ -106,8 +106,17 @@ export function CertificationPreview({
     
     // Función para dibujar el header en cada página
     const drawHeader = () => {
-      // Logo Hospital (izquierda)
-      doc.addImage(hospitalLogoBase64, 'JPEG', 14, 8, 35, 18);
+      const logoHeight = 28; // Altura igual a la tabla central (4 filas × 7)
+      const logoWidth = 35;
+      const logoY = 8;
+      
+      // Configurar estilo de borde
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.1);
+      
+      // Logo Hospital (izquierda) con borde
+      doc.rect(14, logoY, logoWidth, logoHeight, 'S');
+      doc.addImage(hospitalLogoBase64, 'JPEG', 15, logoY + 2, 33, 24);
       
       // Tabla central
       const centerX = 52;
@@ -115,8 +124,6 @@ export function CertificationPreview({
       const cellHeight = 7;
       
       doc.setFontSize(6);
-      doc.setDrawColor(0);
-      doc.setLineWidth(0.1);
       
       // Fila 1: Encabezados
       doc.setFillColor(240, 240, 240);
@@ -158,8 +165,9 @@ export function CertificationPreview({
       doc.text('GJ-F-1561-V4', centerX + col3Width + col3Width / 2, 13 + cellHeight * 3, { align: 'center' });
       doc.text('24/01/2025', centerX + col3Width * 2 + col3Width / 2, 13 + cellHeight * 3, { align: 'center' });
       
-      // Logo Gobernación (derecha)
-      doc.addImage(gobernacionLogoBase64, 'JPEG', pageWidth - 49, 8, 35, 18);
+      // Logo Gobernación (derecha) con borde
+      doc.rect(pageWidth - 49, logoY, logoWidth, logoHeight, 'S');
+      doc.addImage(gobernacionLogoBase64, 'JPEG', pageWidth - 48, logoY + 2, 33, 24);
     };
     
     // Función para dibujar el footer en cada página
@@ -184,7 +192,7 @@ export function CertificationPreview({
     };
     
     // Márgenes para contenido (dejando espacio para header y footer)
-    const marginTop = 38;
+    const marginTop = 44;
     const marginBottom = 25;
     const contentHeight = pageHeight - marginTop - marginBottom;
     
