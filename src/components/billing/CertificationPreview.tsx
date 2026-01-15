@@ -104,70 +104,72 @@ export function CertificationPreview({
     const gobernacionLogoBase64 = await getBase64FromUrl(logoGobernacion);
     const certLogoBase64 = await getBase64FromUrl(logoCertificaciones);
     
-    // Función para dibujar el header en cada página
+    // Función para dibujar el header en cada página (tabla unificada de 3 columnas)
     const drawHeader = () => {
-      const logoHeight = 28; // Altura igual a la tabla central (4 filas × 7)
-      const logoWidth = 35;
-      const logoY = 8;
-      
-      // Configurar estilo de borde
-      doc.setDrawColor(0);
-      doc.setLineWidth(0.1);
-      
-      // Logo Hospital (izquierda) con borde
-      doc.rect(14, logoY, logoWidth, logoHeight, 'S');
-      doc.addImage(hospitalLogoBase64, 'JPEG', 15, logoY + 2, 33, 24);
-      
-      // Tabla central
-      const centerX = 52;
-      const centerWidth = 106;
+      const headerY = 8;
+      const totalHeight = 28; // 4 filas × 7mm
       const cellHeight = 7;
       
+      // Dimensiones de las 3 columnas principales
+      const logoWidth = 35;
+      const marginLeft = 14;
+      const marginRight = 14;
+      const centerStartX = marginLeft + logoWidth; // Donde empieza la tabla central
+      const centerWidth = pageWidth - marginLeft - marginRight - logoWidth * 2; // Ancho del centro
+      const rightLogoX = centerStartX + centerWidth; // Donde empieza el logo derecho
+      
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.1);
       doc.setFontSize(6);
       
+      // ===== COLUMNA IZQUIERDA: Logo Hospital (ocupa las 4 filas) =====
+      doc.rect(marginLeft, headerY, logoWidth, totalHeight, 'S');
+      doc.addImage(hospitalLogoBase64, 'JPEG', marginLeft + 1, headerY + 2, 33, 24);
+      
+      // ===== COLUMNA CENTRAL: Tabla de información =====
       // Fila 1: Encabezados
       doc.setFillColor(240, 240, 240);
-      doc.rect(centerX, 8, centerWidth / 2, cellHeight, 'FD');
-      doc.rect(centerX + centerWidth / 2, 8, centerWidth / 2, cellHeight, 'FD');
+      doc.rect(centerStartX, headerY, centerWidth / 2, cellHeight, 'FD');
+      doc.rect(centerStartX + centerWidth / 2, headerY, centerWidth / 2, cellHeight, 'FD');
       doc.setFont(undefined, 'bold');
-      doc.text('Tipo de Documento', centerX + 2, 13);
-      doc.text('Proceso, Servicio o actividad:', centerX + centerWidth / 2 + 2, 13);
+      doc.text('Tipo de Documento', centerStartX + 2, headerY + 5);
+      doc.text('Proceso, Servicio o actividad:', centerStartX + centerWidth / 2 + 2, headerY + 5);
       
       // Fila 2: Valores
       doc.setFillColor(255, 255, 255);
-      doc.rect(centerX, 8 + cellHeight, centerWidth / 2, cellHeight, 'FD');
-      doc.rect(centerX + centerWidth / 2, 8 + cellHeight, centerWidth / 2, cellHeight, 'FD');
+      doc.rect(centerStartX, headerY + cellHeight, centerWidth / 2, cellHeight, 'FD');
+      doc.rect(centerStartX + centerWidth / 2, headerY + cellHeight, centerWidth / 2, cellHeight, 'FD');
       doc.setFont(undefined, 'normal');
-      doc.text('FORMATO', centerX + centerWidth / 4, 13 + cellHeight, { align: 'center' });
-      doc.text('GESTIÓN JURÍDICA', centerX + centerWidth * 3 / 4, 13 + cellHeight, { align: 'center' });
+      doc.text('FORMATO', centerStartX + centerWidth / 4, headerY + cellHeight + 5, { align: 'center' });
+      doc.text('GESTIÓN JURÍDICA', centerStartX + centerWidth * 3 / 4, headerY + cellHeight + 5, { align: 'center' });
       
       // Fila 3: Sub-encabezados
       const col3Width = centerWidth / 3;
       doc.setFillColor(240, 240, 240);
-      doc.rect(centerX, 8 + cellHeight * 2, col3Width, cellHeight, 'FD');
-      doc.rect(centerX + col3Width, 8 + cellHeight * 2, col3Width, cellHeight, 'FD');
-      doc.rect(centerX + col3Width * 2, 8 + cellHeight * 2, col3Width, cellHeight, 'FD');
+      doc.rect(centerStartX, headerY + cellHeight * 2, col3Width, cellHeight, 'FD');
+      doc.rect(centerStartX + col3Width, headerY + cellHeight * 2, col3Width, cellHeight, 'FD');
+      doc.rect(centerStartX + col3Width * 2, headerY + cellHeight * 2, col3Width, cellHeight, 'FD');
       doc.setFont(undefined, 'bold');
-      doc.text('Nombre', centerX + col3Width / 2, 13 + cellHeight * 2, { align: 'center' });
-      doc.text('Código y Versión', centerX + col3Width + col3Width / 2, 13 + cellHeight * 2, { align: 'center' });
-      doc.text('Fecha aprobación', centerX + col3Width * 2 + col3Width / 2, 13 + cellHeight * 2, { align: 'center' });
+      doc.text('Nombre', centerStartX + col3Width / 2, headerY + cellHeight * 2 + 5, { align: 'center' });
+      doc.text('Código y Versión', centerStartX + col3Width + col3Width / 2, headerY + cellHeight * 2 + 5, { align: 'center' });
+      doc.text('Fecha aprobación', centerStartX + col3Width * 2 + col3Width / 2, headerY + cellHeight * 2 + 5, { align: 'center' });
       
       // Fila 4: Valores finales
       doc.setFillColor(255, 255, 255);
-      doc.rect(centerX, 8 + cellHeight * 3, col3Width, cellHeight, 'FD');
-      doc.rect(centerX + col3Width, 8 + cellHeight * 3, col3Width, cellHeight, 'FD');
-      doc.rect(centerX + col3Width * 2, 8 + cellHeight * 3, col3Width, cellHeight, 'FD');
+      doc.rect(centerStartX, headerY + cellHeight * 3, col3Width, cellHeight, 'FD');
+      doc.rect(centerStartX + col3Width, headerY + cellHeight * 3, col3Width, cellHeight, 'FD');
+      doc.rect(centerStartX + col3Width * 2, headerY + cellHeight * 3, col3Width, cellHeight, 'FD');
       doc.setFont(undefined, 'normal');
       doc.setFontSize(5);
-      doc.text('FORMATO INFORME', centerX + col3Width / 2, 11 + cellHeight * 3, { align: 'center' });
-      doc.text('SUPERVISOR DEL CONTRATO', centerX + col3Width / 2, 14 + cellHeight * 3, { align: 'center' });
+      doc.text('FORMATO INFORME', centerStartX + col3Width / 2, headerY + cellHeight * 3 + 3, { align: 'center' });
+      doc.text('SUPERVISOR DEL CONTRATO', centerStartX + col3Width / 2, headerY + cellHeight * 3 + 6, { align: 'center' });
       doc.setFontSize(6);
-      doc.text('GJ-F-1561-V4', centerX + col3Width + col3Width / 2, 13 + cellHeight * 3, { align: 'center' });
-      doc.text('24/01/2025', centerX + col3Width * 2 + col3Width / 2, 13 + cellHeight * 3, { align: 'center' });
+      doc.text('GJ-F-1561-V4', centerStartX + col3Width + col3Width / 2, headerY + cellHeight * 3 + 5, { align: 'center' });
+      doc.text('24/01/2025', centerStartX + col3Width * 2 + col3Width / 2, headerY + cellHeight * 3 + 5, { align: 'center' });
       
-      // Logo Gobernación (derecha) con borde
-      doc.rect(pageWidth - 49, logoY, logoWidth, logoHeight, 'S');
-      doc.addImage(gobernacionLogoBase64, 'JPEG', pageWidth - 48, logoY + 2, 33, 24);
+      // ===== COLUMNA DERECHA: Logo Gobernación (ocupa las 4 filas) =====
+      doc.rect(rightLogoX, headerY, logoWidth, totalHeight, 'S');
+      doc.addImage(gobernacionLogoBase64, 'JPEG', rightLogoX + 1, headerY + 2, 33, 24);
     };
     
     // Función para dibujar el footer en cada página
