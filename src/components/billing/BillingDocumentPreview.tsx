@@ -272,9 +272,9 @@ export function BillingDocumentPreview({
         0: { cellWidth: contractLabelColWidth },
         1: { cellWidth: contractValueColWidth },
       },
-      // Quitar bordes del título y período
+      // Solo quitar bordes del título (fila 0)
       didParseCell: (data) => {
-        if (data.row.index < 2) {
+        if (data.row.index === 0) {
           data.cell.styles.lineWidth = 0;
         }
       },
