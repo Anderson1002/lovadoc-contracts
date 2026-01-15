@@ -238,11 +238,12 @@ export function CertificationPreview({
     };
     
     // Main certification title (centered)
-    doc.setFontSize(9);
+    doc.setFontSize(16);
     doc.setFont(undefined, 'bold');
     const titleText = `El supervisor del Contrato de Prestación de Servicios No. ${contractNumber} – ${currentYear}`;
     doc.text(titleText, pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 5;
+    doc.setFontSize(11);
     doc.text('CERTIFICA:', pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 6;
     doc.setFont(undefined, 'normal');
@@ -250,7 +251,7 @@ export function CertificationPreview({
     // Main certification text (justified) - combined as single paragraph
     const fullCertText = `Que ${userProfile?.name || '_______________'}, identificada(o) con la cédula de ciudadanía No. ${userProfile?.document_number || '_______________'} de ${userProfile?.document_issue_city || '_______________'}, cumplió a satisfacción con las actividades relacionadas con el objeto: "${contractObject.toUpperCase()}", del Contrato de Prestación de Servicios No. ${contractNumber} – ${currentYear}, correspondiente al periodo del mes de ${certificationMonth || '_______________'} del año ${currentYear}, y cumple con el pago de la Seguridad Social Integral.`;
     
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     const splitCertText = doc.splitTextToSize(fullCertText, contentTextWidth);
     doc.text(splitCertText, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
     yPosition += splitCertText.length * 4 + 6;
@@ -307,7 +308,7 @@ export function CertificationPreview({
     
     // Section 1: Services received
     checkNewPage(30);
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont(undefined, 'bold');
     const section1Title = `1. SERVICIOS Y/O PRODUCTOS RECIBIDOS A SATISFACCIÓN CORRESPONDIENTES AL PERIODO DEL MES DE ${certificationMonth || '___'} DE ${currentYear}.`;
     const splitSection1Title = doc.splitTextToSize(section1Title, contentTextWidth);
@@ -360,14 +361,11 @@ export function CertificationPreview({
     doc.text(splitSection3Title, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
     yPosition += splitSection3Title.length * 4 + 2;
     
-    doc.setFontSize(8);
     doc.setFont(undefined, 'normal');
     const section3Subtitle = '(Ley 100 de 1993 y sus decretos reglamentarios, en el artículo 50 de la Ley 789 de 2002, Leyes 828 de 2003, 1122 de 2007, 1150 de 2007 y 1562 de 2012, Decretos 1072 de 2015 y 1273 de 2018 y demás normas concordantes).';
     const splitSection3Sub = doc.splitTextToSize(section3Subtitle, contentTextWidth);
     doc.text(splitSection3Sub, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
     yPosition += splitSection3Sub.length * 3 + 3;
-    
-    doc.setFontSize(9);
     const section3Text = 'Se verificó el cumplimiento de las obligaciones del contratista con los sistemas de Seguridad Social Integral en salud, pensiones y riesgos laborales, información que se puede constatar en la planilla o certificación de pago correspondiente al periodo aquí relacionado.';
     const splitSection3 = doc.splitTextToSize(section3Text, contentTextWidth);
     doc.text(splitSection3, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
