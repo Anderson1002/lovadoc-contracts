@@ -311,104 +311,20 @@ export function CertificationPreview({
     
     yPosition = (doc as any).lastAutoTable.finalY + 6;
     
-    // ===== SECCIONES CON FORMATO NUMERADO ESTILO WORD =====
-    // Indentación: número alineado a izquierda, texto con sangría francesa
-    const numberIndent = 0; // El número empieza en el margen
-    const textIndent = 8; // El texto continúa con sangría después del número
-    const hangingIndentWidth = contentTextWidth - textIndent; // Ancho disponible para texto con sangría
-    
     // Section 1: Services received
     checkNewPage(30);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    
-    // Título Sección 1 con formato de lista numerada
-    doc.text('1.', contentLeftMargin + numberIndent, yPosition);
-    const section1TitleText = `SERVICIOS Y/O PRODUCTOS RECIBIDOS A SATISFACCIÓN CORRESPONDIENTES AL PERIODO DEL MES DE ${certificationMonth || '___'} DE ${currentYear}.`;
-    const splitSection1Title = doc.splitTextToSize(section1TitleText, hangingIndentWidth);
-    splitSection1Title.forEach((line: string, idx: number) => {
-      doc.text(line, contentLeftMargin + textIndent, yPosition + (idx * 4));
-    });
-    yPosition += splitSection1Title.length * 4 + 4;
-    
-    // Texto Sección 1 con OBJETO en negrilla
+    const section1Title = `1. SERVICIOS Y/O PRODUCTOS RECIBIDOS A SATISFACCIÓN CORRESPONDIENTES AL PERIODO DEL MES DE ${certificationMonth || '___'} DE ${currentYear}.`;
+    const splitSection1Title = doc.splitTextToSize(section1Title, contentTextWidth);
+    doc.text(splitSection1Title, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
+    yPosition += splitSection1Title.length * 4.5 + 4;
     doc.setFont('helvetica', 'normal');
-    const section1Part1 = 'Las actividades desarrolladas por el contratista en el periodo descrito anteriormente, relacionadas con cada una de las actividades específicas establecidas en los estudios previos y del contrato cuyo objeto es: ';
-    const section1ObjectText = contractObject.toUpperCase();
-    const section1Part2 = ', se verifica el cumplimiento a satisfacción de la obligación establecida.';
     
-    // Combinar texto con objeto en negrilla usando tabla
-    autoTable(doc, {
-      startY: yPosition,
-      margin: { left: contentLeftMargin, right: contentRightMargin },
-      body: [[{ content: section1Part1 + section1ObjectText + section1Part2, styles: { fontSize: 10 } }]],
-      theme: 'plain',
-      styles: { cellPadding: 0, font: 'helvetica' },
-      didParseCell: (data) => {
-        // Para aplicar negrilla solo al objeto, usamos didDrawCell
-      },
-      didDrawCell: (data) => {
-        if (data.section === 'body' && data.row.index === 0) {
-          // Redibujar la celda con formato mixto
-          const cell = data.cell;
-          const cellX = cell.x;
-          const cellY = cell.y + 3.5; // Ajuste vertical
-          const cellWidth = cell.width;
-          
-          // Limpiar el contenido anterior
-          doc.setFillColor(255, 255, 255);
-          doc.rect(cellX, cell.y, cellWidth, cell.height, 'F');
-          
-          // Calcular el texto con wrapping manual
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'normal');
-          
-          const fullText = section1Part1 + '**' + section1ObjectText + '**' + section1Part2;
-          let currentY = cellY;
-          
-          // Dividir en líneas considerando el ancho
-          const words = (section1Part1 + section1ObjectText + section1Part2).split(' ');
-          let currentLine = '';
-          let lines: {text: string, bold: boolean}[][] = [[]];
-          let lineIndex = 0;
-          let charCount = 0;
-          const part1Length = section1Part1.length;
-          const objectLength = section1ObjectText.length;
-          
-          words.forEach((word, wordIdx) => {
-            const testLine = currentLine + (currentLine ? ' ' : '') + word;
-            const testWidth = doc.getTextWidth(testLine);
-            
-            if (testWidth > cellWidth - 2 && currentLine) {
-              lineIndex++;
-              lines[lineIndex] = [];
-              currentLine = word;
-            } else {
-              currentLine = testLine;
-            }
-            
-            // Determinar si esta palabra está en la parte del objeto
-            const wordStart = charCount;
-            const wordEnd = charCount + word.length;
-            charCount += word.length + 1; // +1 por el espacio
-            
-            const isInObject = wordStart >= part1Length && wordEnd <= part1Length + objectLength + 1;
-            lines[lineIndex].push({ text: word, bold: isInObject });
-          });
-          
-          // Dibujar cada línea
-          lines.forEach((lineWords, lIdx) => {
-            let xPos = cellX;
-            lineWords.forEach((wordObj, wIdx) => {
-              doc.setFont('helvetica', wordObj.bold ? 'bold' : 'normal');
-              doc.text(wordObj.text, xPos, currentY + (lIdx * 4));
-              xPos += doc.getTextWidth(wordObj.text + ' ');
-            });
-          });
-        }
-      }
-    });
-    yPosition = (doc as any).lastAutoTable.finalY + 4;
+    const section1Text = `Las actividades desarrolladas por el contratista en el periodo descrito anteriormente, relacionadas con cada una de las actividades específicas establecidas en los estudios previos y del contrato se verifica el cumplimiento a satisfacción de la obligación establecida.`;
+    const splitSection1 = doc.splitTextToSize(section1Text, contentTextWidth);
+    doc.text(splitSection1, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
+    yPosition += splitSection1.length * 4.5 + 4;
     
     // NOTA 1
     checkNewPage(20);
@@ -433,13 +349,10 @@ export function CertificationPreview({
     // Section 2: Novedades
     checkNewPage(25);
     doc.setFont('helvetica', 'bold');
-    doc.text('2.', contentLeftMargin + numberIndent, yPosition);
-    const section2TitleText = 'NOVEDADES O SITUACIONES ANORMALES PRESENTADAS DURANTE EL DESARROLLO DEL CONTRATO.';
-    const splitSection2Title = doc.splitTextToSize(section2TitleText, hangingIndentWidth);
-    splitSection2Title.forEach((line: string, idx: number) => {
-      doc.text(line, contentLeftMargin + textIndent, yPosition + (idx * 4));
-    });
-    yPosition += splitSection2Title.length * 4 + 2;
+    const section2Title = '2. NOVEDADES O SITUACIONES ANORMALES PRESENTADAS DURANTE EL DESARROLLO DEL CONTRATO.';
+    const splitSection2Title = doc.splitTextToSize(section2Title, contentTextWidth);
+    doc.text(splitSection2Title, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
+    yPosition += splitSection2Title.length * 4.5 + 2;
     doc.setFont('helvetica', 'normal');
     const splitNovedades = doc.splitTextToSize(novedadesTexto, contentTextWidth);
     doc.text(splitNovedades, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
@@ -448,15 +361,16 @@ export function CertificationPreview({
     // Section 3: Social Security
     checkNewPage(40);
     doc.setFont('helvetica', 'bold');
-    doc.text('3.', contentLeftMargin + numberIndent, yPosition);
-    const section3TitleText = 'CUMPLIMIENTO DE OBLIGACIONES DEL CONTRATISTA RELACIONADAS CON EL PAGO DE SEGURIDAD SOCIAL INTEGRAL Y APORTES PARAFISCALES (Ley 100 de 1993 y sus decretos reglamentarios, en el artículo 50 de la Ley 789 de 2002, Leyes 828 de 2003, 1122 de 2007, 1150 de 2007 y 1562 de 2012, Decretos 1072 de 2015 y 1273 de 2018 y demás normas concordantes).';
-    const splitSection3Title = doc.splitTextToSize(section3TitleText, hangingIndentWidth);
-    splitSection3Title.forEach((line: string, idx: number) => {
-      doc.text(line, contentLeftMargin + textIndent, yPosition + (idx * 4));
-    });
-    yPosition += splitSection3Title.length * 4 + 3;
+    const section3Title = '3. CUMPLIMIENTO DE OBLIGACIONES DEL CONTRATISTA RELACIONADAS CON EL PAGO DE SEGURIDAD SOCIAL INTEGRAL Y APORTES PARAFISCALES';
+    const splitSection3Title = doc.splitTextToSize(section3Title, contentTextWidth);
+    doc.text(splitSection3Title, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
+    yPosition += splitSection3Title.length * 4.5 + 2;
     
     doc.setFont('helvetica', 'normal');
+    const section3Subtitle = '(Ley 100 de 1993 y sus decretos reglamentarios, en el artículo 50 de la Ley 789 de 2002, Leyes 828 de 2003, 1122 de 2007, 1150 de 2007 y 1562 de 2012, Decretos 1072 de 2015 y 1273 de 2018 y demás normas concordantes).';
+    const splitSection3Sub = doc.splitTextToSize(section3Subtitle, contentTextWidth);
+    doc.text(splitSection3Sub, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
+    yPosition += splitSection3Sub.length * 4 + 3;
     const section3Text = 'Se verificó el cumplimiento de las obligaciones del contratista con los sistemas de Seguridad Social Integral en salud, pensiones y riesgos laborales, información que se puede constatar en la planilla o certificación de pago correspondiente al periodo aquí relacionado.';
     const splitSection3 = doc.splitTextToSize(section3Text, contentTextWidth);
     doc.text(splitSection3, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
@@ -465,13 +379,10 @@ export function CertificationPreview({
     // Section 4: Risk Matrix
     checkNewPage(35);
     doc.setFont('helvetica', 'bold');
-    doc.text('4.', contentLeftMargin + numberIndent, yPosition);
-    const section4TitleText = 'ACTIVIDADES DE TRATAMIENTO Y MONITOREO A LA MATRIZ DE RIESGO DEL CONTRATO.';
-    const splitSection4Title = doc.splitTextToSize(section4TitleText, hangingIndentWidth);
-    splitSection4Title.forEach((line: string, idx: number) => {
-      doc.text(line, contentLeftMargin + textIndent, yPosition + (idx * 4));
-    });
-    yPosition += splitSection4Title.length * 4 + 2;
+    const section4Title = '4. ACTIVIDADES DE TRATAMIENTO Y MONITOREO A LA MATRIZ DE RIESGO DEL CONTRATO.';
+    const splitSection4Title = doc.splitTextToSize(section4Title, contentTextWidth);
+    doc.text(splitSection4Title, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
+    yPosition += splitSection4Title.length * 4.5 + 2;
     doc.setFont('helvetica', 'normal');
     
     const section4Text = 'Se ha realizado el monitoreo por parte de la supervisión, de acuerdo con el tratamiento y/o control de los riesgos establecido en la matriz de los estudios previos del contrato, evidenciándose que no hay materialización de los mismos. Lo anterior se verifica a través del informe mensual de actividades del contratista de acuerdo con las obligaciones específicas pactadas, las cuales han tenido satisfactorio cumplimiento a la fecha.';
