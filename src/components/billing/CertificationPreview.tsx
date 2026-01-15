@@ -237,12 +237,16 @@ export function CertificationPreview({
       }
     };
     
-    // Main certification title (centered)
+    // Main certification title (centered) - split to handle long text
     doc.setFontSize(16);
     doc.setFont(undefined, 'bold');
     const titleText = `El supervisor del Contrato de Prestación de Servicios No. ${contractNumber} – ${currentYear}`;
-    doc.text(titleText, pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 5;
+    const splitTitle = doc.splitTextToSize(titleText, contentTextWidth);
+    splitTitle.forEach((line: string, index: number) => {
+      doc.text(line, pageWidth / 2, yPosition + (index * 6), { align: 'center' });
+    });
+    yPosition += splitTitle.length * 6 + 2;
+    
     doc.setFontSize(11);
     doc.text('CERTIFICA:', pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 6;
