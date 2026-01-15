@@ -96,6 +96,7 @@ export function CertificationPreview({
 
   const handleExportPDF = async () => {
     const doc = new jsPDF();
+    doc.setFont('helvetica'); // Equivalente visual a Arial
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
@@ -238,27 +239,27 @@ export function CertificationPreview({
     };
     
     // Main certification title (centered) - split to handle long text
-    doc.setFontSize(16);
-    doc.setFont(undefined, 'bold');
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
     const titleText = `El supervisor del Contrato de Prestación de Servicios No. ${contractNumber} – ${currentYear}`;
     const splitTitle = doc.splitTextToSize(titleText, contentTextWidth);
     splitTitle.forEach((line: string, index: number) => {
-      doc.text(line, pageWidth / 2, yPosition + (index * 6), { align: 'center' });
+      doc.text(line, pageWidth / 2, yPosition + (index * 4), { align: 'center' });
     });
-    yPosition += splitTitle.length * 6 + 2;
+    yPosition += splitTitle.length * 4 + 2;
     
-    doc.setFontSize(11);
+    doc.setFontSize(10);
     doc.text('CERTIFICA:', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 6;
-    doc.setFont(undefined, 'normal');
+    yPosition += 5;
+    doc.setFont('helvetica', 'normal');
     
     // Main certification text (justified) - combined as single paragraph
     const fullCertText = `Que ${userProfile?.name || '_______________'}, identificada(o) con la cédula de ciudadanía No. ${userProfile?.document_number || '_______________'} de ${userProfile?.document_issue_city || '_______________'}, cumplió a satisfacción con las actividades relacionadas con el objeto: "${contractObject.toUpperCase()}", del Contrato de Prestación de Servicios No. ${contractNumber} – ${currentYear}, correspondiente al periodo del mes de ${certificationMonth || '_______________'} del año ${currentYear}, y cumple con el pago de la Seguridad Social Integral.`;
     
-    doc.setFontSize(8);
+    doc.setFontSize(10);
     const splitCertText = doc.splitTextToSize(fullCertText, contentTextWidth);
     doc.text(splitCertText, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
-    yPosition += splitCertText.length * 4 + 6;
+    yPosition += splitCertText.length * 4.5 + 6;
     
     // Tabla de información financiera del contrato
     const plazoEjecucion = (() => {
@@ -288,7 +289,7 @@ export function CertificationPreview({
         ['PORCENTAJE DE EJECUTADO', `${porcentajeEjecutado.toFixed(2)}%`]
       ],
       theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 1 },
+      styles: { fontSize: 10, cellPadding: 1.5, font: 'helvetica' },
       columnStyles: { 
         0: { cellWidth: (contentTextWidth / 2) },
         1: { cellWidth: (contentTextWidth / 2), halign: 'right' }
@@ -312,102 +313,102 @@ export function CertificationPreview({
     
     // Section 1: Services received
     checkNewPage(30);
-    doc.setFontSize(8);
-    doc.setFont(undefined, 'bold');
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
     const section1Title = `1. SERVICIOS Y/O PRODUCTOS RECIBIDOS A SATISFACCIÓN CORRESPONDIENTES AL PERIODO DEL MES DE ${certificationMonth || '___'} DE ${currentYear}.`;
     const splitSection1Title = doc.splitTextToSize(section1Title, contentTextWidth);
     doc.text(splitSection1Title, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
-    yPosition += splitSection1Title.length * 4 + 4;
-    doc.setFont(undefined, 'normal');
+    yPosition += splitSection1Title.length * 4.5 + 4;
+    doc.setFont('helvetica', 'normal');
     
     const section1Text = `Las actividades desarrolladas por el contratista en el periodo descrito anteriormente, relacionadas con cada una de las actividades específicas establecidas en los estudios previos y del contrato se verifica el cumplimiento a satisfacción de la obligación establecida.`;
     const splitSection1 = doc.splitTextToSize(section1Text, contentTextWidth);
     doc.text(splitSection1, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
-    yPosition += splitSection1.length * 4 + 4;
+    yPosition += splitSection1.length * 4.5 + 4;
     
     // NOTA 1
     checkNewPage(20);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text('NOTA 1:', contentLeftMargin, yPosition);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     const nota1Text = `Forma parte del presente documento el informe de actividades previamente entregado por el contratista el ${formatDateShort(reportDeliveryDate)} el cual deberá contener como mínimo: 1. Detalle del cumplimiento de cada una de las obligaciones con sus debidos soportes y evidencias.`;
     const splitNota1 = doc.splitTextToSize(nota1Text, contentTextWidth - 18);
     doc.text(splitNota1, contentLeftMargin + 18, yPosition, { align: 'justify', maxWidth: contentTextWidth - 18 });
-    yPosition += splitNota1.length * 4 + 3;
+    yPosition += splitNota1.length * 4.5 + 3;
     
     // NOTA 2
     checkNewPage(20);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text('NOTA 2:', contentLeftMargin, yPosition);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     const nota2Text = `El informe de ejecución del contratista junto con los soportes del caso deben reposar igualmente en el expediente contractual electrónico. Si existen entregables físicos deberán reposar en la carpeta contractual.`;
     const splitNota2 = doc.splitTextToSize(nota2Text, contentTextWidth - 18);
     doc.text(splitNota2, contentLeftMargin + 18, yPosition, { align: 'justify', maxWidth: contentTextWidth - 18 });
-    yPosition += splitNota2.length * 4 + 6;
+    yPosition += splitNota2.length * 4.5 + 6;
     
     // Section 2: Novedades
     checkNewPage(25);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     const section2Title = '2. NOVEDADES O SITUACIONES ANORMALES PRESENTADAS DURANTE EL DESARROLLO DEL CONTRATO.';
     const splitSection2Title = doc.splitTextToSize(section2Title, contentTextWidth);
     doc.text(splitSection2Title, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
-    yPosition += splitSection2Title.length * 4 + 2;
-    doc.setFont(undefined, 'normal');
+    yPosition += splitSection2Title.length * 4.5 + 2;
+    doc.setFont('helvetica', 'normal');
     const splitNovedades = doc.splitTextToSize(novedadesTexto, contentTextWidth);
     doc.text(splitNovedades, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
-    yPosition += splitNovedades.length * 4 + 6;
+    yPosition += splitNovedades.length * 4.5 + 6;
     
     // Section 3: Social Security
     checkNewPage(40);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     const section3Title = '3. CUMPLIMIENTO DE OBLIGACIONES DEL CONTRATISTA RELACIONADAS CON EL PAGO DE SEGURIDAD SOCIAL INTEGRAL Y APORTES PARAFISCALES';
     const splitSection3Title = doc.splitTextToSize(section3Title, contentTextWidth);
     doc.text(splitSection3Title, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
-    yPosition += splitSection3Title.length * 4 + 2;
+    yPosition += splitSection3Title.length * 4.5 + 2;
     
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     const section3Subtitle = '(Ley 100 de 1993 y sus decretos reglamentarios, en el artículo 50 de la Ley 789 de 2002, Leyes 828 de 2003, 1122 de 2007, 1150 de 2007 y 1562 de 2012, Decretos 1072 de 2015 y 1273 de 2018 y demás normas concordantes).';
     const splitSection3Sub = doc.splitTextToSize(section3Subtitle, contentTextWidth);
     doc.text(splitSection3Sub, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
-    yPosition += splitSection3Sub.length * 3 + 3;
+    yPosition += splitSection3Sub.length * 4 + 3;
     const section3Text = 'Se verificó el cumplimiento de las obligaciones del contratista con los sistemas de Seguridad Social Integral en salud, pensiones y riesgos laborales, información que se puede constatar en la planilla o certificación de pago correspondiente al periodo aquí relacionado.';
     const splitSection3 = doc.splitTextToSize(section3Text, contentTextWidth);
     doc.text(splitSection3, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
-    yPosition += splitSection3.length * 4 + 6;
+    yPosition += splitSection3.length * 4.5 + 6;
     
     // Section 4: Risk Matrix
     checkNewPage(35);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     const section4Title = '4. ACTIVIDADES DE TRATAMIENTO Y MONITOREO A LA MATRIZ DE RIESGO DEL CONTRATO.';
     const splitSection4Title = doc.splitTextToSize(section4Title, contentTextWidth);
     doc.text(splitSection4Title, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
-    yPosition += splitSection4Title.length * 4 + 2;
-    doc.setFont(undefined, 'normal');
+    yPosition += splitSection4Title.length * 4.5 + 2;
+    doc.setFont('helvetica', 'normal');
     
     const section4Text = 'Se ha realizado el monitoreo por parte de la supervisión, de acuerdo con el tratamiento y/o control de los riesgos establecido en la matriz de los estudios previos del contrato, evidenciándose que no hay materialización de los mismos. Lo anterior se verifica a través del informe mensual de actividades del contratista de acuerdo con las obligaciones específicas pactadas, las cuales han tenido satisfactorio cumplimiento a la fecha.';
     const splitSection4 = doc.splitTextToSize(section4Text, contentTextWidth);
     doc.text(splitSection4, contentLeftMargin, yPosition, { align: 'justify', maxWidth: contentTextWidth });
-    yPosition += splitSection4.length * 4 + 6;
+    yPosition += splitSection4.length * 4.5 + 6;
     
     // Section 5: Anexos
     checkNewPage(25);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text('5. ANEXOS', contentLeftMargin, yPosition);
-    yPosition += 6;
-    doc.setFont(undefined, 'normal');
+    yPosition += 5;
+    doc.setFont('helvetica', 'normal');
     
     const splitAnexos = doc.splitTextToSize(anexosTexto, contentTextWidth);
     doc.text(splitAnexos, contentLeftMargin, yPosition);
-    yPosition += splitAnexos.length * 4 + 15;
+    yPosition += splitAnexos.length * 4.5 + 15;
     
     // Signature (only supervisor)
     checkNewPage(30);
     const signatureX = contentBoxX + contentBoxWidth / 2 - 25;
     doc.text('_________________________________', signatureX, yPosition);
     yPosition += 5;
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text(supervisorName || 'SUPERVISOR DEL CONTRATO', signatureX, yPosition);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     yPosition += 4;
     doc.text('Supervisor del Contrato', signatureX, yPosition);
     yPosition += 8;
