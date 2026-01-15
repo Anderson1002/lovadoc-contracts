@@ -132,7 +132,7 @@ export function CertificationPreview({
       doc.setFillColor(240, 240, 240);
       doc.rect(centerStartX, headerY, centerWidth / 2, cellHeight, 'FD');
       doc.rect(centerStartX + centerWidth / 2, headerY, centerWidth / 2, cellHeight, 'FD');
-      doc.setFont(undefined, 'bold');
+      doc.setFont('helvetica', 'bold');
       doc.text('Tipo de Documento', centerStartX + 2, headerY + 5);
       doc.text('Proceso, Servicio o actividad:', centerStartX + centerWidth / 2 + 2, headerY + 5);
       
@@ -140,7 +140,7 @@ export function CertificationPreview({
       doc.setFillColor(255, 255, 255);
       doc.rect(centerStartX, headerY + cellHeight, centerWidth / 2, cellHeight, 'FD');
       doc.rect(centerStartX + centerWidth / 2, headerY + cellHeight, centerWidth / 2, cellHeight, 'FD');
-      doc.setFont(undefined, 'normal');
+      doc.setFont('helvetica', 'normal');
       doc.text('FORMATO', centerStartX + centerWidth / 4, headerY + cellHeight + 5, { align: 'center' });
       doc.text('GESTIÓN JURÍDICA', centerStartX + centerWidth * 3 / 4, headerY + cellHeight + 5, { align: 'center' });
       
@@ -150,7 +150,7 @@ export function CertificationPreview({
       doc.rect(centerStartX, headerY + cellHeight * 2, col3Width, cellHeight, 'FD');
       doc.rect(centerStartX + col3Width, headerY + cellHeight * 2, col3Width, cellHeight, 'FD');
       doc.rect(centerStartX + col3Width * 2, headerY + cellHeight * 2, col3Width, cellHeight, 'FD');
-      doc.setFont(undefined, 'bold');
+      doc.setFont('helvetica', 'bold');
       doc.text('Nombre', centerStartX + col3Width / 2, headerY + cellHeight * 2 + 5, { align: 'center' });
       doc.text('Código y Versión', centerStartX + col3Width + col3Width / 2, headerY + cellHeight * 2 + 5, { align: 'center' });
       doc.text('Fecha aprobación', centerStartX + col3Width * 2 + col3Width / 2, headerY + cellHeight * 2 + 5, { align: 'center' });
@@ -160,7 +160,7 @@ export function CertificationPreview({
       doc.rect(centerStartX, headerY + cellHeight * 3, col3Width, cellHeight, 'FD');
       doc.rect(centerStartX + col3Width, headerY + cellHeight * 3, col3Width, cellHeight, 'FD');
       doc.rect(centerStartX + col3Width * 2, headerY + cellHeight * 3, col3Width, cellHeight, 'FD');
-      doc.setFont(undefined, 'normal');
+      doc.setFont('helvetica', 'normal');
       doc.setFontSize(5);
       doc.text('FORMATO INFORME', centerStartX + col3Width / 2, headerY + cellHeight * 3 + 3, { align: 'center' });
       doc.text('SUPERVISOR DEL CONTRATO', centerStartX + col3Width / 2, headerY + cellHeight * 3 + 6, { align: 'center' });
@@ -182,13 +182,13 @@ export function CertificationPreview({
       
       // Texto a la izquierda
       doc.setFontSize(7);
-      doc.setFont(undefined, 'italic');
+      doc.setFont('helvetica', 'italic');
       doc.setTextColor(0, 0, 0);
       doc.text('Sede Principal Carrera 2 # 1-80 Facatativá – Cundinamarca,', 14, pageHeight - 13);
       doc.setTextColor(0, 0, 255);
       doc.text('www.hospitalfacatativa.gov.co', 14, pageHeight - 9);
       doc.setTextColor(0, 0, 0);
-      doc.setFont(undefined, 'normal');
+      doc.setFont('helvetica', 'normal');
       
       // Logo de certificaciones a la derecha
       doc.addImage(certLogoBase64, 'PNG', pageWidth - 60, pageHeight - 17, 45, 12);
