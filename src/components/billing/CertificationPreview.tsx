@@ -348,6 +348,7 @@ export function CertificationPreview({
     
     // Section 2: Novedades
     checkNewPage(25);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     const section2Title = '2. NOVEDADES O SITUACIONES ANORMALES PRESENTADAS DURANTE EL DESARROLLO DEL CONTRATO.';
     const splitSection2Title = doc.splitTextToSize(section2Title, contentTextWidth);
@@ -360,6 +361,7 @@ export function CertificationPreview({
     
     // Section 3: Social Security
     checkNewPage(40);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     const section3Title = '3. CUMPLIMIENTO DE OBLIGACIONES DEL CONTRATISTA RELACIONADAS CON EL PAGO DE SEGURIDAD SOCIAL INTEGRAL Y APORTES PARAFISCALES';
     const splitSection3Title = doc.splitTextToSize(section3Title, contentTextWidth);
@@ -378,6 +380,7 @@ export function CertificationPreview({
     
     // Section 4: Risk Matrix
     checkNewPage(35);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     const section4Title = '4. ACTIVIDADES DE TRATAMIENTO Y MONITOREO A LA MATRIZ DE RIESGO DEL CONTRATO.';
     const splitSection4Title = doc.splitTextToSize(section4Title, contentTextWidth);
@@ -392,6 +395,7 @@ export function CertificationPreview({
     
     // Section 5: Anexos
     checkNewPage(25);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text('5. ANEXOS', contentLeftMargin, yPosition);
     yPosition += 5;
@@ -403,6 +407,7 @@ export function CertificationPreview({
     
     // Signature (only supervisor)
     checkNewPage(30);
+    doc.setFontSize(10);
     const signatureX = contentBoxX + contentBoxWidth / 2 - 25;
     doc.text('_________________________________', signatureX, yPosition);
     yPosition += 5;
