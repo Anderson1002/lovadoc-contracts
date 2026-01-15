@@ -263,7 +263,7 @@ export function CertificationPreview({
         ['PORCENTAJE DE EJECUTADO', `${porcentajeEjecutado.toFixed(2)}%`]
       ],
       theme: 'grid',
-      styles: { fontSize: 10, cellPadding: 1 },
+      styles: { fontSize: 8, cellPadding: 1 },
       columnStyles: { 
         0: { cellWidth: 90 },
         1: { cellWidth: 90, halign: 'right' }
