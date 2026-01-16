@@ -113,7 +113,6 @@ export function EditBillingAccountDialog({
   
   // Certificación fields
   const [novedades, setNovedades] = useState<string>("");
-  const [certificationDate, setCertificationDate] = useState<string>("");
   // Nuevos campos para formato oficial de certificación
   const [valorEjecutadoAntes, setValorEjecutadoAntes] = useState<string>("0");
   const [riskMatrixCompliance, setRiskMatrixCompliance] = useState<boolean>(false);
@@ -141,7 +140,7 @@ export function EditBillingAccountDialog({
   const informeComplete = !!(selectedContract && amount && startDate && endDate && 
                             activities.filter(a => a.status === 'saved').length > 0 && 
                             (uploads.social_security.uploaded || existingPlanillaPath || pendingPlanillaFile));
-  const certificacionComplete = !!(novedades && certificationDate);
+  const certificacionComplete = !!(certificationMonth && reportDeliveryDate);
   const cuentaCobroComplete = !!(invoiceCity && invoiceDate && invoiceNumber && amountInWords);
   const hasProfileSignature = !!profileSignatureUrl;
   const allFormsComplete = informeComplete && certificacionComplete && cuentaCobroComplete;
@@ -239,7 +238,8 @@ export function EditBillingAccountDialog({
       
       // Load Certificación fields
       setNovedades((billing as any).novedades || "");
-      setCertificationDate((billing as any).certification_date || "");
+      setCertificationMonth((billing as any).certification_month || "");
+      setReportDeliveryDate((billing as any).report_delivery_date || "");
       // Nuevos campos formato oficial
       setValorEjecutadoAntes((billing as any).valor_ejecutado_antes?.toString() || "0");
       setRiskMatrixCompliance((billing as any).risk_matrix_compliance ?? false);
@@ -559,7 +559,9 @@ export function EditBillingAccountDialog({
           arl_planilla_fecha: arlFecha || null,
           // Certificación fields
           novedades: novedades || null,
-          certification_date: certificationDate || null,
+          certification_date: new Date().toISOString().split('T')[0],
+          certification_month: certificationMonth || null,
+          report_delivery_date: reportDeliveryDate || null,
           certificacion_complete: certificacionComplete,
           valor_ejecutado_antes: valorEjecutadoAntes ? parseFloat(valorEjecutadoAntes) : 0,
           risk_matrix_compliance: riskMatrixCompliance,
@@ -683,7 +685,9 @@ export function EditBillingAccountDialog({
           planilla_fecha: planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : null,
           // Certificación fields
           novedades: novedades || null,
-          certification_date: certificationDate || null,
+          certification_date: new Date().toISOString().split('T')[0],
+          certification_month: certificationMonth || null,
+          report_delivery_date: reportDeliveryDate || null,
           certificacion_complete: true,
           valor_ejecutado_antes: valorEjecutadoAntes ? parseFloat(valorEjecutadoAntes) : 0,
           risk_matrix_compliance: riskMatrixCompliance,
@@ -1531,8 +1535,6 @@ export function EditBillingAccountDialog({
                   amount={amount}
                   novedades={novedades}
                   onNovedadesChange={setNovedades}
-                  certificationDate={certificationDate}
-                  onCertificationDateChange={setCertificationDate}
                   isComplete={certificacionComplete}
                   valorEjecutadoAntes={valorEjecutadoAntes}
                   onValorEjecutadoAntesChange={setValorEjecutadoAntes}
@@ -1630,7 +1632,7 @@ export function EditBillingAccountDialog({
                         endDate={endDate}
                         amount={amount}
                         novedades={novedades}
-                        certificationDate={certificationDate}
+                        certificationDate={new Date().toISOString().split('T')[0]}
                         supervisorName={selectedContractData?.supervisor_asignado}
                         valorEjecutadoAntes={valorEjecutadoAntes}
                         riskMatrixCompliance={riskMatrixCompliance}
