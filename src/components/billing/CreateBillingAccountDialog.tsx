@@ -82,7 +82,6 @@ export function CreateBillingAccountDialog({
   
   // Certification form fields
   const [novedades, setNovedades] = useState('');
-  const [certificationDate, setCertificationDate] = useState('');
   // Nuevos campos para formato oficial de certificación
   const [valorEjecutadoAntes, setValorEjecutadoAntes] = useState('0');
   const [riskMatrixCompliance, setRiskMatrixCompliance] = useState(false);
@@ -242,7 +241,8 @@ export function CreateBillingAccountDialog({
     setArlFecha('');
     // Reset certification fields
     setNovedades('');
-    setCertificationDate('');
+    setCertificationMonth('');
+    setReportDeliveryDate('');
     // Reset invoice fields
     setInvoiceCity(userProfile?.city || '');
     setInvoiceDate('');
@@ -942,10 +942,10 @@ export function CreateBillingAccountDialog({
     const hasPlanilla = planillaNumero && planillaValor && planillaFecha && (planillaFile || existingPlanillaPath);
     setInformeComplete(!!currentDraftId && hasActivities && !!hasPlanilla);
     
-    setCertificacionComplete(!!novedades && !!certificationDate);
+    setCertificacionComplete(!!certificationMonth && !!reportDeliveryDate);
     
     setCuentaCobroComplete(!!invoiceDate && !!amountInWords);
-  }, [currentDraftId, activities, planillaNumero, planillaValor, planillaFecha, planillaFile, existingPlanillaPath, novedades, certificationDate, invoiceDate, amountInWords]);
+  }, [currentDraftId, activities, planillaNumero, planillaValor, planillaFecha, planillaFile, existingPlanillaPath, novedades, certificationMonth, reportDeliveryDate, invoiceDate, amountInWords]);
 
   // Calculate if can submit (all 3 formats complete)
   const canSubmitAllFormats = informeComplete && certificacionComplete && cuentaCobroComplete;
@@ -1832,8 +1832,6 @@ export function CreateBillingAccountDialog({
                   amount={amount}
                   novedades={novedades}
                   onNovedadesChange={setNovedades}
-                  certificationDate={certificationDate}
-                  onCertificationDateChange={setCertificationDate}
                   isComplete={certificacionComplete}
                   valorEjecutadoAntes={valorEjecutadoAntes}
                   onValorEjecutadoAntesChange={setValorEjecutadoAntes}
@@ -1955,7 +1953,9 @@ export function CreateBillingAccountDialog({
                     endDate={endDate}
                     amount={amount}
                     novedades={novedades}
-                    certificationDate={certificationDate}
+                    certificationDate={new Date().toISOString().split('T')[0]}
+                    certificationMonth={certificationMonth}
+                    reportDeliveryDate={reportDeliveryDate}
                   />
                 )}
                 {activeTab === 'cuenta' && (

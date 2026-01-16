@@ -21,8 +21,6 @@ interface CertificationFormProps {
   amount: string;
   novedades: string;
   onNovedadesChange: (value: string) => void;
-  certificationDate: string;
-  onCertificationDateChange: (value: string) => void;
   isComplete: boolean;
   // Campos para formato oficial
   valorEjecutadoAntes: string;
@@ -54,8 +52,6 @@ export function CertificationForm({
   amount,
   novedades,
   onNovedadesChange,
-  certificationDate,
-  onCertificationDateChange,
   isComplete,
   valorEjecutadoAntes,
   onValorEjecutadoAntesChange,
@@ -349,16 +345,6 @@ export function CertificationForm({
           <p className="text-xs text-muted-foreground">
             Liste los documentos anexos numerados (ej: 1. Informe..., 2. Planilla...)
           </p>
-        </div>
-
-        {/* Certification Date */}
-        <div className="space-y-2">
-          <Label className="text-base font-semibold">Fecha de Certificación *</Label>
-          <Input
-            type="date"
-            value={certificationDate}
-            onChange={(e) => onCertificationDateChange(e.target.value)}
-          />
         </div>
 
         {/* Info about supervisor signature */}
