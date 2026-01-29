@@ -4,7 +4,6 @@ import { Download, CheckCircle2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
 interface InvoicePreviewProps {
   contractDetails: any;
   userProfile: any;
@@ -21,7 +20,6 @@ interface InvoicePreviewProps {
   benefitHealthContributions: boolean;
   benefitEconomicDependents: boolean;
 }
-
 export function InvoicePreview({
   contractDetails,
   userProfile,
@@ -41,77 +39,84 @@ export function InvoicePreview({
   const formatDate = (date: string | undefined) => {
     if (!date) return '_______________';
     const d = new Date(date);
-    return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
+    return d.toLocaleDateString('es-CO', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
   };
-
   const handleExportPDF = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    
+
     // Header
     doc.setFontSize(16);
     doc.setFont(undefined, "bold");
-    doc.text("CUENTA DE COBRO", pageWidth / 2, 15, { align: "center" });
+    doc.text("CUENTA DE COBRO", pageWidth / 2, 15, {
+      align: "center"
+    });
     doc.setFontSize(11);
-    doc.text("DOCUMENTO EQUIVALENTE", pageWidth / 2, 22, { align: "center" });
+    doc.text("DOCUMENTO EQUIVALENTE", pageWidth / 2, 22, {
+      align: "center"
+    });
     doc.setFont(undefined, "normal");
-    
     doc.setFontSize(8);
     doc.text(`No. ${invoiceNumber || '___'}`, pageWidth - 40, 15);
-    
     let yPosition = 35;
-    
+
     // Contractor Info - Centered 6 lines
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text(userProfile?.name || "", pageWidth / 2, yPosition, { align: "center" });
+    doc.text(userProfile?.name || "", pageWidth / 2, yPosition, {
+      align: "center"
+    });
     yPosition += 5;
-
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    const nitOrCc = userProfile?.nit 
-      ? `NIT: ${userProfile.nit}` 
-      : `CC. ${userProfile?.document_number || ""}`;
-    doc.text(nitOrCc, pageWidth / 2, yPosition, { align: "center" });
+    const nitOrCc = userProfile?.nit ? `NIT: ${userProfile.nit}` : `CC. ${userProfile?.document_number || ""}`;
+    doc.text(nitOrCc, pageWidth / 2, yPosition, {
+      align: "center"
+    });
     yPosition += 5;
-
-    doc.text(userProfile?.address || "", pageWidth / 2, yPosition, { align: "center" });
+    doc.text(userProfile?.address || "", pageWidth / 2, yPosition, {
+      align: "center"
+    });
     yPosition += 5;
-
-    doc.text(`Tel: ${userProfile?.phone || ""}`, pageWidth / 2, yPosition, { align: "center" });
+    doc.text(`Tel: ${userProfile?.phone || ""}`, pageWidth / 2, yPosition, {
+      align: "center"
+    });
     yPosition += 5;
-
-    doc.text(userProfile?.email || "", pageWidth / 2, yPosition, { align: "center" });
+    doc.text(userProfile?.email || "", pageWidth / 2, yPosition, {
+      align: "center"
+    });
     yPosition += 5;
-
-    doc.text(userProfile?.tax_regime || "", pageWidth / 2, yPosition, { align: "center" });
+    doc.text(userProfile?.tax_regime || "", pageWidth / 2, yPosition, {
+      align: "center"
+    });
     yPosition += 10;
-    
+
     // Amount
     doc.setFontSize(8);
     doc.setFont(undefined, "bold");
     doc.text("DEBE A:", 14, yPosition);
     doc.text(userProfile?.name || "_______________", 35, yPosition);
     yPosition += 8;
-    
     doc.text("LA SUMA DE:", 14, yPosition);
     doc.setFont(undefined, "normal");
     doc.text(amountInWords || "_______________", 45, yPosition);
     yPosition += 8;
-    
     doc.setFont(undefined, "bold");
     doc.text("VALOR:", 14, yPosition);
     doc.text(amount ? formatCurrency(parseFloat(amount)) : "$0", 35, yPosition);
     doc.setFont(undefined, "normal");
     yPosition += 15;
-    
+
     // Declarations
     doc.setFontSize(8);
     doc.setFont(undefined, "bold");
     doc.text("DECLARO BAJO LA GRAVEDAD DEL JURAMENTO:", 14, yPosition);
     doc.setFont(undefined, "normal");
     yPosition += 8;
-    
     if (declarationSingleEmployer) {
       doc.text("✓ El pagador es mi único empleador", 14, yPosition);
       yPosition += 5;
@@ -120,15 +125,13 @@ export function InvoicePreview({
       doc.text("✓ El 80% o más de mis ingresos provienen de prestación de servicios", 14, yPosition);
       yPosition += 5;
     }
-    
     yPosition += 10;
-    
+
     // Benefits
     doc.setFont(undefined, "bold");
     doc.text("BENEFICIOS TRIBUTARIOS APLICABLES:", 14, yPosition);
     doc.setFont(undefined, "normal");
     yPosition += 8;
-    
     if (benefitPrepaidHealth) {
       doc.text("✓ Medicina prepagada", 14, yPosition);
       yPosition += 5;
@@ -149,16 +152,15 @@ export function InvoicePreview({
       doc.text("✓ Dependientes económicos", 14, yPosition);
       yPosition += 5;
     }
-    
     yPosition += 15;
-    
+
     // Legal note
     doc.setFontSize(7);
     const legalNote = "Nota: Este documento equivalente presta mérito ejecutivo y tiene la naturaleza de letra de cambio según el Artículo 774 del Código de Comercio.";
     const splitLegal = doc.splitTextToSize(legalNote, pageWidth - 28);
     doc.text(splitLegal, 14, yPosition);
     yPosition += splitLegal.length * 4 + 15;
-    
+
     // Signature
     doc.setFontSize(8);
     doc.text("_________________________________", 14, yPosition);
@@ -168,17 +170,14 @@ export function InvoicePreview({
     doc.text(userProfile?.name || "", 14, yPosition);
     yPosition += 5;
     doc.text(`C.C. ${userProfile?.document_number || ""}`, 14, yPosition);
-    
+
     // Date and City
     yPosition += 15;
     doc.text(`${invoiceCity || "_______________"}, ${formatDate(invoiceDate)}`, 14, yPosition);
-    
     doc.save(`CuentaCobro_${invoiceNumber || 'documento'}.pdf`);
   };
-
   if (!userProfile || !amount) {
-    return (
-      <Card>
+    return <Card>
         <CardHeader>
           <CardTitle className="text-lg">Vista Previa - Cuenta de Cobro</CardTitle>
         </CardHeader>
@@ -187,12 +186,9 @@ export function InvoicePreview({
             Complete los datos para ver la vista previa
           </p>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
-  return (
-    <Card>
+  return <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg">Vista Previa - Cuenta de Cobro</CardTitle>
         <Button size="sm" variant="outline" onClick={handleExportPDF}>
@@ -203,11 +199,7 @@ export function InvoicePreview({
       <CardContent className="space-y-4">
         <div className="border rounded-lg p-4 bg-white dark:bg-card text-sm space-y-4">
           {/* Header */}
-          <div className="text-center border-b pb-3">
-            <p className="font-bold text-lg">CUENTA DE COBRO</p>
-            <p className="font-semibold">DOCUMENTO EQUIVALENTE</p>
-            <p className="text-xs mt-2">No. {invoiceNumber || '___'}</p>
-          </div>
+          
           
           {/* Contractor Info - Centered 6 lines */}
           <div className="text-center text-xs space-y-0.5 py-2">
@@ -232,18 +224,14 @@ export function InvoicePreview({
           <div>
             <p className="font-semibold text-xs mb-2">DECLARACIONES:</p>
             <div className="space-y-1 text-xs">
-              {declarationSingleEmployer && (
-                <p className="flex items-center gap-1">
+              {declarationSingleEmployer && <p className="flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3 text-green-600" />
                   El pagador es mi único empleador
-                </p>
-              )}
-              {declaration80PercentIncome && (
-                <p className="flex items-center gap-1">
+                </p>}
+              {declaration80PercentIncome && <p className="flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3 text-green-600" />
                   80%+ de ingresos por prestación de servicios
-                </p>
-              )}
+                </p>}
             </div>
           </div>
           
@@ -251,36 +239,26 @@ export function InvoicePreview({
           <div>
             <p className="font-semibold text-xs mb-2">BENEFICIOS TRIBUTARIOS:</p>
             <div className="space-y-1 text-xs">
-              {benefitPrepaidHealth && (
-                <p className="flex items-center gap-1">
+              {benefitPrepaidHealth && <p className="flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3 text-green-600" />
                   Medicina prepagada
-                </p>
-              )}
-              {benefitVoluntaryPension && (
-                <p className="flex items-center gap-1">
+                </p>}
+              {benefitVoluntaryPension && <p className="flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3 text-green-600" />
                   Aportes voluntarios a pensión
-                </p>
-              )}
-              {benefitHousingInterest && (
-                <p className="flex items-center gap-1">
+                </p>}
+              {benefitHousingInterest && <p className="flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3 text-green-600" />
                   Intereses de vivienda
-                </p>
-              )}
-              {benefitHealthContributions && (
-                <p className="flex items-center gap-1">
+                </p>}
+              {benefitHealthContributions && <p className="flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3 text-green-600" />
                   Aportes obligatorios a salud
-                </p>
-              )}
-              {benefitEconomicDependents && (
-                <p className="flex items-center gap-1">
+                </p>}
+              {benefitEconomicDependents && <p className="flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3 text-green-600" />
                   Dependientes económicos
-                </p>
-              )}
+                </p>}
             </div>
           </div>
           
@@ -300,6 +278,5 @@ export function InvoicePreview({
           </p>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 }
