@@ -112,7 +112,7 @@ export function InvoicePreview({
     doc.setFont(undefined, "normal");
     doc.text(`Ciudad y fecha: Girardot, ${formatDate(invoiceDate)}`, 14, yPosition);
     yPosition += 5;
-    doc.text(`Cliente: Hospital Departamental de Villavicencio E.S.E.`, 14, yPosition);
+    doc.text(`Cliente: MAKTUB MA S.A.S`, 14, yPosition);
     yPosition += 5;
     doc.text(`NIT: 900.827.439-4`, 14, yPosition);
     yPosition += 5;
@@ -244,7 +244,7 @@ export function InvoicePreview({
           {/* Client Info - Left aligned */}
           <div className="text-left text-xs space-y-0.5 pt-2">
             <p><span className="font-medium">Ciudad y fecha:</span> Girardot, {formatDate(invoiceDate)}</p>
-            <p><span className="font-medium">Cliente:</span> Hospital Departamental de Villavicencio E.S.E.</p>
+            <p><span className="font-medium">Cliente:</span> MAKTUB MA S.A.S</p>
             <p><span className="font-medium">NIT:</span> 900.827.439-4</p>
             <p><span className="font-medium">Dirección:</span> CALLE 21 No 11 21 GIRARDOT</p>
             <p><span className="font-medium">Teléfono:</span> 3113988647</p>
