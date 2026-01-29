@@ -336,6 +336,15 @@ export function InvoicePreview({
                 </tr>
               </tbody>
             </table>
+            
+            {/* Blank row */}
+            <div className="h-2"></div>
+            
+            {/* RUT Activity */}
+            <p className="text-xs text-left">Actividad económica RUT</p>
+            
+            {/* Legal note */}
+            <p className="text-xs text-left">Esta factura se asimila a una letra de cambio para todos los efectos legales Artículo 774 c de Código de Comercio.</p>
           </div>
           
           {/* Declarations */}
