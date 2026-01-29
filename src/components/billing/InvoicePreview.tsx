@@ -251,37 +251,37 @@ export function InvoicePreview({
           </div>
           
           {/* Contract Object Box */}
-          <div className="border-2 border-foreground p-4 rounded-lg">
+          <div className="border-2 border-foreground p-4 rounded-lg space-y-2">
             <p className="text-xs text-justify">
               POR PRESTACION DE SERVICIOS COMO: ({contractDetails?.description || 'Sin descripción'}) DEL PERIODO DEL MES DE {invoiceDate ? new Date(invoiceDate + 'T00:00:00').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }).toUpperCase() : '_______________'} SEGÚN CONTRATO No. {contractDetails?.contract_number_original || contractDetails?.contract_number || '___'}
             </p>
+            
+            {/* Blank row */}
+            <div className="h-2"></div>
+            
+            {/* Amount row - centered */}
+            <p className="text-xs text-center font-bold">
+              SON: {amount ? formatCurrency(parseFloat(amount)) : '$0'}
+            </p>
+            
+            {/* Amount in words - centered */}
+            <p className="text-xs text-center">
+              {amountInWords || '_______________'}
+            </p>
+            
+            {/* Blank row */}
+            <div className="h-2"></div>
+            
+            {/* Bank account row - centered */}
+            <p className="text-xs text-center">
+              N0. CUENTA BANCARIA N° {userProfile?.bank_account || '_______________'} DE AHORROS
+            </p>
+            
+            {/* Bank name row - centered */}
+            <p className="text-xs text-center">
+              BANCO: {userProfile?.bank_name || '_______________'}
+            </p>
           </div>
-          
-          {/* Blank row */}
-          <div className="h-4"></div>
-          
-          {/* Amount row - centered */}
-          <p className="text-xs text-center font-bold">
-            SON: {amount ? formatCurrency(parseFloat(amount)) : '$0'}
-          </p>
-          
-          {/* Amount in words - centered */}
-          <p className="text-xs text-center">
-            {amountInWords || '_______________'}
-          </p>
-          
-          {/* Blank row */}
-          <div className="h-4"></div>
-          
-          {/* Bank account row - centered */}
-          <p className="text-xs text-center">
-            N0. CUENTA BANCARIA N° {userProfile?.bank_account || '_______________'} DE AHORROS
-          </p>
-          
-          {/* Bank name row - centered */}
-          <p className="text-xs text-center">
-            BANCO: {userProfile?.bank_name || '_______________'}
-          </p>
           
           {/* Declarations */}
           <div>
