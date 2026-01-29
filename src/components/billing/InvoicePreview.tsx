@@ -281,6 +281,14 @@ export function InvoicePreview({
             <p className="text-xs text-center">
               BANCO: {userProfile?.bank_name || '_______________'}
             </p>
+            
+            {/* Blank row */}
+            <div className="h-2"></div>
+            
+            {/* Legal declaration - justified */}
+            <p className="text-xs text-justify">
+              Bajo la gravedad de juramento informo que no he contratado con más de 1 empleador por un término igual o superior a 90 días, y por consiguiente solicito se me aplica la retención en la fuente por salarios en virtud de lo señalado en el parágrafo 2 del artículo 383 del estatuto tributario, reglamentado por el artículo 1.2.4.1.6 del decreto 1625 de 2016, adicional informo que el 80% o más de mis ingresos totales proceden de la actividad o servicio que estoy realizando SI__x__. NO_____.
+            </p>
           </div>
           
           {/* Declarations */}
