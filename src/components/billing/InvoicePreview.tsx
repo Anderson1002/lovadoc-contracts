@@ -253,8 +253,7 @@ export function InvoicePreview({
           {/* Contract Object Box */}
           <div className="border-2 border-foreground p-4 rounded-lg">
             <p className="text-xs text-justify">
-              <span className="font-bold">OBJETO DEL CONTRATO No. {contractDetails?.contract_number_original || contractDetails?.contract_number || '___'}:</span>{' '}
-              {contractDetails?.description || 'Sin descripción'}
+              POR PRESTACION DE SERVICIOS COMO: ({contractDetails?.description || 'Sin descripción'}) DEL PERIODO DEL MES DE {invoiceDate ? new Date(invoiceDate + 'T00:00:00').toLocaleDateString('es-CO', { month: 'long' }).toUpperCase() : '_______________'} SEGÚN CONTRATO No. {contractDetails?.contract_number_original || contractDetails?.contract_number || '___'}
             </p>
           </div>
           
