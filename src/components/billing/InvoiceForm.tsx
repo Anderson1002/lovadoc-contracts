@@ -131,14 +131,6 @@ export function InvoiceForm({
               placeholder="Ej: 001"
             />
           </div>
-          <div className="space-y-2">
-            <Label className="text-base font-semibold">Ciudad *</Label>
-            <Input
-              value={invoiceCity}
-              onChange={(e) => onInvoiceCityChange(e.target.value)}
-              placeholder="Ej: Villavicencio"
-            />
-          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

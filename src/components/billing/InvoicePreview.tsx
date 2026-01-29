@@ -110,15 +110,15 @@ export function InvoicePreview({
     // Client Info - Left aligned
     doc.setFontSize(8);
     doc.setFont(undefined, "normal");
-    doc.text(`Ciudad y fecha: Mosquera, ${formatDate(invoiceDate)}`, 14, yPosition);
+    doc.text(`Ciudad y fecha: Girardot, ${formatDate(invoiceDate)}`, 14, yPosition);
     yPosition += 5;
     doc.text(`Cliente: Hospital Departamental de Villavicencio E.S.E.`, 14, yPosition);
     yPosition += 5;
-    doc.text(`NIT: 892.000.501-0`, 14, yPosition);
+    doc.text(`NIT: 900.827.439-4`, 14, yPosition);
     yPosition += 5;
-    doc.text(`Dirección: Cra 37A No. 28-53 Barzal Alto`, 14, yPosition);
+    doc.text(`Dirección: CALLE 21 No 11 21 GIRARDOT`, 14, yPosition);
     yPosition += 5;
-    doc.text(`Teléfono: (608) 6818888`, 14, yPosition);
+    doc.text(`Teléfono: 3113988647`, 14, yPosition);
     yPosition += 10;
 
     // Amount
@@ -243,11 +243,11 @@ export function InvoicePreview({
           
           {/* Client Info - Left aligned */}
           <div className="text-left text-xs space-y-0.5 pt-2">
-            <p><span className="font-medium">Ciudad y fecha:</span> Mosquera, {formatDate(invoiceDate)}</p>
+            <p><span className="font-medium">Ciudad y fecha:</span> Girardot, {formatDate(invoiceDate)}</p>
             <p><span className="font-medium">Cliente:</span> Hospital Departamental de Villavicencio E.S.E.</p>
-            <p><span className="font-medium">NIT:</span> 892.000.501-0</p>
-            <p><span className="font-medium">Dirección:</span> Cra 37A No. 28-53 Barzal Alto</p>
-            <p><span className="font-medium">Teléfono:</span> (608) 6818888</p>
+            <p><span className="font-medium">NIT:</span> 900.827.439-4</p>
+            <p><span className="font-medium">Dirección:</span> CALLE 21 No 11 21 GIRARDOT</p>
+            <p><span className="font-medium">Teléfono:</span> 3113988647</p>
           </div>
           
           {/* Amount Box */}
