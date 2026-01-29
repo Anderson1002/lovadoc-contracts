@@ -61,27 +61,31 @@ export function InvoicePreview({
     
     let yPosition = 35;
     
-    // Contractor Info
+    // Contractor Info - Centered 6 lines
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(userProfile?.name || "", pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 5;
+
     doc.setFontSize(9);
-    const contractorInfo = [
-      ["NOMBRE:", userProfile?.name || ""],
-      ["NIT/CC:", userProfile?.nit || userProfile?.document_number || ""],
-      ["DIRECCIÓN:", userProfile?.address || ""],
-      ["TELÉFONO:", userProfile?.phone || ""],
-      ["CIUDAD:", userProfile?.city || invoiceCity || ""],
-      ["RÉGIMEN:", userProfile?.tax_regime || ""],
-      ["ACTIVIDAD RUT:", userProfile?.rut_activity_code || ""],
-    ];
-    
-    autoTable(doc, {
-      startY: yPosition,
-      body: contractorInfo,
-      theme: 'plain',
-      styles: { fontSize: 8 },
-      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 35 } },
-    });
-    
-    yPosition = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFont('helvetica', 'normal');
+    const nitOrCc = userProfile?.nit 
+      ? `NIT: ${userProfile.nit}` 
+      : `CC. ${userProfile?.document_number || ""}`;
+    doc.text(nitOrCc, pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 5;
+
+    doc.text(userProfile?.address || "", pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 5;
+
+    doc.text(`Tel: ${userProfile?.phone || ""}`, pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 5;
+
+    doc.text(userProfile?.email || "", pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 5;
+
+    doc.text(userProfile?.tax_regime || "", pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 10;
     
     // Amount
     doc.setFontSize(8);
@@ -205,14 +209,14 @@ export function InvoicePreview({
             <p className="text-xs mt-2">No. {invoiceNumber || '___'}</p>
           </div>
           
-          {/* Contractor Info */}
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <p><span className="text-muted-foreground">Nombre:</span> <strong>{userProfile?.name}</strong></p>
-            <p><span className="text-muted-foreground">NIT/CC:</span> {userProfile?.nit || userProfile?.document_number}</p>
-            <p><span className="text-muted-foreground">Dirección:</span> {userProfile?.address || 'N/A'}</p>
-            <p><span className="text-muted-foreground">Teléfono:</span> {userProfile?.phone || 'N/A'}</p>
-            <p><span className="text-muted-foreground">Ciudad:</span> {userProfile?.city || invoiceCity || 'N/A'}</p>
-            <p><span className="text-muted-foreground">Régimen:</span> {userProfile?.tax_regime || 'N/A'}</p>
+          {/* Contractor Info - Centered 6 lines */}
+          <div className="text-center text-xs space-y-0.5 py-2">
+            <p className="font-bold text-sm">{userProfile?.name}</p>
+            <p>{userProfile?.nit ? `NIT: ${userProfile.nit}` : `CC. ${userProfile?.document_number || 'N/A'}`}</p>
+            <p>{userProfile?.address || 'N/A'}</p>
+            <p>Tel: {userProfile?.phone || 'N/A'}</p>
+            <p>{userProfile?.email || 'N/A'}</p>
+            <p>{userProfile?.tax_regime || 'N/A'}</p>
           </div>
           
           {/* Amount Box */}
