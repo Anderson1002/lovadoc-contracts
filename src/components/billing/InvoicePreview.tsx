@@ -93,6 +93,18 @@ export function InvoicePreview({
     doc.text(userProfile?.tax_regime || "", pageWidth / 2, yPosition, {
       align: "center"
     });
+    yPosition += 8;
+
+    // Divider line and Document Title
+    doc.setLineWidth(0.5);
+    doc.line(14, yPosition, pageWidth - 14, yPosition);
+    yPosition += 6;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text("DOCUMENTO EQUIVALENTE FACTURA No. DSE", pageWidth / 2, yPosition, {
+      align: "center"
+    });
     yPosition += 10;
 
     // Amount
@@ -210,6 +222,10 @@ export function InvoicePreview({
             <p>{userProfile?.email || 'N/A'}</p>
             <p>{userProfile?.tax_regime || 'N/A'}</p>
           </div>
+          
+          {/* Divider and Document Title */}
+          <div className="border-t border-foreground my-2"></div>
+          <p className="text-center font-bold text-sm">DOCUMENTO EQUIVALENTE FACTURA No. DSE</p>
           
           {/* Amount Box */}
           <div className="bg-primary/5 p-4 rounded-lg text-center">
