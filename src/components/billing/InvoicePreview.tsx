@@ -297,6 +297,45 @@ export function InvoicePreview({
             <p className="text-xs text-justify">
               Deseo obtener beneficios tributarios porque cumplo con la siguiente condición y adjunto los soportes correspondientes:
             </p>
+            
+            {/* Blank row */}
+            <div className="h-2"></div>
+            
+            {/* Tax benefits table */}
+            <table className="w-full text-xs border-collapse">
+              <tbody>
+                <tr>
+                  <td className="w-[90%] py-1 align-top">Pago por salud a empresas de medicina prepagada o pagos por seguros de salud</td>
+                  <td className="w-[10%] py-1 text-center align-top">
+                    <span>{benefitPrepaidHealth ? 'SI' : 'NO'}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="w-[90%] py-1 align-top">Aportes a fondos de pensiones voluntarios (APB) o cuentas para el fomento de la construcción (AFC)</td>
+                  <td className="w-[10%] py-1 text-center align-top">
+                    <span>{benefitVoluntaryPension ? 'SI' : 'NO'}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="w-[90%] py-1 align-top">Intereses o corrección monetaria en virtud de préstamos para la adquisición de vivienda</td>
+                  <td className="w-[10%] py-1 text-center align-top">
+                    <span>{benefitHousingInterest ? 'SI' : 'NO'}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="w-[90%] py-1 align-top">Aportes obligatorios al sistema de seguridad social integral en salud</td>
+                  <td className="w-[10%] py-1 text-center align-top">
+                    <span>{benefitHealthContributions ? 'SI' : 'NO'}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="w-[90%] py-1 align-top">Declaración juramentada de dependencia económica</td>
+                  <td className="w-[10%] py-1 text-center align-top">
+                    <span>{benefitEconomicDependents ? 'SI' : 'NO'}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
           
           {/* Declarations */}
