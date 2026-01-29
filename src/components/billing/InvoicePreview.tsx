@@ -250,12 +250,11 @@ export function InvoicePreview({
             <p><span className="font-medium">Teléfono:</span> 3113988647</p>
           </div>
           
-          {/* Amount Box */}
-          <div className="bg-primary/5 p-4 rounded-lg text-center">
-            <p className="text-xs text-muted-foreground">DEBE A: {userProfile?.name}</p>
-            <p className="text-xs text-muted-foreground mt-1">LA SUMA DE: {amountInWords || '_______________'}</p>
-            <p className="text-2xl font-bold text-primary mt-2">
-              {amount ? formatCurrency(parseFloat(amount)) : '$0'}
+          {/* Contract Object Box */}
+          <div className="border-2 border-foreground p-4 rounded-lg">
+            <p className="text-xs text-justify">
+              <span className="font-bold">OBJETO DEL CONTRATO No. {contractDetails?.contract_number_original || contractDetails?.contract_number || '___'}:</span>{' '}
+              {contractDetails?.description || 'Sin descripción'}
             </p>
           </div>
           
