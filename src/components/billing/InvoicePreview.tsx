@@ -107,6 +107,20 @@ export function InvoicePreview({
     });
     yPosition += 10;
 
+    // Client Info - Left aligned
+    doc.setFontSize(8);
+    doc.setFont(undefined, "normal");
+    doc.text(`Ciudad y fecha: Mosquera, ${formatDate(invoiceDate)}`, 14, yPosition);
+    yPosition += 5;
+    doc.text(`Cliente: Hospital Departamental de Villavicencio E.S.E.`, 14, yPosition);
+    yPosition += 5;
+    doc.text(`NIT: 892.000.501-0`, 14, yPosition);
+    yPosition += 5;
+    doc.text(`Dirección: Cra 37A No. 28-53 Barzal Alto`, 14, yPosition);
+    yPosition += 5;
+    doc.text(`Teléfono: (608) 6818888`, 14, yPosition);
+    yPosition += 10;
+
     // Amount
     doc.setFontSize(8);
     doc.setFont(undefined, "bold");
@@ -226,6 +240,15 @@ export function InvoicePreview({
           {/* Divider and Document Title */}
           <div className="border-t border-foreground my-2"></div>
           <p className="text-center font-bold text-sm">DOCUMENTO EQUIVALENTE FACTURA No. DSE</p>
+          
+          {/* Client Info - Left aligned */}
+          <div className="text-left text-xs space-y-0.5 pt-2">
+            <p><span className="font-medium">Ciudad y fecha:</span> Mosquera, {formatDate(invoiceDate)}</p>
+            <p><span className="font-medium">Cliente:</span> Hospital Departamental de Villavicencio E.S.E.</p>
+            <p><span className="font-medium">NIT:</span> 892.000.501-0</p>
+            <p><span className="font-medium">Dirección:</span> Cra 37A No. 28-53 Barzal Alto</p>
+            <p><span className="font-medium">Teléfono:</span> (608) 6818888</p>
+          </div>
           
           {/* Amount Box */}
           <div className="bg-primary/5 p-4 rounded-lg text-center">
