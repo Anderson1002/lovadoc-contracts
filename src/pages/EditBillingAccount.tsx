@@ -1659,6 +1659,7 @@ export function EditBillingAccountDialog({
                         benefitHousingInterest={benefitHousingInterest}
                         benefitHealthContributions={benefitHealthContributions}
                         benefitEconomicDependents={benefitEconomicDependents}
+                        signatureUrl={profileSignatureUrl}
                       />
                     )}
                   </CardContent>

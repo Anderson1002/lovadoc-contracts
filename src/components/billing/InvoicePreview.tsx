@@ -19,6 +19,7 @@ interface InvoicePreviewProps {
   benefitHousingInterest: boolean;
   benefitHealthContributions: boolean;
   benefitEconomicDependents: boolean;
+  signatureUrl?: string;
 }
 export function InvoicePreview({
   contractDetails,
@@ -34,7 +35,8 @@ export function InvoicePreview({
   benefitVoluntaryPension,
   benefitHousingInterest,
   benefitHealthContributions,
-  benefitEconomicDependents
+  benefitEconomicDependents,
+  signatureUrl
 }: InvoicePreviewProps) {
   const formatDate = (date: string | undefined) => {
     if (!date) return '_______________';
@@ -352,10 +354,10 @@ export function InvoicePreview({
             {/* Signature section - centered */}
             <div className="text-center space-y-2">
               {/* Signature image or placeholder */}
-              {userProfile?.signature_url ? (
+              {signatureUrl ? (
                 <img 
-                  src={userProfile.signature_url} 
-                  alt="Firma del contratista" 
+                  src={signatureUrl} 
+                  alt="" 
                   className="max-h-20 mx-auto"
                 />
               ) : (
