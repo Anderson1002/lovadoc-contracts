@@ -345,6 +345,31 @@ export function InvoicePreview({
             
             {/* Legal note */}
             <p className="text-xs text-left">Esta factura se asimila a una letra de cambio para todos los efectos legales Artículo 774 c de Código de Comercio.</p>
+            
+            {/* Blank row for spacing */}
+            <div className="h-4"></div>
+
+            {/* Signature section - centered */}
+            <div className="text-center space-y-2">
+              {/* Signature image or placeholder */}
+              {userProfile?.signature_url ? (
+                <img 
+                  src={userProfile.signature_url} 
+                  alt="Firma del contratista" 
+                  className="max-h-20 mx-auto"
+                />
+              ) : (
+                <div className="h-16 border-b border-foreground max-w-xs mx-auto"></div>
+              )}
+              
+              {/* Contractor signature label */}
+              <p className="text-xs font-semibold">FIRMA DEL CONTRATISTA</p>
+              
+              {/* Document info */}
+              <p className="text-xs">
+                C.C. {userProfile?.document_number || '_______________'} de {userProfile?.document_issue_city || '_______________'}
+              </p>
+            </div>
           </div>
           
           {/* Declarations */}
