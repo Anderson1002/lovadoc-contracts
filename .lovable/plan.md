@@ -1,149 +1,75 @@
 
+# Plan: Agregar sección de firma dentro del contenedor de la Cuenta de Cobro
 
-## Plan: Nuevo Encabezado Centrado para Cuenta de Cobro
+## Resumen
+Agregar la imagen de la firma del contratista y la información de identificación (C.C. + ciudad de expedición) dentro del contenedor principal con borde negro, manteniendo todo centrado.
 
-### Objetivo
-Modificar el encabezado de la **Cuenta de Cobro** (tanto en la vista previa como en el PDF descargado) para que muestre los datos del contratista de forma **centrada en 6 líneas**:
+## Cambios a realizar
+
+### Archivo: `src/components/billing/InvoicePreview.tsx`
+
+**Ubicación**: Después del texto legal "Esta factura se asimila..." y antes del cierre del contenedor `</div>` (línea 348)
+
+**Agregar**:
+1. Una fila en blanco (`h-4` para espacio)
+2. La imagen de la firma centrada (si existe `userProfile?.signature_url`)
+3. Si no hay firma, mostrar una línea de placeholder
+4. Texto "FIRMA DEL CONTRATISTA" centrado
+5. Texto "C.C. [document_number] de [document_issue_city]" centrado
+
+## Estructura visual dentro del contenedor
 
 ```text
-JUAN PÉREZ GARCÍA                    ← Línea 1: Nombre (sin etiqueta)
-CC. 12345678                         ← Línea 2: NIT/CC
-Calle 123 #45-67, Barrio Centro      ← Línea 3: Dirección
-Tel: 3001234567                      ← Línea 4: Teléfono
-correo@ejemplo.com                   ← Línea 5: Email
-Régimen Simplificado                 ← Línea 6: Régimen
+┌─────────────────────────────────────────────────────────────┐
+│ ... contenido anterior ...                                  │
+│                                                             │
+│ Actividad económica RUT                                     │
+│ Esta factura se asimila a una letra de cambio...            │
+│                                                             │
+│                    [IMAGEN DE FIRMA]                        │
+│                                                             │
+│                  FIRMA DEL CONTRATISTA                      │
+│             C.C. 123456789 de Bogotá                        │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Archivo a Modificar
+## Detalles técnicos
 
-**`src/components/billing/InvoicePreview.tsx`**
+### Código a agregar (después de línea 347, antes de cerrar el div del contenedor):
 
----
+```jsx
+{/* Blank row for spacing */}
+<div className="h-4"></div>
 
-### Cambios en la Vista Previa (HTML)
-
-**Ubicación:** Líneas 208-216 (sección "Contractor Info")
-
-**Antes:**
-```tsx
-{/* Contractor Info */}
-<div className="grid grid-cols-2 gap-2 text-xs">
-  <p><span className="text-muted-foreground">Nombre:</span> <strong>{userProfile?.name}</strong></p>
-  <p><span className="text-muted-foreground">NIT/CC:</span> {userProfile?.nit || userProfile?.document_number}</p>
-  <p><span className="text-muted-foreground">Dirección:</span> {userProfile?.address || 'N/A'}</p>
-  <p><span className="text-muted-foreground">Teléfono:</span> {userProfile?.phone || 'N/A'}</p>
-  <p><span className="text-muted-foreground">Ciudad:</span> {userProfile?.city || invoiceCity || 'N/A'}</p>
-  <p><span className="text-muted-foreground">Régimen:</span> {userProfile?.tax_regime || 'N/A'}</p>
+{/* Signature section - centered */}
+<div className="text-center space-y-2">
+  {/* Signature image or placeholder */}
+  {userProfile?.signature_url ? (
+    <img 
+      src={userProfile.signature_url} 
+      alt="Firma del contratista" 
+      className="max-h-20 mx-auto"
+    />
+  ) : (
+    <div className="h-16 border-b border-foreground max-w-xs mx-auto"></div>
+  )}
+  
+  {/* Contractor signature label */}
+  <p className="text-xs font-semibold">FIRMA DEL CONTRATISTA</p>
+  
+  {/* Document info */}
+  <p className="text-xs">
+    C.C. {userProfile?.document_number || '_______________'} de {userProfile?.document_issue_city || '_______________'}
+  </p>
 </div>
 ```
 
-**Después:**
-```tsx
-{/* Contractor Info - Centered 6 lines */}
-<div className="text-center text-xs space-y-0.5 py-2">
-  <p className="font-bold text-sm">{userProfile?.name}</p>
-  <p>{userProfile?.nit ? `NIT: ${userProfile.nit}` : `CC. ${userProfile?.document_number || 'N/A'}`}</p>
-  <p>{userProfile?.address || 'N/A'}</p>
-  <p>Tel: {userProfile?.phone || 'N/A'}</p>
-  <p>{userProfile?.email || 'N/A'}</p>
-  <p>{userProfile?.tax_regime || 'N/A'}</p>
-</div>
-```
-
----
-
-### Cambios en el PDF (jsPDF)
-
-**Ubicación:** Líneas 64-82 (sección "Contractor Info" en `handleExportPDF`)
-
-**Antes:**
-```typescript
-// Contractor Info
-doc.setFontSize(9);
-const contractorInfo = [
-  ["NOMBRE:", userProfile?.name || ""],
-  ["NIT/CC:", userProfile?.nit || userProfile?.document_number || ""],
-  ["DIRECCIÓN:", userProfile?.address || ""],
-  ["TELÉFONO:", userProfile?.phone || ""],
-  ["CIUDAD:", userProfile?.city || invoiceCity || ""],
-  ["RÉGIMEN:", userProfile?.tax_regime || ""],
-  ["ACTIVIDAD RUT:", userProfile?.rut_activity_code || ""],
-];
-
-autoTable(doc, {
-  startY: yPosition,
-  body: contractorInfo,
-  theme: 'plain',
-  styles: { fontSize: 8 },
-  columnStyles: { 0: { fontStyle: 'bold', cellWidth: 35 } },
-});
-
-yPosition = (doc as any).lastAutoTable.finalY + 10;
-```
-
-**Después:**
-```typescript
-// Contractor Info - Centered 6 lines
-doc.setFontSize(10);
-doc.setFont('helvetica', 'bold');
-doc.text(userProfile?.name || "", pageWidth / 2, yPosition, { align: "center" });
-yPosition += 5;
-
-doc.setFontSize(9);
-doc.setFont('helvetica', 'normal');
-const nitOrCc = userProfile?.nit 
-  ? `NIT: ${userProfile.nit}` 
-  : `CC. ${userProfile?.document_number || ""}`;
-doc.text(nitOrCc, pageWidth / 2, yPosition, { align: "center" });
-yPosition += 5;
-
-doc.text(userProfile?.address || "", pageWidth / 2, yPosition, { align: "center" });
-yPosition += 5;
-
-doc.text(`Tel: ${userProfile?.phone || ""}`, pageWidth / 2, yPosition, { align: "center" });
-yPosition += 5;
-
-doc.text(userProfile?.email || "", pageWidth / 2, yPosition, { align: "center" });
-yPosition += 5;
-
-doc.text(userProfile?.tax_regime || "", pageWidth / 2, yPosition, { align: "center" });
-yPosition += 10;
-```
-
----
-
-### Resumen de Cambios
-
-| Sección | Cambio | Resultado |
-|---------|--------|-----------|
-| Vista previa HTML | Reemplazar grid 2 columnas por div centrado | 6 líneas centradas sin etiquetas |
-| PDF (jsPDF) | Eliminar autoTable y usar `doc.text()` centrado | 6 líneas centradas en el PDF |
-| Campo Email | Agregar `userProfile?.email` | Mostrar email del contratista |
-| Campo Ciudad | Eliminar | Ya no se muestra en el encabezado |
-| Campo Actividad RUT | Eliminar | Ya no se muestra en el encabezado |
-
----
-
-### Resultado Visual Esperado
-
-**Vista Previa:**
-```
-┌──────────────────────────────────────┐
-│        CUENTA DE COBRO               │
-│      DOCUMENTO EQUIVALENTE           │
-│           No. 001                    │
-├──────────────────────────────────────┤
-│         JUAN PÉREZ GARCÍA            │  ← Nombre (bold)
-│           CC. 12345678               │  ← NIT/CC
-│     Calle 123 #45-67, Centro         │  ← Dirección
-│         Tel: 3001234567              │  ← Teléfono
-│       correo@ejemplo.com             │  ← Email
-│       Régimen Simplificado           │  ← Régimen
-├──────────────────────────────────────┤
-│        DEBE A: JUAN PÉREZ            │
-│        LA SUMA DE: ...               │
-└──────────────────────────────────────┘
-```
-
+### Notas importantes:
+- La firma se obtiene dinámicamente de `userProfile?.signature_url` (almacenada en el perfil)
+- El número de documento viene de `userProfile?.document_number`
+- La ciudad de expedición viene de `userProfile?.document_issue_city`
+- Si no hay firma guardada, se muestra una línea horizontal como placeholder
+- Todo está centrado horizontalmente dentro del contenedor
