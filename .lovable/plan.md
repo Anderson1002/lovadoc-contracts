@@ -1,75 +1,76 @@
 
-# Plan: Agregar sección de firma dentro del contenedor de la Cuenta de Cobro
+# Plan: Corregir la Firma en Cuenta de Cobro
 
-## Resumen
-Agregar la imagen de la firma del contratista y la información de identificación (C.C. + ciudad de expedición) dentro del contenedor principal con borde negro, manteniendo todo centrado.
+## Problemas Identificados
 
-## Cambios a realizar
+1. **URL de firma rota**: En la base de datos, `signature_url` contiene solo el path relativo (`d75d63c6-dc44-4f69-9926-0d183b0ecc15/signature_1766100315177.png`), pero el componente intenta usarlo directamente como URL de imagen sin generar la URL firmada de Supabase Storage.
 
-### Archivo: `src/components/billing/InvoicePreview.tsx`
+2. **Texto duplicado**: El `alt="Firma del contratista"` se muestra cuando la imagen está rota, creando duplicación con "FIRMA DEL CONTRATISTA".
 
-**Ubicación**: Después del texto legal "Esta factura se asimila..." y antes del cierre del contenedor `</div>` (línea 348)
+## Solución
 
-**Agregar**:
-1. Una fila en blanco (`h-4` para espacio)
-2. La imagen de la firma centrada (si existe `userProfile?.signature_url`)
-3. Si no hay firma, mostrar una línea de placeholder
-4. Texto "FIRMA DEL CONTRATISTA" centrado
-5. Texto "C.C. [document_number] de [document_issue_city]" centrado
+### 1. Modificar `InvoicePreview.tsx`
+- Agregar nuevo prop `signatureUrl?: string` para recibir la URL firmada
+- Usar `signatureUrl` en lugar de `userProfile.signature_url` para la imagen
+- Cambiar el `alt` de la imagen a un texto vacío o descriptivo que no duplique el label
 
-## Estructura visual dentro del contenedor
+```tsx
+// Nuevo prop
+signatureUrl?: string;
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│ ... contenido anterior ...                                  │
-│                                                             │
-│ Actividad económica RUT                                     │
-│ Esta factura se asimila a una letra de cambio...            │
-│                                                             │
-│                    [IMAGEN DE FIRMA]                        │
-│                                                             │
-│                  FIRMA DEL CONTRATISTA                      │
-│             C.C. 123456789 de Bogotá                        │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+// En la imagen
+{signatureUrl ? (
+  <img 
+    src={signatureUrl} 
+    alt="" // Sin texto alt visible
+    className="max-h-20 mx-auto"
+  />
+) : (
+  <div className="h-16 border-b border-foreground max-w-xs mx-auto"></div>
+)}
+```
+
+### 2. Modificar `CreateBillingAccountDialog.tsx`
+- Agregar estado `profileSignatureUrl` para almacenar la URL firmada
+- En la carga inicial, obtener la URL firmada de la firma del perfil usando `createSignedUrl`
+- Pasar `signatureUrl={profileSignatureUrl}` al `InvoicePreview`
+
+### 3. Modificar `EditBillingAccount.tsx`
+- Ya tiene `profileSignatureUrl` definido y generado correctamente
+- Solo agregar `signatureUrl={profileSignatureUrl}` al `InvoicePreview`
+
+---
+
+## Archivos a Modificar
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/billing/InvoicePreview.tsx` | Agregar prop `signatureUrl`, usar para imagen, quitar alt duplicado |
+| `src/components/billing/CreateBillingAccountDialog.tsx` | Agregar lógica para cargar URL firmada, pasarla al preview |
+| `src/pages/EditBillingAccount.tsx` | Pasar `profileSignatureUrl` al `InvoicePreview` |
+
+---
+
+## Verificación en Base de Datos
+
+**Resultado de la consulta**:
+```
+signature_url: d75d63c6-dc44-4f69-9926-0d183b0ecc15/signature_1766100315177.png
+document_number: 20392259
+document_issue_city: Bogotá
+```
+
+La firma existe en la base de datos pero es un path relativo que requiere generar URL firmada con:
+```typescript
+const { data } = await supabase.storage
+  .from('billing-signatures')
+  .createSignedUrl(signature_path, 3600);
 ```
 
 ---
 
-## Detalles técnicos
+## Resultado Esperado
 
-### Código a agregar (después de línea 347, antes de cerrar el div del contenedor):
-
-```jsx
-{/* Blank row for spacing */}
-<div className="h-4"></div>
-
-{/* Signature section - centered */}
-<div className="text-center space-y-2">
-  {/* Signature image or placeholder */}
-  {userProfile?.signature_url ? (
-    <img 
-      src={userProfile.signature_url} 
-      alt="Firma del contratista" 
-      className="max-h-20 mx-auto"
-    />
-  ) : (
-    <div className="h-16 border-b border-foreground max-w-xs mx-auto"></div>
-  )}
-  
-  {/* Contractor signature label */}
-  <p className="text-xs font-semibold">FIRMA DEL CONTRATISTA</p>
-  
-  {/* Document info */}
-  <p className="text-xs">
-    C.C. {userProfile?.document_number || '_______________'} de {userProfile?.document_issue_city || '_______________'}
-  </p>
-</div>
-```
-
-### Notas importantes:
-- La firma se obtiene dinámicamente de `userProfile?.signature_url` (almacenada en el perfil)
-- El número de documento viene de `userProfile?.document_number`
-- La ciudad de expedición viene de `userProfile?.document_issue_city`
-- Si no hay firma guardada, se muestra una línea horizontal como placeholder
-- Todo está centrado horizontalmente dentro del contenedor
+- La imagen de firma se cargará correctamente desde Supabase Storage
+- Solo aparecerá el texto "FIRMA DEL CONTRATISTA" en mayúsculas
+- La información del documento se mostrará como "C.C. 20392259 de Bogotá"
