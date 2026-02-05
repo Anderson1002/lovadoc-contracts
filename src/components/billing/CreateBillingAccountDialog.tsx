@@ -117,6 +117,7 @@ export function CreateBillingAccountDialog({
   const [existingPlanillaUrl, setExistingPlanillaUrl] = useState<string | null>(null);
   const [existingPlanillaName, setExistingPlanillaName] = useState<string | null>(null);
   const planillaFileInputRef = useRef<HTMLInputElement>(null);
+  const [profileSignatureUrl, setProfileSignatureUrl] = useState<string | null>(null);
   
   // Desglose de Aportes de Seguridad Social
   const [saludNumero, setSaludNumero] = useState('');
@@ -146,8 +147,17 @@ export function CreateBillingAccountDialog({
     if (open) {
       loadContracts();
       resetForm();
-      // Ensure we have user profile data
-      console.log('User profile data:', userProfile);
+      // Load signature URL from profile
+      if (userProfile?.signature_url) {
+        supabase.storage
+          .from('billing-signatures')
+          .createSignedUrl(userProfile.signature_url, 3600)
+          .then(({ data }) => {
+            if (data?.signedUrl) {
+              setProfileSignatureUrl(data.signedUrl);
+            }
+          });
+      }
     }
   }, [open, userProfile]);
 
@@ -1974,6 +1984,7 @@ export function CreateBillingAccountDialog({
                     benefitHousingInterest={benefitHousingInterest}
                     benefitHealthContributions={benefitHealthContributions}
                     benefitEconomicDependents={benefitEconomicDependents}
+                    signatureUrl={profileSignatureUrl}
                   />
                 )}
               </div>
