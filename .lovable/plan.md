@@ -1,25 +1,26 @@
 
-# Plan: Corregir la Firma en Cuenta de Cobro ✅ COMPLETADO
+# Plan: Eliminar secciones de Declaraciones, Beneficios Tributarios y Nota Legal del formulario de Cuenta de Cobro
 
-## Cambios Realizados
+## Resumen
+Eliminar del formulario (`InvoiceForm.tsx`) las tres secciones que ya no se necesitan:
+1. "DECLARACIONES BAJO LA GRAVEDAD DEL JURAMENTO" (con sus dos checkboxes)
+2. "BENEFICIOS TRIBUTARIOS" (con sus cinco checkboxes)
+3. "Nota Legal"
 
-1. **InvoicePreview.tsx**: 
-   - Agregado nuevo prop `signatureUrl?: string`
-   - Cambiado para usar `signatureUrl` en lugar de `userProfile.signature_url`
-   - Eliminado el texto `alt` duplicado
+Estas secciones ya se muestran en el preview (`InvoicePreview.tsx`), por lo que no es necesario mantenerlas en el formulario de entrada.
 
-2. **CreateBillingAccountDialog.tsx**:
-   - Agregado estado `profileSignatureUrl`
-   - Agregada lógica para cargar URL firmada desde Supabase Storage
-   - Pasado `signatureUrl={profileSignatureUrl}` al InvoicePreview
+## Cambios
 
-3. **EditBillingAccount.tsx**:
-   - Ya tenía `profileSignatureUrl` cargado correctamente
-   - Solo agregado `signatureUrl={profileSignatureUrl}` al InvoicePreview
+### Archivo: `src/components/billing/InvoiceForm.tsx`
 
-## Resultado
+**Eliminar las líneas 165-264** que contienen:
+- Sección "Declarations" (líneas 165-192)
+- Sección "Tax Benefits" (líneas 194-257)
+- Sección "Legal Note" (líneas 259-264)
 
-- La imagen de firma se carga correctamente desde Supabase Storage usando URL firmada
-- Solo aparece el texto "FIRMA DEL CONTRATISTA" en mayúsculas (sin duplicación)
-- La información del documento se muestra como "C.C. [número] de [ciudad]"
+El formulario terminará después del resumen del monto ("VALOR TOTAL A COBRAR") en la línea 163.
 
+### Detalles Técnicos
+
+- Los props relacionados con declaraciones y beneficios (`declarationSingleEmployer`, `declaration80PercentIncome`, `benefitPrepaidHealth`, etc.) se mantendrán en la interfaz `InvoiceFormProps` por ahora para no romper los componentes padres que los pasan. Se pueden limpiar en un paso posterior si se desea.
+- Los imports de `Checkbox` dejará de usarse en este archivo, por lo que también se eliminará.
