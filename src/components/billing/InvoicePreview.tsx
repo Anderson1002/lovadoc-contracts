@@ -47,161 +47,199 @@ export function InvoicePreview({
       year: 'numeric'
     });
   };
+  const loadImageAsBase64 = (url: string): Promise<string | null> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        } else {
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  };
+
   const handleExportPDF = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 14;
+    const contentWidth = pageWidth - margin * 2;
 
-    // Header
-    doc.setFontSize(16);
-    doc.setFont(undefined, "bold");
-    doc.text("CUENTA DE COBRO", pageWidth / 2, 15, {
-      align: "center"
-    });
-    doc.setFontSize(11);
-    doc.text("DOCUMENTO EQUIVALENTE", pageWidth / 2, 22, {
-      align: "center"
-    });
-    doc.setFont(undefined, "normal");
-    doc.setFontSize(8);
-    doc.text(`No. ${invoiceNumber || '___'}`, pageWidth - 40, 15);
-    let yPosition = 35;
-
-    // Contractor Info - Centered 6 lines
+    // --- Header: Contractor Info (centered, 6 lines) ---
+    let y = 15;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text(userProfile?.name || "", pageWidth / 2, yPosition, {
-      align: "center"
-    });
-    yPosition += 5;
-    doc.setFontSize(9);
+    doc.text(userProfile?.name || "", pageWidth / 2, y, { align: "center" });
+    y += 5;
     doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
     const nitOrCc = userProfile?.nit ? `NIT: ${userProfile.nit}` : `CC. ${userProfile?.document_number || ""}`;
-    doc.text(nitOrCc, pageWidth / 2, yPosition, {
-      align: "center"
-    });
-    yPosition += 5;
-    doc.text(userProfile?.address || "", pageWidth / 2, yPosition, {
-      align: "center"
-    });
-    yPosition += 5;
-    doc.text(`Tel: ${userProfile?.phone || ""}`, pageWidth / 2, yPosition, {
-      align: "center"
-    });
-    yPosition += 5;
-    doc.text(userProfile?.email || "", pageWidth / 2, yPosition, {
-      align: "center"
-    });
-    yPosition += 5;
-    doc.text(userProfile?.tax_regime || "", pageWidth / 2, yPosition, {
-      align: "center"
-    });
-    yPosition += 8;
+    doc.text(nitOrCc, pageWidth / 2, y, { align: "center" });
+    y += 5;
+    doc.text(userProfile?.address || "", pageWidth / 2, y, { align: "center" });
+    y += 5;
+    doc.text(`Tel: ${userProfile?.phone || ""}`, pageWidth / 2, y, { align: "center" });
+    y += 5;
+    doc.text(userProfile?.email || "", pageWidth / 2, y, { align: "center" });
+    y += 5;
+    doc.text(userProfile?.tax_regime || "", pageWidth / 2, y, { align: "center" });
+    y += 6;
 
-    // Divider line and Document Title
+    // --- Divider line ---
     doc.setLineWidth(0.5);
-    doc.line(14, yPosition, pageWidth - 14, yPosition);
-    yPosition += 6;
-    
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 6;
+
+    // --- Secondary title ---
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text("DOCUMENTO EQUIVALENTE FACTURA No. DSE", pageWidth / 2, yPosition, {
-      align: "center"
+    doc.text("DOCUMENTO EQUIVALENTE FACTURA No. DSE", pageWidth / 2, y, { align: "center" });
+    y += 8;
+
+    // --- Client Info (left aligned) ---
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Ciudad y fecha: Girardot, ${formatDate(invoiceDate)}`, margin, y);
+    y += 5;
+    doc.text(`Cliente: MAKTUB MA S.A.S`, margin, y);
+    y += 5;
+    doc.text(`NIT: 900.827.439-4`, margin, y);
+    y += 5;
+    doc.text(`Dirección: CALLE 21 No 11 21 GIRARDOT`, margin, y);
+    y += 5;
+    doc.text(`Teléfono: 3113988647`, margin, y);
+    y += 8;
+
+    // --- Bordered main content box ---
+    const boxStartY = y;
+    const boxX = margin;
+    const boxWidth = contentWidth;
+
+    // We'll draw the rect after calculating content height
+    // For now, track y inside the box
+    let boxY = y + 4; // padding top
+
+    // Narrative block
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    const monthYear = invoiceDate
+      ? new Date(invoiceDate + 'T00:00:00').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }).toUpperCase()
+      : '_______________';
+    const narrativeText = `POR PRESTACION DE SERVICIOS COMO: (${contractDetails?.description || 'Sin descripción'}) DEL PERIODO DEL MES DE ${monthYear} SEGÚN CONTRATO No. ${contractDetails?.contract_number_original || contractDetails?.contract_number || '___'}`;
+    const narrativeLines = doc.splitTextToSize(narrativeText, boxWidth - 8);
+    doc.text(narrativeLines, boxX + 4, boxY);
+    boxY += narrativeLines.length * 3.5 + 4;
+
+    // Amount centered
+    doc.setFont('helvetica', 'bold');
+    doc.text(`SON: ${amount ? formatCurrency(parseFloat(amount)) : '$0'}`, pageWidth / 2, boxY, { align: "center" });
+    boxY += 5;
+
+    // Amount in words centered
+    doc.setFont('helvetica', 'normal');
+    doc.text(amountInWords || '_______________', pageWidth / 2, boxY, { align: "center" });
+    boxY += 5;
+
+    // Bank account centered
+    doc.text(`N0. CUENTA BANCARIA N° ${userProfile?.bank_account || '_______________'} DE AHORROS`, pageWidth / 2, boxY, { align: "center" });
+    boxY += 5;
+
+    // Bank name centered
+    doc.text(`BANCO: ${userProfile?.bank_name || '_______________'}`, pageWidth / 2, boxY, { align: "center" });
+    boxY += 6;
+
+    // Legal declaration (Art. 383) - justified
+    const legalDeclaration = `Bajo la gravedad de juramento informo que no he contratado con más de 1 empleador por un término igual o superior a 90 días, y por consiguiente solicito se me aplica la retención en la fuente por salarios en virtud de lo señalado en el parágrafo 2 del artículo 383 del estatuto tributario, reglamentado por el artículo 1.2.4.1.6 del decreto 1625 de 2016, adicional informo que el 80% o más de mis ingresos totales proceden de la actividad o servicio que estoy realizando SI__x__. NO_____.`;
+    const legalLines = doc.splitTextToSize(legalDeclaration, boxWidth - 8);
+    doc.text(legalLines, boxX + 4, boxY);
+    boxY += legalLines.length * 3.5 + 4;
+
+    // Tax benefits intro text
+    const benefitsIntro = `Deseo obtener beneficios tributarios porque cumplo con la siguiente condición y adjunto los soportes correspondientes:`;
+    const benefitsIntroLines = doc.splitTextToSize(benefitsIntro, boxWidth - 8);
+    doc.text(benefitsIntroLines, boxX + 4, boxY);
+    boxY += benefitsIntroLines.length * 3.5 + 4;
+
+    // Tax benefits table using autoTable
+    const benefitsData = [
+      ['Pago por salud a empresas de medicina prepagada o pagos por seguros de salud', benefitPrepaidHealth ? 'SI' : 'NO'],
+      ['Aportes a fondos de pensiones voluntarios (APB) o cuentas para el fomento de la construcción (AFC)', benefitVoluntaryPension ? 'SI' : 'NO'],
+      ['Intereses o corrección monetaria en virtud de préstamos para la adquisición de vivienda', benefitHousingInterest ? 'SI' : 'NO'],
+      ['Aportes obligatorios al sistema de seguridad social integral en salud', benefitHealthContributions ? 'SI' : 'NO'],
+      ['Declaración juramentada de dependencia económica', benefitEconomicDependents ? 'SI' : 'NO'],
+    ];
+
+    autoTable(doc, {
+      startY: boxY,
+      margin: { left: boxX + 4, right: margin + 4 },
+      body: benefitsData,
+      columnStyles: {
+        0: { cellWidth: (boxWidth - 8) * 0.9 },
+        1: { cellWidth: (boxWidth - 8) * 0.1, halign: 'center' },
+      },
+      styles: {
+        fontSize: 8,
+        cellPadding: 1,
+        lineColor: [0, 0, 0],
+        lineWidth: 0.3,
+        font: 'helvetica',
+      },
+      theme: 'grid',
     });
-    yPosition += 10;
 
-    // Client Info - Left aligned
+    boxY = (doc as any).lastAutoTable.finalY + 4;
+
+    // RUT Activity
     doc.setFontSize(8);
-    doc.setFont(undefined, "normal");
-    doc.text(`Ciudad y fecha: Girardot, ${formatDate(invoiceDate)}`, 14, yPosition);
-    yPosition += 5;
-    doc.text(`Cliente: MAKTUB MA S.A.S`, 14, yPosition);
-    yPosition += 5;
-    doc.text(`NIT: 900.827.439-4`, 14, yPosition);
-    yPosition += 5;
-    doc.text(`Dirección: CALLE 21 No 11 21 GIRARDOT`, 14, yPosition);
-    yPosition += 5;
-    doc.text(`Teléfono: 3113988647`, 14, yPosition);
-    yPosition += 10;
+    doc.setFont('helvetica', 'normal');
+    doc.text('Actividad económica RUT', boxX + 4, boxY);
+    boxY += 5;
 
-    // Amount
-    doc.setFontSize(8);
-    doc.setFont(undefined, "bold");
-    doc.text("DEBE A:", 14, yPosition);
-    doc.text(userProfile?.name || "_______________", 35, yPosition);
-    yPosition += 8;
-    doc.text("LA SUMA DE:", 14, yPosition);
-    doc.setFont(undefined, "normal");
-    doc.text(amountInWords || "_______________", 45, yPosition);
-    yPosition += 8;
-    doc.setFont(undefined, "bold");
-    doc.text("VALOR:", 14, yPosition);
-    doc.text(amount ? formatCurrency(parseFloat(amount)) : "$0", 35, yPosition);
-    doc.setFont(undefined, "normal");
-    yPosition += 15;
-
-    // Declarations
-    doc.setFontSize(8);
-    doc.setFont(undefined, "bold");
-    doc.text("DECLARO BAJO LA GRAVEDAD DEL JURAMENTO:", 14, yPosition);
-    doc.setFont(undefined, "normal");
-    yPosition += 8;
-    if (declarationSingleEmployer) {
-      doc.text("✓ El pagador es mi único empleador", 14, yPosition);
-      yPosition += 5;
-    }
-    if (declaration80PercentIncome) {
-      doc.text("✓ El 80% o más de mis ingresos provienen de prestación de servicios", 14, yPosition);
-      yPosition += 5;
-    }
-    yPosition += 10;
-
-    // Benefits
-    doc.setFont(undefined, "bold");
-    doc.text("BENEFICIOS TRIBUTARIOS APLICABLES:", 14, yPosition);
-    doc.setFont(undefined, "normal");
-    yPosition += 8;
-    if (benefitPrepaidHealth) {
-      doc.text("✓ Medicina prepagada", 14, yPosition);
-      yPosition += 5;
-    }
-    if (benefitVoluntaryPension) {
-      doc.text("✓ Aportes voluntarios a pensión", 14, yPosition);
-      yPosition += 5;
-    }
-    if (benefitHousingInterest) {
-      doc.text("✓ Intereses de vivienda", 14, yPosition);
-      yPosition += 5;
-    }
-    if (benefitHealthContributions) {
-      doc.text("✓ Aportes obligatorios a salud", 14, yPosition);
-      yPosition += 5;
-    }
-    if (benefitEconomicDependents) {
-      doc.text("✓ Dependientes económicos", 14, yPosition);
-      yPosition += 5;
-    }
-    yPosition += 15;
-
-    // Legal note
-    doc.setFontSize(7);
-    const legalNote = "Nota: Este documento equivalente presta mérito ejecutivo y tiene la naturaleza de letra de cambio según el Artículo 774 del Código de Comercio.";
-    const splitLegal = doc.splitTextToSize(legalNote, pageWidth - 28);
-    doc.text(splitLegal, 14, yPosition);
-    yPosition += splitLegal.length * 4 + 15;
+    // Legal note Art. 774
+    doc.text('Esta factura se asimila a una letra de cambio para todos los efectos legales Artículo 774 c de Código de Comercio.', boxX + 4, boxY);
+    boxY += 8;
 
     // Signature
-    doc.setFontSize(8);
-    doc.text("_________________________________", 14, yPosition);
-    yPosition += 5;
-    doc.text("FIRMA DEL CONTRATISTA", 14, yPosition);
-    yPosition += 5;
-    doc.text(userProfile?.name || "", 14, yPosition);
-    yPosition += 5;
-    doc.text(`C.C. ${userProfile?.document_number || ""}`, 14, yPosition);
+    let signatureBase64: string | null = null;
+    if (signatureUrl) {
+      signatureBase64 = await loadImageAsBase64(signatureUrl);
+    }
 
-    // Date and City
-    yPosition += 15;
-    doc.text(`${invoiceCity || "_______________"}, ${formatDate(invoiceDate)}`, 14, yPosition);
+    if (signatureBase64) {
+      const sigWidth = 50;
+      const sigHeight = 20;
+      const sigX = (pageWidth - sigWidth) / 2;
+      doc.addImage(signatureBase64, 'PNG', sigX, boxY, sigWidth, sigHeight);
+      boxY += sigHeight + 2;
+    } else {
+      doc.line(pageWidth / 2 - 30, boxY + 10, pageWidth / 2 + 30, boxY + 10);
+      boxY += 14;
+    }
+
+    // Signature label centered
+    doc.setFont('helvetica', 'bold');
+    doc.text('FIRMA DEL CONTRATISTA', pageWidth / 2, boxY, { align: 'center' });
+    boxY += 5;
+
+    // C.C. info centered
+    doc.setFont('helvetica', 'normal');
+    doc.text(`C.C. ${userProfile?.document_number || '_______________'} de ${userProfile?.document_issue_city || '_______________'}`, pageWidth / 2, boxY, { align: 'center' });
+    boxY += 4;
+
+    // Draw the border rect around all box content
+    const boxEndY = boxY;
+    doc.setLineWidth(0.5);
+    doc.rect(boxX, boxStartY, boxWidth, boxEndY - boxStartY + 2);
+
     doc.save(`CuentaCobro_${invoiceNumber || 'documento'}.pdf`);
   };
   if (!userProfile || !amount) {
