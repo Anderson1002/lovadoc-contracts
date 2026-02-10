@@ -279,7 +279,7 @@ export function InvoicePreview({
           
           {/* Divider and Document Title */}
           <div className="border-t border-foreground my-2"></div>
-          <p className="text-center font-bold text-sm">DOCUMENTO EQUIVALENTE FACTURA No. DSE</p>
+          <p className="text-center font-bold text-sm">DOCUMENTO EQUIVALENTE FACTURA No. DSE{invoiceNumber ? ` ${invoiceNumber}` : ''}</p>
           
           {/* Client Info - Left aligned */}
           <div className="text-left text-xs space-y-0.5 pt-2">
