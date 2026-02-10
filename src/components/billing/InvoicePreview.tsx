@@ -374,58 +374,6 @@ export function InvoicePreview({
             </div>
           </div>
           
-          {/* Declarations */}
-          <div>
-            <p className="font-semibold text-xs mb-2">DECLARACIONES:</p>
-            <div className="space-y-1 text-xs">
-              {declarationSingleEmployer && <p className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3 text-green-600" />
-                  El pagador es mi único empleador
-                </p>}
-              {declaration80PercentIncome && <p className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3 text-green-600" />
-                  80%+ de ingresos por prestación de servicios
-                </p>}
-            </div>
-          </div>
-          
-          {/* Benefits */}
-          <div>
-            <p className="font-semibold text-xs mb-2">BENEFICIOS TRIBUTARIOS:</p>
-            <div className="space-y-1 text-xs">
-              {benefitPrepaidHealth && <p className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3 text-green-600" />
-                  Medicina prepagada
-                </p>}
-              {benefitVoluntaryPension && <p className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3 text-green-600" />
-                  Aportes voluntarios a pensión
-                </p>}
-              {benefitHousingInterest && <p className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3 text-green-600" />
-                  Intereses de vivienda
-                </p>}
-              {benefitHealthContributions && <p className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3 text-green-600" />
-                  Aportes obligatorios a salud
-                </p>}
-              {benefitEconomicDependents && <p className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3 text-green-600" />
-                  Dependientes económicos
-                </p>}
-            </div>
-          </div>
-          
-          {/* Signature */}
-          <div className="pt-4 border-t mt-4">
-            <div className="text-center text-xs">
-              <div className="border-t border-foreground pt-1 mt-8 max-w-xs mx-auto">
-                <p className="font-semibold">FIRMA DEL CONTRATISTA</p>
-                <p>{userProfile?.name}</p>
-                <p className="text-muted-foreground">C.C. {userProfile?.document_number}</p>
-              </div>
-            </div>
-          </div>
           
           <p className="text-xs text-muted-foreground text-center pt-2">
             {invoiceCity || '_______________'}, {formatDate(invoiceDate)}
