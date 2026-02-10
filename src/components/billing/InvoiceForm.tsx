@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { CheckCircle, FileText } from "lucide-react";
 import { formatCurrency, formatCurrencyInput } from "@/lib/utils";
 
@@ -162,106 +162,6 @@ export function InvoiceForm({
           </div>
         </div>
 
-        {/* Declarations */}
-        <div className="space-y-4">
-          <h4 className="font-medium text-base">DECLARACIONES BAJO LA GRAVEDAD DEL JURAMENTO:</h4>
-          
-          <div className="space-y-3 p-4 bg-muted rounded-lg">
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="singleEmployer"
-                checked={declarationSingleEmployer}
-                onCheckedChange={(checked) => onDeclarationSingleEmployerChange(checked as boolean)}
-              />
-              <Label htmlFor="singleEmployer" className="text-sm font-normal leading-relaxed cursor-pointer">
-                Que el pagador (Hospital Departamental de Villavicencio E.S.E.) es mi único empleador
-              </Label>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="income80Percent"
-                checked={declaration80PercentIncome}
-                onCheckedChange={(checked) => onDeclaration80PercentIncomeChange(checked as boolean)}
-              />
-              <Label htmlFor="income80Percent" className="text-sm font-normal leading-relaxed cursor-pointer">
-                Que el 80% o más de mis ingresos provienen de la prestación de servicios
-              </Label>
-            </div>
-          </div>
-        </div>
-
-        {/* Tax Benefits */}
-        <div className="space-y-4">
-          <h4 className="font-medium text-base">BENEFICIOS TRIBUTARIOS:</h4>
-          <p className="text-sm text-muted-foreground">
-            Marque los beneficios tributarios que le aplican:
-          </p>
-          
-          <div className="space-y-3 p-4 bg-muted rounded-lg">
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="prepaidHealth"
-                checked={benefitPrepaidHealth}
-                onCheckedChange={(checked) => onBenefitPrepaidHealthChange(checked as boolean)}
-              />
-              <Label htmlFor="prepaidHealth" className="text-sm font-normal cursor-pointer">
-                Pagos de planes complementarios de medicina prepagada
-              </Label>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="voluntaryPension"
-                checked={benefitVoluntaryPension}
-                onCheckedChange={(checked) => onBenefitVoluntaryPensionChange(checked as boolean)}
-              />
-              <Label htmlFor="voluntaryPension" className="text-sm font-normal cursor-pointer">
-                Aportes a fondos voluntarios de pensión
-              </Label>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="housingInterest"
-                checked={benefitHousingInterest}
-                onCheckedChange={(checked) => onBenefitHousingInterestChange(checked as boolean)}
-              />
-              <Label htmlFor="housingInterest" className="text-sm font-normal cursor-pointer">
-                Pago de intereses de préstamos para adquisición de vivienda
-              </Label>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="healthContributions"
-                checked={benefitHealthContributions}
-                onCheckedChange={(checked) => onBenefitHealthContributionsChange(checked as boolean)}
-              />
-              <Label htmlFor="healthContributions" className="text-sm font-normal cursor-pointer">
-                Aportes obligatorios a salud
-              </Label>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="economicDependents"
-                checked={benefitEconomicDependents}
-                onCheckedChange={(checked) => onBenefitEconomicDependentsChange(checked as boolean)}
-              />
-              <Label htmlFor="economicDependents" className="text-sm font-normal cursor-pointer">
-                Dependientes económicos
-              </Label>
-            </div>
-          </div>
-        </div>
-
-        {/* Legal Note */}
-        <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
-          <p className="text-xs text-amber-700 dark:text-amber-300">
-            <strong>Nota Legal:</strong> Este documento equivalente presta mérito ejecutivo y tiene la naturaleza de letra de cambio según el Artículo 774 del Código de Comercio. El firmante declara bajo juramento que la información aquí consignada es veraz.
-          </p>
-        </div>
       </CardContent>
     </Card>
   );
