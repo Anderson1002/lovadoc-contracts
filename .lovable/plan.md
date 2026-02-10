@@ -1,26 +1,66 @@
 
-# Plan: Eliminar secciones de Declaraciones, Beneficios Tributarios y Nota Legal del formulario de Cuenta de Cobro
+# Plan: Actualizar PDF de Cuenta de Cobro para coincidir con la vista previa HTML
 
 ## Resumen
-Eliminar del formulario (`InvoiceForm.tsx`) las tres secciones que ya no se necesitan:
-1. "DECLARACIONES BAJO LA GRAVEDAD DEL JURAMENTO" (con sus dos checkboxes)
-2. "BENEFICIOS TRIBUTARIOS" (con sus cinco checkboxes)
-3. "Nota Legal"
 
-Estas secciones ya se muestran en el preview (`InvoicePreview.tsx`), por lo que no es necesario mantenerlas en el formulario de entrada.
+Reemplazar completamente la funcion `handleExportPDF` en `InvoicePreview.tsx` para que el PDF generado replique exactamente la estructura de la vista previa HTML.
 
-## Cambios
+## Estructura del PDF actualizado
 
-### Archivo: `src/components/billing/InvoiceForm.tsx`
+El PDF seguira este orden (igual al HTML):
 
-**Eliminar las líneas 165-264** que contienen:
-- Sección "Declarations" (líneas 165-192)
-- Sección "Tax Benefits" (líneas 194-257)
-- Sección "Legal Note" (líneas 259-264)
+1. **Encabezado del contratista** (centrado, 6 lineas): Nombre (bold), NIT/CC, Direccion, Tel, Email, Regimen tributario
+2. **Linea divisoria** + titulo "DOCUMENTO EQUIVALENTE FACTURA No. DSE"
+3. **Datos del cliente** (izquierda): Ciudad/fecha, Cliente, NIT, Direccion, Telefono
+4. **Recuadro principal bordeado** que contiene:
+   - Bloque narrativo: "POR PRESTACION DE SERVICIOS COMO: (...) DEL PERIODO DEL MES DE ..."
+   - Monto centrado: "SON: $X.XXX.XXX"
+   - Monto en letras centrado
+   - Datos bancarios centrados: cuenta y banco
+   - Declaracion legal justificada (parrafo completo del Art. 383)
+   - Texto de beneficios tributarios
+   - Tabla de 5 beneficios con columnas 90/10 (descripcion | SI/NO)
+   - "Actividad economica RUT"
+   - Nota legal Art. 774
+   - Imagen de firma del contratista (si existe `signatureUrl`)
+   - "FIRMA DEL CONTRATISTA"
+   - "C.C. XXXXX de Ciudad"
 
-El formulario terminará después del resumen del monto ("VALOR TOTAL A COBRAR") en la línea 163.
+## Cambios tecnicos
 
-### Detalles Técnicos
+### Archivo: `src/components/billing/InvoicePreview.tsx`
 
-- Los props relacionados con declaraciones y beneficios (`declarationSingleEmployer`, `declaration80PercentIncome`, `benefitPrepaidHealth`, etc.) se mantendrán en la interfaz `InvoiceFormProps` por ahora para no romper los componentes padres que los pasan. Se pueden limpiar en un paso posterior si se desea.
-- Los imports de `Checkbox` dejará de usarse en este archivo, por lo que también se eliminará.
+**Reemplazar `handleExportPDF` (lineas 50-205)** con nueva implementacion que:
+
+- Elimina las secciones antiguas: "DEBE A", "LA SUMA DE", "VALOR", declaraciones con checkmarks, beneficios con checkmarks, nota legal antigua, firma izquierda, fecha/ciudad final
+- Agrega recuadro bordeado usando `doc.rect()` alrededor del contenido principal
+- Agrega bloque narrativo con `splitTextToSize` para texto justificado
+- Agrega montos y datos bancarios centrados
+- Agrega parrafo legal completo (Art. 383) con texto justificado
+- Agrega tabla de beneficios usando `autoTable` con 2 columnas (90%/10%)
+- Agrega notas legales (RUT y Art. 774)
+- Carga la imagen de firma desde `signatureUrl` usando `fetch` + `canvas` para convertir a base64, y la inserta centrada con `doc.addImage()`
+- Agrega texto de firma centrado: label + C.C. + ciudad de expedicion
+
+### Manejo de la imagen de firma
+
+```
+// Pseudocodigo
+if (signatureUrl) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  // Cargar imagen, dibujar en canvas, obtener base64
+  // doc.addImage(base64, 'PNG', x, y, width, height);
+}
+```
+
+### Tabla de beneficios en PDF
+
+Se usara `autoTable` con:
+- 2 columnas: descripcion (90%) y SI/NO (10%)
+- 5 filas con los mismos textos del HTML
+- Bordes completos, fuente 8pt
+
+## Resultado esperado
+
+El PDF descargado sera visualmente identico a la vista previa HTML, con toda la informacion en el mismo orden y formato.
