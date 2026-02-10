@@ -141,7 +141,7 @@ export function EditBillingAccountDialog({
                             activities.filter(a => a.status === 'saved').length > 0 && 
                             (uploads.social_security.uploaded || existingPlanillaPath || pendingPlanillaFile));
   const certificacionComplete = !!(certificationMonth && reportDeliveryDate);
-  const cuentaCobroComplete = !!(invoiceCity && invoiceDate && invoiceNumber && amountInWords);
+  const cuentaCobroComplete = !!(invoiceDate && invoiceNumber && amountInWords);
   const hasProfileSignature = !!profileSignatureUrl;
   const allFormsComplete = informeComplete && certificacionComplete && cuentaCobroComplete;
   const canSubmitForReview = allFormsComplete && hasProfileSignature &&
