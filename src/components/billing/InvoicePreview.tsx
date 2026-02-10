@@ -374,10 +374,6 @@ export function InvoicePreview({
             </div>
           </div>
           
-          
-          <p className="text-xs text-muted-foreground text-center pt-2">
-            {invoiceCity || '_______________'}, {formatDate(invoiceDate)}
-          </p>
         </div>
       </CardContent>
     </Card>;
