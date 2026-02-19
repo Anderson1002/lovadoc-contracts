@@ -1,94 +1,65 @@
 
+# Plan: Vista de 3 Documentos para Supervisor + Observaciones por Documento
 
-# Validacion del Flujo Completo: Cuentas de Cobro por Rol
+## Los 3 documentos de una cuenta de cobro
 
-## Estado Actual de la Base de Datos
+1. **Informe de Actividades** - Campos del empleado: actividades, acciones desarrolladas, evidencias, datos de planilla (salud, pension, ARL), firma del contratista
+2. **Certificacion** - Campos del empleado: novedades del periodo, valor ejecutado antes, fecha de entrega del informe, mes de certificacion, lista de anexos. Campos auto-generados: tabla financiera (15 campos), texto legal, firma del supervisor
+3. **Cuenta de Cobro (Invoice)** - Campos del empleado: numero de factura, fecha, monto en letras, declaraciones tributarias (SI/NO), beneficios tributarios. Campos auto-generados: datos del contratista, datos del cliente, texto legal
 
-Solo existe 1 cuenta de cobro:
-- **COB-202512-001** - Estado: `borrador` - Creada por: salazar.anderson2@gmail.com (EMPLOYEE)
-- No existe un usuario con ROL = TREASURY en el sistema actualmente
+## Problema actual
 
-## Flujo de Estados
+- El supervisor solo ve el "Informe de Actividades" en la vista previa
+- No puede ver la Certificacion ni la Cuenta de Cobro
+- Al devolver, solo puede dejar un comentario general, sin indicar en cual documento esta el problema
 
-```text
-borrador --> pendiente_revision --> aprobada --> causada
-                |                      |
-                v                      v
-            rechazada          pendiente_revision
-                |               (devuelta por treasury)
-                v
-        pendiente_revision
-        (reenvio por employee)
-```
+## Cambios propuestos
 
-## Visibilidad por Rol y Pestana
+### 1. Ampliar la vista previa con pestanas (Tabs) - `BillingReviewList.tsx`
 
-### ROL = EMPLOYEE (salazar.anderson2@gmail.com)
+Reemplazar el dialogo de vista previa actual (que solo muestra `BillingDocumentPreview`) por un dialogo con 3 pestanas:
 
-| Pestana | Que ve | Filtro |
-|---------|--------|--------|
-| Mis Cuentas | Sus propias cuentas en TODOS los estados | RLS: created_by = su perfil |
-| Todas las Cuentas | Solo sus propias cuentas | RLS limita a sus cuentas |
-| Pendientes Revision | NO visible | Tab oculta para employee |
-| Cuentas por Pagar | NO visible | Tab oculta para employee |
+- **Informe de Actividades** - Muestra `BillingDocumentPreview` (ya existente)
+- **Certificacion** - Muestra `CertificationPreview` (ya existente, solo falta integrarlo)
+- **Cuenta de Cobro** - Muestra `InvoicePreview` (ya existente, solo falta integrarlo)
 
-**Acciones disponibles:**
-- Editar: solo en `borrador` o `rechazada`
-- Enviar a revision: solo en `borrador` o `rechazada`
-- Eliminar: solo en `borrador`
+Para esto se necesita cargar campos adicionales del `billing_accounts` en la funcion `handlePreview`:
+- `novedades`, `certification_date`, `certification_month`, `report_delivery_date`
+- `valor_ejecutado_antes`, `risk_matrix_compliance`, `social_security_verified`, `anexos_lista`
+- `invoice_number`, `invoice_date`, `invoice_city`, `amount_in_words`
+- `declaration_single_employer`, `declaration_80_percent_income`
+- `benefit_prepaid_health`, `benefit_voluntary_pension`, `benefit_housing_interest`, `benefit_health_contributions`, `benefit_economic_dependents`
+- `firma_url`, `supervisor_signature_url`
 
-### ROL = SUPERVISOR (sistemas.ingeniero3@hus.org.co)
+Todos estos campos ya existen en la tabla `billing_accounts` y ya se cargan con `select(*)`.
 
-| Pestana | Que ve | Filtro |
-|---------|--------|--------|
-| Mis Cuentas | NO visible | Tab oculta para supervisor |
-| Pendientes Revision | Cuentas en `pendiente_revision` de su proceso | query: status = pendiente_revision + RLS: proceso_id |
-| Todas las Cuentas | Cuentas de su proceso EXCEPTO borradores | Codigo + RLS: status != borrador AND proceso del supervisor |
-| Cuentas por Pagar | NO visible | Tab oculta para supervisor |
+### 2. Mejorar el dialogo de devolucion - `BillingReviewList.tsx`
 
-**Acciones disponibles:**
-- Aprobar: cambia a `aprobada`
-- Devolver/Rechazar: cambia a `rechazada` (requiere comentario)
+Cuando el supervisor elige "Devolver", en lugar de un solo campo de comentario, mostrar:
 
-### ROL = TREASURY (no existe usuario aun)
+- Un selector de documento (Informe / Certificacion / Cuenta de Cobro) para indicar en cual documento esta la observacion
+- El campo de comentario existente para detallar la observacion
+- El comentario guardado incluira automaticamente el prefijo del documento: ej. "[INFORME] Falta la planilla de ARL"
 
-| Pestana | Que ve | Filtro |
-|---------|--------|--------|
-| Mis Cuentas | NO visible | Tab oculta para treasury |
-| Pendientes Revision | NO visible | Tab oculta para treasury |
-| Cuentas por Pagar | Solo cuentas en estado `aprobada` | query: status = aprobada |
-| Todas las Cuentas | Todas las cuentas EXCEPTO borradores | Codigo + RLS: status != borrador |
+Esto no requiere cambios en la base de datos, ya que el campo `comentario_supervisor` es texto libre y puede contener el prefijo del documento.
 
-**Acciones disponibles:**
-- Marcar como Causada: cambia a `causada`
-- Devolver al Supervisor: cambia a `pendiente_revision`
+### 3. Cargar campos del contrato adicionales
 
-### ROL = ADMIN / SUPER_ADMIN
+Ampliar el `select` de contratos en `handlePreview` para incluir:
+- `cdp`, `rp`, `budget_code`, `addition_number`, `addition_cdp`, `addition_rp`, `addition_amount`
+- `execution_period_months`, `execution_period_days`
 
-| Pestana | Que ve | Filtro |
-|---------|--------|--------|
-| Mis Cuentas | Visible, sus propias cuentas | |
-| Pendientes Revision | Visible, todas las pendientes | |
-| Cuentas por Pagar | Visible, todas las aprobadas | |
-| Todas las Cuentas | TODAS las cuentas incluyendo borradores | Sin restriccion |
+Estos campos son necesarios para renderizar correctamente la tabla financiera de la Certificacion.
 
-## Validacion de Seguridad (RLS)
+## Archivos a modificar
 
-Las politicas RLS en la base de datos refuerzan correctamente la logica:
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/billing/BillingReviewList.tsx` | Agregar tabs con los 3 documentos en el dialogo de vista previa. Mejorar dialogo de devolucion con selector de documento. Ampliar query de contratos. |
 
-1. **EMPLOYEE** ve solo sus propias cuentas (todos los estados) - CORRECTO
-2. **SUPERVISOR** ve cuentas de su proceso EXCEPTO borradores - CORRECTO
-3. **TREASURY** ve todas las cuentas EXCEPTO borradores - CORRECTO
-4. **ADMIN/SUPER_ADMIN** ve todo - CORRECTO
+## Resultado esperado
 
-Los triggers de transicion de estado (`validate_cuenta_transition`) tambien estan correctos:
-- Employee: borrador/rechazada -> pendiente_revision
-- Supervisor: pendiente_revision -> aprobada/rechazada
-- Treasury: aprobada -> causada o pendiente_revision
-
-## Conclusion
-
-El flujo esta correctamente implementado tanto a nivel de codigo como de RLS. La unica observacion es que **no existe un usuario con ROL = TREASURY** en el sistema. Para probar el flujo completo, se necesita crear uno.
-
-No se requieren cambios de codigo. Todo funciona segun la logica de negocio descrita.
-
+- El supervisor puede navegar entre los 3 documentos de una cuenta de cobro
+- Al devolver, puede indicar en cual documento esta el problema
+- El empleado ve claramente en que documento y campo debe corregir
+- No se requieren cambios en la base de datos
