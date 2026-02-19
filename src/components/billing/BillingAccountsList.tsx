@@ -62,6 +62,9 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
         console.log('Non-admin user in "all" view - RLS will filter automatically');
       } else {
         console.log('Admin/Supervisor/Treasury user - will see all accounts per RLS');
+        if (['supervisor', 'treasury'].includes(userRole)) {
+          query = query.neq('status', 'borrador');
+        }
       }
 
       console.log('Executing query...');
