@@ -9,6 +9,7 @@ import { formatCurrency } from "@/lib/utils";
 import { EditBillingAccountDialog } from "../../pages/EditBillingAccount";
 import { BillingAccountActions } from "./BillingAccountActions";
 import { BillingAccountStatusBadge } from "./BillingAccountStatusBadge";
+import { SupervisorObservations } from "./SupervisorObservations";
 
 interface BillingAccountsListProps {
   userProfile: any;
@@ -248,7 +249,12 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
                     </div>
                   </TableCell>
                   <TableCell>
-                    <BillingAccountStatusBadge status={billing.status} />
+                    <div className="space-y-1">
+                      <BillingAccountStatusBadge status={billing.status} />
+                      {billing.status === 'rechazada' && billing.comentario_supervisor && (
+                        <SupervisorObservations comment={billing.comentario_supervisor} compact />
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatDate(billing.created_at)}
