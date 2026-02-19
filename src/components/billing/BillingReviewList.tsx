@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Eye, CheckCircle, XCircle, Calendar, DollarSign, FileText, MessageCircle } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Calendar, DollarSign, FileText, MessageCircle, Plus, Trash2 } from "lucide-react";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { BillingDocumentPreview } from "@/components/billing/BillingDocumentPreview";
 import { CertificationPreview } from "@/components/billing/CertificationPreview";
@@ -32,7 +32,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
   const [submitting, setSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewBilling, setPreviewBilling] = useState<any>(null);
-  const [documentType, setDocumentType] = useState<string>('');
+  const [observations, setObservations] = useState<Array<{ documentType: string; comment: string }>>([{ documentType: '', comment: '' }]);
 
   useEffect(() => {
     loadPendingBillingAccounts();
@@ -99,7 +99,19 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
     setSelectedBilling(billing);
     setReviewAction(action);
     setComments('');
-    setDocumentType('');
+    setObservations([{ documentType: '', comment: '' }]);
+  };
+
+  const addObservation = () => {
+    setObservations(prev => [...prev, { documentType: '', comment: '' }]);
+  };
+
+  const removeObservation = (index: number) => {
+    setObservations(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateObservation = (index: number, field: 'documentType' | 'comment', value: string) => {
+    setObservations(prev => prev.map((obs, i) => i === index ? { ...obs, [field]: value } : obs));
   };
 
   const handlePreview = async (billing: any) => {
@@ -196,22 +208,31 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
   const submitReview = async () => {
     if (!selectedBilling || !reviewAction) return;
 
-    // Validate comments for rejection
-    if (reviewAction === 'reject' && !comments.trim()) {
-      toast({
-        title: "Error",
-        description: "Debe agregar un comentario al devolver una cuenta de cobro",
-        variant: "destructive"
-      });
-      return;
+    // Validate observations for rejection
+    if (reviewAction === 'reject') {
+      const validObs = observations.filter(o => o.documentType && o.comment.trim());
+      if (validObs.length === 0) {
+        toast({
+          title: "Error",
+          description: "Debe agregar al menos una observación con documento y comentario",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     try {
       setSubmitting(true);
 
-      // Update billing account status (solo estado y comentario_supervisor)
-      const prefix = reviewAction === 'reject' && documentType ? `[${documentType}] ` : '';
-      const fullComment = comments.trim() ? `${prefix}${comments.trim()}` : null;
+      // Build combined comment from all observations
+      let fullComment: string | null = null;
+      if (reviewAction === 'reject') {
+        const validObs = observations.filter(o => o.documentType && o.comment.trim());
+        fullComment = validObs.map(o => `[${o.documentType}] ${o.comment.trim()}`).join('\n');
+      } else {
+        fullComment = comments.trim() || null;
+      }
+
       const updates: any = {
         status: reviewAction === 'approve' ? 'aprobada' : 'rechazada',
         comentario_supervisor: fullComment
@@ -226,14 +247,14 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
 
       // Create review record
       const decisionValue = reviewAction === 'approve' ? 'aprobada' : 'rechazada';
-      const actionValue = reviewAction === 'approve' ? 'approved' : 'rejected'; // Fixed: using correct constraint values
+      const actionValue = reviewAction === 'approve' ? 'approved' : 'rejected';
       const reviewData = {
         billing_account_id: selectedBilling.id,
         reviewer_id: userProfile.id,
-        action: actionValue, // Fixed: using correct action value
-        comments: comments.trim() || null,
+        action: actionValue,
+        comments: fullComment,
         decision: decisionValue,
-        comentario: comments.trim() || null
+        comentario: fullComment
       };
 
       const { error: reviewError } = await supabase
@@ -254,6 +275,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
       setSelectedBilling(null);
       setReviewAction(null);
       setComments('');
+      setObservations([{ documentType: '', comment: '' }]);
 
     } catch (error: any) {
       console.error('Error submitting review:', error);
@@ -407,11 +429,11 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
       <Dialog 
         open={!!selectedBilling && !!reviewAction} 
         onOpenChange={(open) => {
-          if (!open) {
+           if (!open) {
             setSelectedBilling(null);
             setReviewAction(null);
             setComments('');
-            setDocumentType('');
+            setObservations([{ documentType: '', comment: '' }]);
           }
         }}
       >
@@ -437,37 +459,68 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
           </DialogHeader>
 
           <div className="space-y-4">
-            {reviewAction === 'reject' && (
+            {reviewAction === 'reject' ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Observaciones por documento *</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addObservation}
+                    disabled={observations.length >= 3}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Agregar observación
+                  </Button>
+                </div>
+                {observations.map((obs, index) => (
+                  <div key={index} className="border rounded-md p-3 space-y-2 bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <Select value={obs.documentType} onValueChange={(val) => updateObservation(index, 'documentType', val)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione el documento..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="INFORME">Informe de Actividades</SelectItem>
+                            <SelectItem value="CERTIFICACIÓN">Certificación</SelectItem>
+                            <SelectItem value="CUENTA DE COBRO">Cuenta de Cobro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {observations.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          onClick={() => removeObservation(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <Textarea
+                      placeholder="Detalle la observación..."
+                      value={obs.comment}
+                      onChange={(e) => updateObservation(index, 'comment', e.target.value)}
+                      className="min-h-[60px]"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
               <div>
-                <Label htmlFor="documentType">Documento con observación *</Label>
-                <Select value={documentType} onValueChange={setDocumentType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione el documento..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="INFORME">Informe de Actividades</SelectItem>
-                    <SelectItem value="CERTIFICACIÓN">Certificación</SelectItem>
-                    <SelectItem value="CUENTA DE COBRO">Cuenta de Cobro</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="comments">Comentarios (opcional)</Label>
+                <Textarea
+                  id="comments"
+                  placeholder="Agregue comentarios si es necesario..."
+                  value={comments}
+                  onChange={(e) => setComments(e.target.value)}
+                />
               </div>
             )}
-            <div>
-              <Label htmlFor="comments">
-                {reviewAction === 'reject' ? 'Motivo de la devolución *' : 'Comentarios (opcional)'}
-              </Label>
-              <Textarea
-                id="comments"
-                placeholder={
-                  reviewAction === 'reject' 
-                    ? "Explique el motivo del rechazo..." 
-                    : "Agregue comentarios si es necesario..."
-                }
-                value={comments}
-                onChange={(e) => setComments(e.target.value)}
-                required={reviewAction === 'reject'}
-              />
-            </div>
 
             <div className="flex justify-end gap-2">
               <Button
@@ -476,7 +529,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                   setSelectedBilling(null);
                   setReviewAction(null);
                   setComments('');
-                  setDocumentType('');
+                  setObservations([{ documentType: '', comment: '' }]);
                 }}
                 disabled={submitting}
               >
@@ -484,7 +537,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
               </Button>
               <Button
                 onClick={submitReview}
-                disabled={submitting || (reviewAction === 'reject' && (!comments.trim() || !documentType))}
+                disabled={submitting || (reviewAction === 'reject' && observations.filter(o => o.documentType && o.comment.trim()).length === 0)}
                 variant={reviewAction === 'approve' ? 'default' : 'destructive'}
               >
                 {submitting ? 'Procesando...' : (reviewAction === 'approve' ? 'Aprobar' : 'Devolver')}
