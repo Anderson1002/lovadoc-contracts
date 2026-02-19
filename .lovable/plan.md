@@ -1,32 +1,34 @@
 
 
-# Plan: Corregir criterio de completitud de Cuenta de Cobro
+# Plan: Filtrar cuentas en borrador para supervisores en "Todas las Cuentas"
 
 ## Problema
 
-En `EditBillingAccount.tsx`, la variable `cuentaCobroComplete` se calcula asi:
+Cuando un supervisor accede a la pestana "Todas las Cuentas", puede ver cuentas de cobro en estado **borrador**. Las cuentas en borrador son trabajo en progreso del empleado y no deben ser visibles para supervisores ni tesoreria hasta que el empleado las envie (estado `pendiente_revision`).
+
+## Logica de negocio
+
+| Rol | Que ve en "Todas las Cuentas" |
+|-----|-------------------------------|
+| employee | Solo sus propias cuentas (todos los estados) |
+| supervisor | Cuentas de su proceso, **excepto borradores** |
+| admin / super_admin | Todas las cuentas (todos los estados) |
+| treasury | Todas las cuentas, **excepto borradores** |
+
+## Cambio tecnico
+
+### Archivo: `src/components/billing/BillingAccountsList.tsx`
+
+En la funcion `loadBillingAccounts`, dentro del bloque `filterType === 'all'`, agregar un filtro para excluir cuentas en estado `borrador` cuando el usuario es supervisor o treasury:
 
 ```
-cuentaCobroComplete = !!(invoiceCity && invoiceDate && invoiceNumber && amountInWords)
+// Linea ~60-65, dentro del else (admin/supervisor/treasury)
+if (['supervisor', 'treasury'].includes(userRole)) {
+  query = query.neq('status', 'borrador');
+}
 ```
 
-Pero el campo `invoiceCity` fue eliminado del formulario (la ciudad ahora es fija "Girardot" en el preview). Como ya no se captura ese dato, siempre esta vacio y la cuenta nunca se marca como completa.
-
-## Solucion
-
-Actualizar la condicion en `EditBillingAccount.tsx` (linea 144) para remover `invoiceCity` del criterio:
-
-**Antes:**
-```
-const cuentaCobroComplete = !!(invoiceCity && invoiceDate && invoiceNumber && amountInWords);
-```
-
-**Despues:**
-```
-const cuentaCobroComplete = !!(invoiceDate && invoiceNumber && amountInWords);
-```
-
-Esto coincide con los campos que el usuario realmente debe completar: Documento Equivalente No., Fecha, y Valor en Letras.
-
-### Archivo afectado
-- `src/pages/EditBillingAccount.tsx` - linea 144
+Esto asegura que:
+- Los borradores solo son visibles para el empleado que los creo
+- Los supervisores solo ven cuentas ya enviadas/radicadas
+- Admins y super_admins mantienen visibilidad completa
