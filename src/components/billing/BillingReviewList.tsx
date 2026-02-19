@@ -11,6 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Eye, CheckCircle, XCircle, Calendar, DollarSign, FileText, MessageCircle } from "lucide-react";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { BillingDocumentPreview } from "@/components/billing/BillingDocumentPreview";
+import { CertificationPreview } from "@/components/billing/CertificationPreview";
+import { InvoicePreview } from "@/components/billing/InvoicePreview";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface BillingReviewListProps {
   userProfile: any;
@@ -28,6 +32,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
   const [submitting, setSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewBilling, setPreviewBilling] = useState<any>(null);
+  const [documentType, setDocumentType] = useState<string>('');
 
   useEffect(() => {
     loadPendingBillingAccounts();
@@ -94,6 +99,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
     setSelectedBilling(billing);
     setReviewAction(action);
     setComments('');
+    setDocumentType('');
   };
 
   const handlePreview = async (billing: any) => {
@@ -107,11 +113,21 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
             contract_number,
             contract_number_original,
             client_profile_id,
-            profiles:client_profile_id(name, document_number, email, phone, address, bank_account, bank_name),
+            profiles:client_profile_id(name, document_number, email, phone, address, bank_account, bank_name, document_issue_city, nit, tax_regime, signature_url),
             total_amount,
             start_date,
             end_date,
-            description
+            description,
+            cdp,
+            rp,
+            fecha_rp,
+            budget_code,
+            addition_number,
+            addition_cdp,
+            addition_rp,
+            addition_amount,
+            execution_period_months,
+            execution_period_days
           )
         `)
         .eq('id', billing.id)
@@ -194,9 +210,11 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
       setSubmitting(true);
 
       // Update billing account status (solo estado y comentario_supervisor)
+      const prefix = reviewAction === 'reject' && documentType ? `[${documentType}] ` : '';
+      const fullComment = comments.trim() ? `${prefix}${comments.trim()}` : null;
       const updates: any = {
         status: reviewAction === 'approve' ? 'aprobada' : 'rechazada',
-        comentario_supervisor: comments.trim() || null
+        comentario_supervisor: fullComment
       };
 
       const { error: updateError } = await supabase
@@ -393,6 +411,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
             setSelectedBilling(null);
             setReviewAction(null);
             setComments('');
+            setDocumentType('');
           }
         }}
       >
@@ -418,6 +437,21 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
           </DialogHeader>
 
           <div className="space-y-4">
+            {reviewAction === 'reject' && (
+              <div>
+                <Label htmlFor="documentType">Documento con observación *</Label>
+                <Select value={documentType} onValueChange={setDocumentType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione el documento..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INFORME">Informe de Actividades</SelectItem>
+                    <SelectItem value="CERTIFICACIÓN">Certificación</SelectItem>
+                    <SelectItem value="CUENTA DE COBRO">Cuenta de Cobro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label htmlFor="comments">
                 {reviewAction === 'reject' ? 'Motivo de la devolución *' : 'Comentarios (opcional)'}
@@ -442,6 +476,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                   setSelectedBilling(null);
                   setReviewAction(null);
                   setComments('');
+                  setDocumentType('');
                 }}
                 disabled={submitting}
               >
@@ -449,7 +484,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
               </Button>
               <Button
                 onClick={submitReview}
-                disabled={submitting || (reviewAction === 'reject' && !comments.trim())}
+                disabled={submitting || (reviewAction === 'reject' && (!comments.trim() || !documentType))}
                 variant={reviewAction === 'approve' ? 'default' : 'destructive'}
               >
                 {submitting ? 'Procesando...' : (reviewAction === 'approve' ? 'Aprobar' : 'Devolver')}
@@ -461,20 +496,75 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
 
       {/* Preview Dialog */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle>Vista Previa - INFORME DE ACTIVIDADES</DialogTitle>
+            <DialogTitle>Vista Previa - Documentos de la Cuenta de Cobro</DialogTitle>
           </DialogHeader>
           {previewBilling && (
-            <BillingDocumentPreview
-              userProfile={previewBilling.created_by_profile}
-              selectedContract={previewBilling.contracts}
-              startDate={previewBilling.billing_start_date ? parseLocalDate(previewBilling.billing_start_date) : new Date()}
-              endDate={previewBilling.billing_end_date ? parseLocalDate(previewBilling.billing_end_date) : new Date()}
-              activities={previewBilling.transformedActivities || []}
-              amount={previewBilling.amount.toString()}
-              reviewComments={previewBilling.reviewComments}
-            />
+            <Tabs defaultValue="informe" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="informe">Informe de Actividades</TabsTrigger>
+                <TabsTrigger value="certificacion">Certificación</TabsTrigger>
+                <TabsTrigger value="cuenta">Cuenta de Cobro</TabsTrigger>
+              </TabsList>
+              <TabsContent value="informe">
+                <BillingDocumentPreview
+                  userProfile={previewBilling.created_by_profile}
+                  selectedContract={previewBilling.contracts}
+                  startDate={previewBilling.billing_start_date ? parseLocalDate(previewBilling.billing_start_date) : new Date()}
+                  endDate={previewBilling.billing_end_date ? parseLocalDate(previewBilling.billing_end_date) : new Date()}
+                  activities={previewBilling.transformedActivities || []}
+                  amount={previewBilling.amount.toString()}
+                  reviewComments={previewBilling.reviewComments}
+                  saludNumero={previewBilling.salud_planilla_numero}
+                  saludValor={previewBilling.salud_planilla_valor?.toString()}
+                  saludFecha={previewBilling.salud_planilla_fecha}
+                  pensionNumero={previewBilling.pension_planilla_numero}
+                  pensionValor={previewBilling.pension_planilla_valor?.toString()}
+                  pensionFecha={previewBilling.pension_planilla_fecha}
+                  arlNumero={previewBilling.arl_planilla_numero}
+                  arlValor={previewBilling.arl_planilla_valor?.toString()}
+                  arlFecha={previewBilling.arl_planilla_fecha}
+                />
+              </TabsContent>
+              <TabsContent value="certificacion">
+                <CertificationPreview
+                  contractDetails={previewBilling.contracts}
+                  userProfile={previewBilling.created_by_profile}
+                  startDate={previewBilling.billing_start_date ? parseLocalDate(previewBilling.billing_start_date) : undefined}
+                  endDate={previewBilling.billing_end_date ? parseLocalDate(previewBilling.billing_end_date) : undefined}
+                  amount={previewBilling.amount.toString()}
+                  novedades={previewBilling.novedades || ''}
+                  certificationDate={previewBilling.certification_date || ''}
+                  supervisorName={previewBilling.created_by_profile?.name}
+                  valorEjecutadoAntes={previewBilling.valor_ejecutado_antes?.toString() || '0'}
+                  riskMatrixCompliance={previewBilling.risk_matrix_compliance || false}
+                  socialSecurityVerified={previewBilling.social_security_verified || true}
+                  anexosLista={previewBilling.anexos_lista || ''}
+                  activities={previewBilling.transformedActivities || []}
+                  certificationMonth={previewBilling.certification_month || ''}
+                  reportDeliveryDate={previewBilling.report_delivery_date || ''}
+                />
+              </TabsContent>
+              <TabsContent value="cuenta">
+                <InvoicePreview
+                  contractDetails={previewBilling.contracts}
+                  userProfile={previewBilling.created_by_profile}
+                  amount={previewBilling.amount.toString()}
+                  invoiceNumber={previewBilling.invoice_number || ''}
+                  invoiceCity={previewBilling.invoice_city || ''}
+                  invoiceDate={previewBilling.invoice_date || ''}
+                  amountInWords={previewBilling.amount_in_words || ''}
+                  declarationSingleEmployer={previewBilling.declaration_single_employer ?? true}
+                  declaration80PercentIncome={previewBilling.declaration_80_percent_income ?? true}
+                  benefitPrepaidHealth={previewBilling.benefit_prepaid_health ?? false}
+                  benefitVoluntaryPension={previewBilling.benefit_voluntary_pension ?? false}
+                  benefitHousingInterest={previewBilling.benefit_housing_interest ?? false}
+                  benefitHealthContributions={previewBilling.benefit_health_contributions ?? true}
+                  benefitEconomicDependents={previewBilling.benefit_economic_dependents ?? false}
+                />
+              </TabsContent>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>
