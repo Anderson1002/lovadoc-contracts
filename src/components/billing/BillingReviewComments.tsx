@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { MessageSquare, Search, Calendar } from "lucide-react";
+import { SupervisorObservations } from "./SupervisorObservations";
 
 interface BillingReview {
   id: string;
@@ -192,12 +193,12 @@ export function BillingReviewComments({ userRole }: BillingReviewCommentsProps) 
                     <TableCell>
                       {getStatusBadge(review.estado || '')}
                     </TableCell>
-                    <TableCell className="max-w-xs">
-                      <div className="truncate" title={review.last_comment || 'Sin comentarios'}>
-                        <span className="font-medium text-blue-700">
-                          {review.last_comment || 'Sin comentarios'}
-                        </span>
-                      </div>
+                    <TableCell className="max-w-md">
+                      {review.last_comment ? (
+                        <SupervisorObservations comment={review.last_comment} compact />
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Sin comentarios</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {getDecisionBadge(review.last_decision)}

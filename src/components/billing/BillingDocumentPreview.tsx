@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
+import { SupervisorObservations } from "./SupervisorObservations";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -629,9 +630,14 @@ export function BillingDocumentPreview({
                   <p className="text-sm mb-1">
                     <strong>Revisor:</strong> {review.reviewer.name}
                   </p>
-                  <p className="text-sm">
-                    <strong>Comentario:</strong> {review.comments || 'Sin comentarios'}
-                  </p>
+                  {review.comments ? (
+                    <div className="mt-1">
+                      <strong className="text-sm">Comentario:</strong>
+                      <SupervisorObservations comment={review.comments} className="mt-1" />
+                    </div>
+                  ) : (
+                    <p className="text-sm"><strong>Comentario:</strong> Sin comentarios</p>
+                  )}
                 </div>
               ))}
             </div>
