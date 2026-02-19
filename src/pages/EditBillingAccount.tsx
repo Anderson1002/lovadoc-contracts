@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Loader2, Trash2, Check, ChevronsUpDown, Eye, Download, RefreshCw } from "lucide-react";
+import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Loader2, Trash2, Check, ChevronsUpDown, Eye, Download, RefreshCw, AlertTriangle } from "lucide-react";
+import { SupervisorObservations } from "@/components/billing/SupervisorObservations";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { formatCurrency, formatCurrencyInput, parseLocalDate } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
@@ -801,6 +802,16 @@ export function EditBillingAccountDialog({
             }
           </DialogDescription>
         </DialogHeader>
+
+        {billingAccount?.status === 'rechazada' && billingAccount?.comentario_supervisor && (
+          <div className="border border-destructive/50 bg-destructive/5 rounded-lg p-4 space-y-2">
+            <div className="flex items-center gap-2 text-sm font-semibold text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              Cuenta devuelta — Corrija las siguientes observaciones
+            </div>
+            <SupervisorObservations comment={billingAccount.comentario_supervisor} />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Form with Tabs */}
