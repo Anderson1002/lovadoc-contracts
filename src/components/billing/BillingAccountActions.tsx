@@ -393,6 +393,19 @@ export function BillingAccountActions({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Review History Dialog */}
+      <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Historial de Revisiones — {billingAccount.account_number}
+            </DialogTitle>
+          </DialogHeader>
+          <BillingReviewHistory billingAccountId={billingAccount.id} />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
