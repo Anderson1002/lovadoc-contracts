@@ -595,10 +595,14 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
           </DialogHeader>
           {previewBilling && (
             <Tabs defaultValue="informe" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="informe">Informe de Actividades</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="informe">Informe</TabsTrigger>
                 <TabsTrigger value="certificacion">Certificación</TabsTrigger>
                 <TabsTrigger value="cuenta">Cuenta de Cobro</TabsTrigger>
+                <TabsTrigger value="historial" className="flex items-center gap-1">
+                  <History className="h-3 w-3" />
+                  Historial
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="informe">
                 <BillingDocumentPreview
@@ -657,7 +661,28 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                   benefitEconomicDependents={previewBilling.benefit_economic_dependents ?? false}
                 />
               </TabsContent>
+              <TabsContent value="historial">
+                <div className="p-4">
+                  <h3 className="text-sm font-semibold mb-4">Historial de Revisiones</h3>
+                  <BillingReviewHistory billingAccountId={previewBilling.id} />
+                </div>
+              </TabsContent>
             </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* History Dialog */}
+      <Dialog open={!!showHistoryId} onOpenChange={(open) => !open && setShowHistoryId(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Historial de Revisiones
+            </DialogTitle>
+          </DialogHeader>
+          {showHistoryId && (
+            <BillingReviewHistory billingAccountId={showHistoryId} />
           )}
         </DialogContent>
       </Dialog>
