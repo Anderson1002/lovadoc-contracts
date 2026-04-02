@@ -1,65 +1,88 @@
 
-# Plan: Vista de 3 Documentos para Supervisor + Observaciones por Documento
+# Plan: Indicador de Re-envío + Historial de Auditoría de Cuentas de Cobro
 
-## Los 3 documentos de una cuenta de cobro
+## Contexto del problema
 
-1. **Informe de Actividades** - Campos del empleado: actividades, acciones desarrolladas, evidencias, datos de planilla (salud, pension, ARL), firma del contratista
-2. **Certificacion** - Campos del empleado: novedades del periodo, valor ejecutado antes, fecha de entrega del informe, mes de certificacion, lista de anexos. Campos auto-generados: tabla financiera (15 campos), texto legal, firma del supervisor
-3. **Cuenta de Cobro (Invoice)** - Campos del empleado: numero de factura, fecha, monto en letras, declaraciones tributarias (SI/NO), beneficios tributarios. Campos auto-generados: datos del contratista, datos del cliente, texto legal
+La imagen muestra que la cuenta **COB-202512-001** regresó a "Pendientes Revisión" después de ser devuelta y corregida. El supervisor no tiene manera de saber que esta cuenta ya fue revisada antes, ni cuántas veces fue devuelta.
 
-## Problema actual
+La base de datos **ya cuenta** con la tabla `billing_reviews` que almacena cada acción del supervisor (approved/rejected), el comentario, la fecha y el reviewer. Solo necesitamos aprovecharla.
 
-- El supervisor solo ve el "Informe de Actividades" en la vista previa
-- No puede ver la Certificacion ni la Cuenta de Cobro
-- Al devolver, solo puede dejar un comentario general, sin indicar en cual documento esta el problema
+## Estados disponibles en `billing_account_states`
+
+| Código | Nombre | Descripción |
+|--------|--------|-------------|
+| BOR | borrador | Cuenta creada, pendiente de completar |
+| PEN | pendiente_revision | Cuenta enviada para revisión del supervisor |
+| APR | aprobada | Cuenta aprobada por el supervisor |
+| REC | rechazada | Cuenta rechazada por el supervisor |
+| CAU | causada | Cuenta causada/pagada por tesorería |
+
+No se requieren nuevos estados. El indicador de re-envío se muestra visualmente en la UI sin cambiar el estado de la base de datos.
 
 ## Cambios propuestos
 
-### 1. Ampliar la vista previa con pestanas (Tabs) - `BillingReviewList.tsx`
+### 1. Indicador "Re-enviada" en la tabla de Pendientes de Revisión
 
-Reemplazar el dialogo de vista previa actual (que solo muestra `BillingDocumentPreview`) por un dialogo con 3 pestanas:
+**Archivo:** `src/components/billing/BillingReviewList.tsx`
 
-- **Informe de Actividades** - Muestra `BillingDocumentPreview` (ya existente)
-- **Certificacion** - Muestra `CertificationPreview` (ya existente, solo falta integrarlo)
-- **Cuenta de Cobro** - Muestra `InvoicePreview` (ya existente, solo falta integrarlo)
+Al cargar las cuentas pendientes, también se consulta `billing_reviews` para obtener el conteo de devoluciones previas. Si `rejection_count > 0`, se muestra junto al número de cuenta un badge naranja/ámbar: **"Re-enviada · N devoluciones"**.
 
-Para esto se necesita cargar campos adicionales del `billing_accounts` en la funcion `handlePreview`:
-- `novedades`, `certification_date`, `certification_month`, `report_delivery_date`
-- `valor_ejecutado_antes`, `risk_matrix_compliance`, `social_security_verified`, `anexos_lista`
-- `invoice_number`, `invoice_date`, `invoice_city`, `amount_in_words`
-- `declaration_single_employer`, `declaration_80_percent_income`
-- `benefit_prepaid_health`, `benefit_voluntary_pension`, `benefit_housing_interest`, `benefit_health_contributions`, `benefit_economic_dependents`
-- `firma_url`, `supervisor_signature_url`
+Esto le indica claramente al supervisor que esta cuenta ya pasó por el proceso antes.
 
-Todos estos campos ya existen en la tabla `billing_accounts` y ya se cargan con `select(*)`.
+```text
+Número           | Contrato | Contratista | ...
+COB-202512-001   | 1745-25  | UsuarioOPS  | ...
+[Re-enviada · 1 devolución]
+```
 
-### 2. Mejorar el dialogo de devolucion - `BillingReviewList.tsx`
+### 2. Botón "Ver Historial" en la fila de revisión
 
-Cuando el supervisor elige "Devolver", en lugar de un solo campo de comentario, mostrar:
+**Archivo:** `src/components/billing/BillingReviewList.tsx`
 
-- Un selector de documento (Informe / Certificacion / Cuenta de Cobro) para indicar en cual documento esta la observacion
-- El campo de comentario existente para detallar la observacion
-- El comentario guardado incluira automaticamente el prefijo del documento: ej. "[INFORME] Falta la planilla de ARL"
+Junto al botón de vista previa (FileText), agregar un botón de historial (History icon) que abre un Dialog con el historial completo de revisiones de esa cuenta.
 
-Esto no requiere cambios en la base de datos, ya que el campo `comentario_supervisor` es texto libre y puede contener el prefijo del documento.
+### 3. Nuevo componente: `BillingReviewHistory.tsx`
 
-### 3. Cargar campos del contrato adicionales
+Crear un componente reutilizable que muestra el historial de auditoría de una cuenta de cobro, con el mismo estilo visual que `ContractStateHistory.tsx` (timeline con íconos, fechas, badges).
 
-Ampliar el `select` de contratos en `handlePreview` para incluir:
-- `cdp`, `rp`, `budget_code`, `addition_number`, `addition_cdp`, `addition_rp`, `addition_amount`
-- `execution_period_months`, `execution_period_days`
+Cada entrada del historial mostrará:
+- Ícono de la acción (✅ Aprobado / ❌ Devuelto)
+- Fecha y hora
+- Nombre del supervisor revisor
+- Observaciones por documento con los badges de colores (usando `SupervisorObservations`)
+- Badge "Más reciente" en la primera entrada
 
-Estos campos son necesarios para renderizar correctamente la tabla financiera de la Certificacion.
+### 4. Integrar el historial en la vista previa de 3 documentos
 
-## Archivos a modificar
+**Archivo:** `src/components/billing/BillingReviewList.tsx`
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/billing/BillingReviewList.tsx` | Agregar tabs con los 3 documentos en el dialogo de vista previa. Mejorar dialogo de devolucion con selector de documento. Ampliar query de contratos. |
+En el Dialog de vista previa (con las 3 pestañas), agregar una cuarta pestaña **"Historial"** que muestre el `BillingReviewHistory` de esa cuenta.
 
-## Resultado esperado
+### 5. Historial también visible para el EMPLOYEE en su vista de edición
 
-- El supervisor puede navegar entre los 3 documentos de una cuenta de cobro
-- Al devolver, puede indicar en cual documento esta el problema
-- El empleado ve claramente en que documento y campo debe corregir
-- No se requieren cambios en la base de datos
+**Archivo:** `src/pages/EditBillingAccount.tsx`
+
+Ya se muestra la alerta de observaciones cuando la cuenta está rechazada. Agregar un acordeón/sección "Ver historial completo" debajo de la alerta, que muestre el `BillingReviewHistory` para que el empleado pueda ver el historial completo de devoluciones.
+
+## Resumen de archivos a crear/modificar
+
+| Archivo | Operación | Descripción |
+|---------|-----------|-------------|
+| `src/components/billing/BillingReviewHistory.tsx` | Crear | Componente de timeline de auditoría de revisiones |
+| `src/components/billing/BillingReviewList.tsx` | Modificar | Añadir conteo de devoluciones previas, badge "Re-enviada", botón historial, y pestaña "Historial" en preview |
+| `src/pages/EditBillingAccount.tsx` | Modificar | Añadir historial colapsable debajo de la alerta de rechazo |
+
+## No se requieren cambios en la base de datos
+
+La tabla `billing_reviews` ya registra cada acción y ya tiene datos. Solo se necesita consultarla correctamente.
+
+## Resultado esperado para el Supervisor
+
+- Ve en la lista de pendientes si una cuenta es una re-envío (badge ámbar)
+- Puede abrir el historial con un clic para ver todas las devoluciones anteriores y sus observaciones
+- Al abrir la vista previa de documentos, la pestaña "Historial" muestra la auditoría completa
+
+## Resultado esperado para el Empleado
+
+- Al abrir una cuenta rechazada, ve la alerta de observaciones actuales (ya implementado)
+- Debajo, puede expandir el historial completo para ver el contexto de todas las devoluciones
