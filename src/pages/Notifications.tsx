@@ -108,81 +108,177 @@ export default function Notifications() {
 
   const loadNotifications = async () => {
     try {
-      // Cargar notificaciones reales del sistema
       const realNotifications: Notification[] = [];
-
-      // 1. Contratos próximos a vencer (en los próximos 30 días)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      
-      const { data: expiringContracts, error: contractsError } = await supabase
+
+      // === CONTRATOS PRÓXIMOS A VENCER (todos los roles) ===
+      const { data: expiringContracts } = await supabase
         .from('contracts')
         .select('id, contract_number, contract_number_original, end_date, created_at, client_profile_id, profiles!contracts_client_profile_id_fkey(name)')
         .eq('estado', 'en_ejecucion')
         .lte('end_date', thirtyDaysFromNow.toISOString().split('T')[0])
         .order('end_date', { ascending: true });
 
-      if (contractsError) {
-        console.error('Error loading expiring contracts:', contractsError);
-      } else {
-        expiringContracts?.forEach(contract => {
-          const daysUntilExpiry = Math.ceil((new Date(contract.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-          const clientName = (contract.profiles as any)?.name || 'Cliente';
-          realNotifications.push({
-            id: `contract-expiry-${contract.id}`,
-            title: 'Contrato próximo a vencer',
-            message: `El contrato ${contract.contract_number_original || contract.contract_number} (${clientName}) vence en ${daysUntilExpiry} días`,
-            type: daysUntilExpiry <= 7 ? 'error' : 'warning',
-            read: false,
-            created_at: contract.created_at,
-            entity_type: 'contract',
-            entity_id: contract.id
-          });
+      expiringContracts?.forEach(contract => {
+        const daysUntilExpiry = Math.ceil((new Date(contract.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+        const clientName = (contract.profiles as any)?.name || 'Cliente';
+        realNotifications.push({
+          id: `contract-expiry-${contract.id}`,
+          title: 'Contrato próximo a vencer',
+          message: `El contrato ${contract.contract_number_original || contract.contract_number} (${clientName}) vence en ${daysUntilExpiry} días`,
+          type: daysUntilExpiry <= 7 ? 'error' : 'warning',
+          read: false,
+          created_at: contract.created_at,
+          entity_type: 'contract',
+          entity_id: contract.id
         });
+      });
+
+      // === CUENTAS PENDIENTES DE REVISIÓN (supervisor, admin, super_admin) ===
+      if (['supervisor', 'admin', 'super_admin'].includes(userRole)) {
+        const { data: pendingBilling } = await supabase
+          .from('billing_accounts')
+          .select('id, account_number, amount, created_at, enviado_el, created_by')
+          .eq('status', 'pendiente_revision')
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (pendingBilling && pendingBilling.length > 0) {
+          const creatorIds = [...new Set(pendingBilling.map(b => b.created_by))];
+          const { data: profiles } = await supabase.from('profiles').select('id, name').in('id', creatorIds);
+          const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p.name]));
+
+          pendingBilling.forEach(billing => {
+            realNotifications.push({
+              id: `billing-pending-${billing.id}`,
+              title: 'Cuenta de cobro pendiente de revisión',
+              message: `Cuenta ${billing.account_number} por $${parseFloat(billing.amount.toString()).toLocaleString('es-CO')} pendiente de revisión`,
+              type: 'info',
+              read: false,
+              created_at: billing.enviado_el || billing.created_at,
+              entity_type: 'billing',
+              entity_id: billing.id,
+              action_user: { name: profileMap[billing.created_by] || 'Contratista' }
+            });
+          });
+        }
       }
 
-      // 2. Cuentas de cobro pendientes de revisión
-      const { data: pendingBilling, error: billingError } = await supabase
-        .from('billing_accounts')
-        .select('id, account_number, amount, created_at, created_by, profiles!billing_accounts_created_by_fkey(name)')
-        .eq('status', 'pendiente_revision')
-        .order('created_at', { ascending: false })
-        .limit(10);
+      // === CUENTAS RECHAZADAS / DEVUELTAS (employee ve las suyas) ===
+      if (userRole === 'employee' && userProfileData?.id) {
+        const { data: rejectedBilling } = await supabase
+          .from('billing_accounts')
+          .select('id, account_number, amount, updated_at, comentario_supervisor')
+          .eq('status', 'rechazada')
+          .eq('created_by', userProfileData.id)
+          .order('updated_at', { ascending: false })
+          .limit(10);
 
-      if (billingError) {
-        console.error('Error loading pending billing:', billingError);
-      } else {
-        pendingBilling?.forEach(billing => {
+        rejectedBilling?.forEach(billing => {
           realNotifications.push({
-            id: `billing-pending-${billing.id}`,
-            title: 'Nueva cuenta de cobro para revisar',
-            message: `Cuenta ${billing.account_number} por $${parseFloat(billing.amount.toString()).toLocaleString('es-CO')} pendiente de revisión`,
-            type: 'info',
+            id: `billing-rejected-${billing.id}`,
+            title: '⚠️ Cuenta de cobro devuelta',
+            message: `Tu cuenta ${billing.account_number} fue devuelta. ${billing.comentario_supervisor ? 'Observaciones: ' + billing.comentario_supervisor.substring(0, 100) + (billing.comentario_supervisor.length > 100 ? '...' : '') : 'Revisa las observaciones del supervisor.'}`,
+            type: 'error',
             read: false,
-            created_at: billing.created_at,
+            created_at: billing.updated_at,
             entity_type: 'billing',
-            entity_id: billing.id,
-            action_user: {
-              name: (billing.profiles as any)?.name || 'Usuario desconocido'
-            }
+            entity_id: billing.id
           });
         });
       }
 
-      // 3. Contratos recién creados (últimos 7 días)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      // === CUENTAS APROBADAS (employee ve las suyas, admin/supervisor ven todas) ===
+      {
+        let approvedQuery = supabase
+          .from('billing_accounts')
+          .select('id, account_number, amount, updated_at, created_by')
+          .eq('status', 'aprobada')
+          .gte('updated_at', sevenDaysAgo.toISOString())
+          .order('updated_at', { ascending: false })
+          .limit(10);
 
-      const { data: newContracts, error: newContractsError } = await supabase
-        .from('contracts')
-        .select('id, contract_number, contract_number_original, created_at, total_amount, created_by, client_profile_id, profiles!contracts_created_by_fkey(name), client:profiles!contracts_client_profile_id_fkey(name)')
+        if (userRole === 'employee' && userProfileData?.id) {
+          approvedQuery = approvedQuery.eq('created_by', userProfileData.id);
+        }
+
+        const { data: approvedBilling } = await approvedQuery;
+
+        if (approvedBilling && approvedBilling.length > 0) {
+          const creatorIds = [...new Set(approvedBilling.map(b => b.created_by))];
+          const { data: profiles } = await supabase.from('profiles').select('id, name').in('id', creatorIds);
+          const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p.name]));
+
+          approvedBilling.forEach(billing => {
+            realNotifications.push({
+              id: `billing-approved-${billing.id}`,
+              title: 'Cuenta de cobro aprobada',
+              message: `La cuenta ${billing.account_number} por $${parseFloat(billing.amount.toString()).toLocaleString('es-CO')} ha sido aprobada`,
+              type: 'success',
+              read: false,
+              created_at: billing.updated_at,
+              entity_type: 'billing',
+              entity_id: billing.id,
+              action_user: { name: profileMap[billing.created_by] || 'Contratista' }
+            });
+          });
+        }
+      }
+
+      // === HISTORIAL DE REVISIONES RECIENTES (últimos 7 días) ===
+      const { data: recentReviews } = await supabase
+        .from('billing_reviews')
+        .select(`
+          id, action, comments, created_at, billing_account_id,
+          billing_accounts!billing_reviews_billing_account_id_fkey(account_number, created_by)
+        `)
         .gte('created_at', sevenDaysAgo.toISOString())
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(15);
 
-      if (newContractsError) {
-        console.error('Error loading new contracts:', newContractsError);
-      } else {
+      if (recentReviews) {
+        // Only show reviews relevant to the current user's role
+        recentReviews.forEach(review => {
+          const account = review.billing_accounts as any;
+          if (!account) return;
+
+          // Employee only sees reviews of their own accounts
+          if (userRole === 'employee' && account.created_by !== userProfileData?.id) return;
+
+          // Avoid duplicate with the rejected/approved notifications already added
+          const isDuplicate = realNotifications.some(n =>
+            n.entity_id === review.billing_account_id &&
+            (n.id.startsWith('billing-rejected-') || n.id.startsWith('billing-approved-'))
+          );
+          if (isDuplicate) return;
+
+          if (review.action === 'rejected') {
+            realNotifications.push({
+              id: `review-rejected-${review.id}`,
+              title: 'Cuenta devuelta por supervisor',
+              message: `Cuenta ${account.account_number} fue devuelta. ${review.comments ? review.comments.substring(0, 80) + '...' : ''}`,
+              type: 'warning',
+              read: false,
+              created_at: review.created_at,
+              entity_type: 'billing',
+              entity_id: review.billing_account_id
+            });
+          }
+        });
+      }
+
+      // === CONTRATOS RECIÉN CREADOS (admin, supervisor) ===
+      if (['admin', 'super_admin', 'supervisor'].includes(userRole)) {
+        const { data: newContracts } = await supabase
+          .from('contracts')
+          .select('id, contract_number, contract_number_original, created_at, total_amount, client_profile_id, client:profiles!contracts_client_profile_id_fkey(name)')
+          .gte('created_at', sevenDaysAgo.toISOString())
+          .order('created_at', { ascending: false })
+          .limit(5);
+
         newContracts?.forEach(contract => {
           const clientName = (contract.client as any)?.name || 'Cliente';
           realNotifications.push({
@@ -193,50 +289,40 @@ export default function Notifications() {
             read: false,
             created_at: contract.created_at,
             entity_type: 'contract',
-            entity_id: contract.id,
-            action_user: {
-              name: (contract.profiles as any)?.name || 'Usuario desconocido'
-            }
+            entity_id: contract.id
           });
         });
       }
 
-      // 4. Cuentas de cobro aprobadas recientemente
-      const { data: approvedBilling, error: approvedError } = await supabase
-        .from('billing_accounts')
-        .select('id, account_number, amount, updated_at, created_by, profiles!billing_accounts_created_by_fkey(name)')
-        .eq('status', 'aprobada')
-        .gte('updated_at', sevenDaysAgo.toISOString())
-        .order('updated_at', { ascending: false })
-        .limit(5);
+      // === CUENTAS CAUSADAS (employee ve las suyas) ===
+      if (userRole === 'employee' && userProfileData?.id) {
+        const { data: paidBilling } = await supabase
+          .from('billing_accounts')
+          .select('id, account_number, amount, updated_at')
+          .eq('status', 'causada')
+          .eq('created_by', userProfileData.id)
+          .gte('updated_at', sevenDaysAgo.toISOString())
+          .order('updated_at', { ascending: false })
+          .limit(5);
 
-      if (approvedError) {
-        console.error('Error loading approved billing:', approvedError);
-      } else {
-        approvedBilling?.forEach(billing => {
+        paidBilling?.forEach(billing => {
           realNotifications.push({
-            id: `billing-approved-${billing.id}`,
-            title: 'Cuenta de cobro aprobada',
-            message: `La cuenta ${billing.account_number} por $${parseFloat(billing.amount.toString()).toLocaleString('es-CO')} ha sido aprobada`,
+            id: `billing-paid-${billing.id}`,
+            title: '💰 Cuenta de cobro causada',
+            message: `Tu cuenta ${billing.account_number} por $${parseFloat(billing.amount.toString()).toLocaleString('es-CO')} ha sido causada por Tesorería`,
             type: 'success',
-            read: Math.random() > 0.5, // Simular algunas como leídas
+            read: false,
             created_at: billing.updated_at,
             entity_type: 'billing',
-            entity_id: billing.id,
-            action_user: {
-              name: (billing.profiles as any)?.name || 'Usuario desconocido'
-            }
+            entity_id: billing.id
           });
         });
       }
 
-      // Ordenar notificaciones por fecha
       realNotifications.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
       setNotifications(realNotifications);
     } catch (error) {
-      console.error('Error loading real notifications:', error);
-      // Fallback a notificaciones simuladas si hay error
+      console.error('Error loading notifications:', error);
       setNotifications([]);
     }
   };
