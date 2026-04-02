@@ -3,7 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Eye, Edit, Send, Trash2, Loader2, DollarSign, ArrowLeft } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Eye, Edit, Send, Trash2, Loader2, DollarSign, ArrowLeft, History } from "lucide-react";
+import { BillingReviewHistory } from "./BillingReviewHistory";
 
 interface BillingAccountActionsProps {
   billingAccount: any;
@@ -26,6 +28,7 @@ export function BillingAccountActions({
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [showPayDialog, setShowPayDialog] = useState(false);
   const [showReturnDialog, setShowReturnDialog] = useState(false);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
 
   const canEdit = () => {
     // Puede editar si: es dueño y estado = borrador o rechazada (admins también)
@@ -221,6 +224,18 @@ export function BillingAccountActions({
           <Eye className="h-4 w-4" />
         </Button>
 
+        {billingAccount.status !== 'borrador' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            title="Ver historial de revisiones"
+            onClick={() => setShowHistoryDialog(true)}
+          >
+            <History className="h-4 w-4" />
+          </Button>
+        )}
+
         {canEdit() && (
           <Button
             variant="ghost"
@@ -378,6 +393,19 @@ export function BillingAccountActions({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Review History Dialog */}
+      <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Historial de Revisiones — {billingAccount.account_number}
+            </DialogTitle>
+          </DialogHeader>
+          <BillingReviewHistory billingAccountId={billingAccount.id} />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
