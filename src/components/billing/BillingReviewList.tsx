@@ -426,6 +426,17 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                         >
                           <FileText className="h-4 w-4" />
                         </Button>
+                        {(rejectionCounts[billing.id] || 0) > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            title="Ver historial de revisiones"
+                            onClick={() => setShowHistoryId(billing.id)}
+                          >
+                            <History className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
