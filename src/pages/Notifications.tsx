@@ -68,7 +68,6 @@ export default function Notifications() {
           navigate("/auth");
         } else {
           loadUserProfile(session.user.id);
-          loadNotifications();
         }
       }
     );
@@ -81,13 +80,19 @@ export default function Notifications() {
         navigate("/auth");
       } else {
         loadUserProfile(session.user.id);
-        loadNotifications();
       }
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Reload notifications when profile/role is ready
+  useEffect(() => {
+    if (userProfileData && userRole) {
+      loadNotifications();
+    }
+  }, [userProfileData, userRole]);
 
   const loadUserProfile = async (userId: string) => {
     try {
