@@ -92,12 +92,13 @@ export default function Notifications() {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('*, roles!profiles_role_id_fkey(name)')
+        .select('id, name, email, user_id, proceso_id, roles!profiles_role_id_fkey(name)')
         .eq('user_id', userId)
         .maybeSingle();
 
       if (profile && profile.roles) {
         setUserRole((profile.roles as any).name);
+        setUserProfileData(profile);
       }
     } catch (error) {
       console.error('Error loading profile:', error);
