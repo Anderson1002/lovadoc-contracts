@@ -285,6 +285,31 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
 
       if (reviewError) throw reviewError;
 
+      // Send email notification on rejection
+      if (reviewAction === 'reject' && selectedBilling.created_by_profile?.email) {
+        const validObs = observations.filter(o => o.documentType && o.comment.trim());
+        const billingMonthFormatted = selectedBilling.billing_month
+          ? new Date(selectedBilling.billing_month).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })
+          : 'N/A';
+
+        try {
+          await supabase.functions.invoke('notify-billing-rejection', {
+            body: {
+              employeeEmail: selectedBilling.created_by_profile.email,
+              employeeName: selectedBilling.created_by_profile.name || 'Contratista',
+              accountNumber: selectedBilling.account_number,
+              contractNumber: selectedBilling.contracts?.contract_number_original || selectedBilling.contracts?.contract_number || 'N/A',
+              billingMonth: billingMonthFormatted,
+              supervisorName: userProfile.name || 'Supervisor',
+              observations: validObs,
+            },
+          });
+          console.log('Rejection notification email sent successfully');
+        } catch (emailError) {
+          console.error('Error sending rejection email (non-blocking):', emailError);
+        }
+      }
+
       toast({
         title: "Éxito",
         description: `Cuenta de cobro ${reviewAction === 'approve' ? 'aprobada' : 'rechazada'} exitosamente`,
