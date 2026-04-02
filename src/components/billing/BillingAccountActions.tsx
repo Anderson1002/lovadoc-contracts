@@ -3,7 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Eye, Edit, Send, Trash2, Loader2, DollarSign, ArrowLeft } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Eye, Edit, Send, Trash2, Loader2, DollarSign, ArrowLeft, History } from "lucide-react";
+import { BillingReviewHistory } from "./BillingReviewHistory";
 
 interface BillingAccountActionsProps {
   billingAccount: any;
