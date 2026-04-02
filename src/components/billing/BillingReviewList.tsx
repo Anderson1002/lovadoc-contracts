@@ -5,14 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Eye, CheckCircle, XCircle, Calendar, DollarSign, FileText, MessageCircle, Plus, Trash2 } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Calendar, DollarSign, FileText, History, Plus, Trash2 } from "lucide-react";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { BillingDocumentPreview } from "@/components/billing/BillingDocumentPreview";
 import { CertificationPreview } from "@/components/billing/CertificationPreview";
 import { InvoicePreview } from "@/components/billing/InvoicePreview";
+import { BillingReviewHistory } from "@/components/billing/BillingReviewHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -34,6 +35,9 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
   const [previewBilling, setPreviewBilling] = useState<any>(null);
   const [observations, setObservations] = useState<Array<{ documentType: string; comment: string }>>([{ documentType: '', comment: '' }]);
 
+  const [rejectionCounts, setRejectionCounts] = useState<Record<string, number>>({});
+  const [showHistoryId, setShowHistoryId] = useState<string | null>(null);
+
   useEffect(() => {
     loadPendingBillingAccounts();
   }, []);
@@ -53,7 +57,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
 
       if (error) throw error;
 
-      // Load creators' profiles to show contractor name/email
+      // Load creators' profiles
       const creatorIds = Array.from(new Set((data || []).map((d: any) => d.created_by).filter(Boolean)));
       let withProfiles = data || [];
       if (creatorIds.length > 0) {
@@ -64,6 +68,24 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
         if (profilesError) throw profilesError;
         const map = Object.fromEntries((profilesData || []).map((p: any) => [p.id, p]));
         withProfiles = (data || []).map((d: any) => ({ ...d, created_by_profile: map[d.created_by] }));
+      }
+
+      // Load rejection counts for all accounts
+      const accountIds = (data || []).map((d: any) => d.id);
+      if (accountIds.length > 0) {
+        const { data: reviews, error: reviewsError } = await supabase
+          .from('billing_reviews')
+          .select('billing_account_id')
+          .in('billing_account_id', accountIds)
+          .eq('action', 'rejected');
+        
+        if (!reviewsError && reviews) {
+          const counts: Record<string, number> = {};
+          reviews.forEach((r: any) => {
+            counts[r.billing_account_id] = (counts[r.billing_account_id] || 0) + 1;
+          });
+          setRejectionCounts(counts);
+        }
       }
 
       setBillingAccounts(withProfiles);
@@ -357,7 +379,14 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                 {billingAccounts.map((billing) => (
                   <TableRow key={billing.id}>
                     <TableCell className="font-medium">
-                      {billing.account_number}
+                      <div className="flex flex-col gap-1">
+                        {billing.account_number}
+                        {(rejectionCounts[billing.id] || 0) > 0 && (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-[10px] w-fit">
+                            Re-enviada · {rejectionCounts[billing.id]} {rejectionCounts[billing.id] === 1 ? 'devolución' : 'devoluciones'}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div>
@@ -397,6 +426,17 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                         >
                           <FileText className="h-4 w-4" />
                         </Button>
+                        {(rejectionCounts[billing.id] || 0) > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            title="Ver historial de revisiones"
+                            onClick={() => setShowHistoryId(billing.id)}
+                          >
+                            <History className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -555,10 +595,14 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
           </DialogHeader>
           {previewBilling && (
             <Tabs defaultValue="informe" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="informe">Informe de Actividades</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="informe">Informe</TabsTrigger>
                 <TabsTrigger value="certificacion">Certificación</TabsTrigger>
                 <TabsTrigger value="cuenta">Cuenta de Cobro</TabsTrigger>
+                <TabsTrigger value="historial" className="flex items-center gap-1">
+                  <History className="h-3 w-3" />
+                  Historial
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="informe">
                 <BillingDocumentPreview
@@ -617,7 +661,28 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                   benefitEconomicDependents={previewBilling.benefit_economic_dependents ?? false}
                 />
               </TabsContent>
+              <TabsContent value="historial">
+                <div className="p-4">
+                  <h3 className="text-sm font-semibold mb-4">Historial de Revisiones</h3>
+                  <BillingReviewHistory billingAccountId={previewBilling.id} />
+                </div>
+              </TabsContent>
             </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* History Dialog */}
+      <Dialog open={!!showHistoryId} onOpenChange={(open) => !open && setShowHistoryId(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Historial de Revisiones
+            </DialogTitle>
+          </DialogHeader>
+          {showHistoryId && (
+            <BillingReviewHistory billingAccountId={showHistoryId} />
           )}
         </DialogContent>
       </Dialog>
