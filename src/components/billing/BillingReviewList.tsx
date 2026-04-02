@@ -310,6 +310,29 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
         }
       }
 
+      // Send email notification on approval
+      if (reviewAction === 'approve' && selectedBilling.created_by_profile?.email) {
+        const billingMonthFormatted = selectedBilling.billing_month
+          ? new Date(selectedBilling.billing_month).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })
+          : 'N/A';
+
+        try {
+          await supabase.functions.invoke('notify-billing-approval', {
+            body: {
+              employeeEmail: selectedBilling.created_by_profile.email,
+              employeeName: selectedBilling.created_by_profile.name || 'Contratista',
+              accountNumber: selectedBilling.account_number,
+              contractNumber: selectedBilling.contracts?.contract_number_original || selectedBilling.contracts?.contract_number || 'N/A',
+              billingMonth: billingMonthFormatted,
+              supervisorName: userProfile.name || 'Supervisor',
+            },
+          });
+          console.log('Approval notification email sent successfully');
+        } catch (emailError) {
+          console.error('Error sending approval email (non-blocking):', emailError);
+        }
+      }
+
       toast({
         title: "Éxito",
         description: `Cuenta de cobro ${reviewAction === 'approve' ? 'aprobada' : 'rechazada'} exitosamente`,
