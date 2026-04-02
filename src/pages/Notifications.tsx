@@ -53,6 +53,7 @@ export default function Notifications() {
   const [userRole, setUserRole] = useState("employee");
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [userProfileData, setUserProfileData] = useState<any>(null);
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
   const navigate = useNavigate();
   const { toast } = useToast();
