@@ -28,6 +28,7 @@ export function BillingAccountActions({
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [showPayDialog, setShowPayDialog] = useState(false);
   const [showReturnDialog, setShowReturnDialog] = useState(false);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
 
   const canEdit = () => {
     // Puede editar si: es dueño y estado = borrador o rechazada (admins también)
