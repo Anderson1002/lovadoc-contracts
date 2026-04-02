@@ -235,6 +235,8 @@ export function BillingAccountActions({
             <History className="h-4 w-4" />
           </Button>
         )}
+
+        {canEdit() && (
           <Button
             variant="ghost"
             size="sm"
