@@ -35,6 +35,9 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
   const [previewBilling, setPreviewBilling] = useState<any>(null);
   const [observations, setObservations] = useState<Array<{ documentType: string; comment: string }>>([{ documentType: '', comment: '' }]);
 
+  const [rejectionCounts, setRejectionCounts] = useState<Record<string, number>>({});
+  const [showHistoryId, setShowHistoryId] = useState<string | null>(null);
+
   useEffect(() => {
     loadPendingBillingAccounts();
   }, []);
@@ -54,7 +57,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
 
       if (error) throw error;
 
-      // Load creators' profiles to show contractor name/email
+      // Load creators' profiles
       const creatorIds = Array.from(new Set((data || []).map((d: any) => d.created_by).filter(Boolean)));
       let withProfiles = data || [];
       if (creatorIds.length > 0) {
@@ -65,6 +68,24 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
         if (profilesError) throw profilesError;
         const map = Object.fromEntries((profilesData || []).map((p: any) => [p.id, p]));
         withProfiles = (data || []).map((d: any) => ({ ...d, created_by_profile: map[d.created_by] }));
+      }
+
+      // Load rejection counts for all accounts
+      const accountIds = (data || []).map((d: any) => d.id);
+      if (accountIds.length > 0) {
+        const { data: reviews, error: reviewsError } = await supabase
+          .from('billing_reviews')
+          .select('billing_account_id')
+          .in('billing_account_id', accountIds)
+          .eq('action', 'rejected');
+        
+        if (!reviewsError && reviews) {
+          const counts: Record<string, number> = {};
+          reviews.forEach((r: any) => {
+            counts[r.billing_account_id] = (counts[r.billing_account_id] || 0) + 1;
+          });
+          setRejectionCounts(counts);
+        }
       }
 
       setBillingAccounts(withProfiles);
