@@ -5,14 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Eye, CheckCircle, XCircle, Calendar, DollarSign, FileText, MessageCircle, Plus, Trash2 } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Calendar, DollarSign, FileText, History, Plus, Trash2 } from "lucide-react";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { BillingDocumentPreview } from "@/components/billing/BillingDocumentPreview";
 import { CertificationPreview } from "@/components/billing/CertificationPreview";
 import { InvoicePreview } from "@/components/billing/InvoicePreview";
+import { BillingReviewHistory } from "@/components/billing/BillingReviewHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
