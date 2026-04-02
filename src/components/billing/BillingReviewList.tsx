@@ -379,7 +379,14 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                 {billingAccounts.map((billing) => (
                   <TableRow key={billing.id}>
                     <TableCell className="font-medium">
-                      {billing.account_number}
+                      <div className="flex flex-col gap-1">
+                        {billing.account_number}
+                        {(rejectionCounts[billing.id] || 0) > 0 && (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-[10px] w-fit">
+                            Re-enviada · {rejectionCounts[billing.id]} {rejectionCounts[billing.id] === 1 ? 'devolución' : 'devoluciones'}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div>
