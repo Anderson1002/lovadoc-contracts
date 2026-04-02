@@ -79,6 +79,27 @@ export function BillingAccountActions({
         throw error;
       }
 
+      // Send notification to supervisor (non-blocking)
+      const isResubmission = billingAccount.status === 'rechazada';
+      try {
+        await supabase.functions.invoke('notify-billing-submission', {
+          body: {
+            accountNumber: billingAccount.account_number,
+            contractNumber: billingAccount.contracts?.contract_number_original || billingAccount.contracts?.contract_number || 'N/A',
+            billingMonth: billingAccount.billing_month
+              ? new Date(billingAccount.billing_month).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })
+              : 'N/A',
+            employeeName: userProfile?.name || 'Contratista',
+            employeeEmail: userProfile?.email || '',
+            amount: billingAccount.amount || 0,
+            contractId: billingAccount.contract_id,
+            isResubmission,
+          },
+        });
+      } catch (emailError) {
+        console.error('Error sending submission notification (non-blocking):', emailError);
+      }
+
       toast({
         title: "Éxito",
         description: "Cuenta de cobro enviada a revisión correctamente"
