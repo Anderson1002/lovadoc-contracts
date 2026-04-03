@@ -1,71 +1,31 @@
 
 
-# Plan: Agregar OID a tablas principales del sistema
+# Plan: Ocultar secciones redundantes para el rol Employee en CreateContract
 
-## Analisis
+## Problema
 
-De las 17 tablas del sistema, solo 2 tienen OID:
-- `contract` (importada) - tiene `"OID"` 
-- `contracts` (sistema) - tiene `oid`
+Cuando el empleado selecciona un contrato en la card "Contrato a Radicar" (linea 402), los datos de cliente, descripcion y valor ya se pre-cargan automaticamente desde la tabla `contract`. Sin embargo, mas abajo aparecen 3 cards editables que repiten esa misma informacion:
 
-Las demas tablas usan solo UUID como identificador, que es largo y dificil de referenciar para los usuarios.
+1. **Informacion del Cliente** (linea 607-622) - ClientSelector editable
+2. **Descripcion del Contrato** (linea 624-645) - Textarea editable
+3. **Informacion Financiera** (linea 647-669) - Input editable
 
-## Tablas que necesitan OID
+Estas secciones son para roles admin/supervisor que crean contratos manualmente. El employee no necesita verlas porque sus datos ya vienen del contrato importado.
 
-Las tablas donde el usuario interactua directamente y necesita un numero de referencia corto:
+## Solucion
 
-| Tabla | Justificacion | Registros actuales |
-|-------|--------------|-------------------|
-| `billing_accounts` | El usuario referencia cuentas de cobro constantemente (ej: #1, #2...) | Pocos |
-| `profiles` | Identificar usuarios rapidamente en listados | Pocos |
+Envolver las 3 cards con una condicion `userRole !== "employee"` para que solo sean visibles para admin/supervisor. Para el employee, los datos ya estan en la card "Contrato a Radicar" (campos disabled de solo lectura).
 
-Las siguientes tablas **NO necesitan OID** porque son tablas internas/de auditoria que el usuario no referencia directamente:
-- `billing_activities`, `billing_activity_evidence`, `billing_documents` (sub-registros)
-- `billing_reviews`, `historial_estado_cuenta` (auditoria)
-- `contract_state_history`, `contract_payments`, `documents` (auditoria/soporte)
-- `contract_states`, `billing_account_states`, `roles`, `permissions` (catalogos)
-- `activities` (log interno)
+Adicionalmente, cuando el employee tiene un contrato seleccionado, los valores del formulario (`clientProfileId`, `description`, `totalAmount`) ya se setean automaticamente desde el contrato activo, asi que ocultar estas cards no afecta el envio del formulario.
 
-## Migracion SQL
-
-```sql
--- Agregar OID a billing_accounts
-ALTER TABLE public.billing_accounts ADD COLUMN oid SERIAL;
-
--- Agregar OID a profiles
-ALTER TABLE public.profiles ADD COLUMN oid SERIAL;
-```
-
-Los registros existentes reciben numeros automaticamente. Nuevos registros continuan la secuencia.
-
-## Cambios en codigo
-
-### 1. `src/components/billing/BillingAccountsList.tsx`
-- Mostrar columna OID (#1, #2...) en la tabla de cuentas de cobro junto al account_number
-- Incluir `oid` en la query de billing_accounts
-
-### 2. `src/components/billing/BillingReviewList.tsx`
-- Mostrar OID de la cuenta en las listas de revision
-
-### 3. `src/pages/Users.tsx`
-- Mostrar columna OID (#1, #2...) en la tabla de usuarios
-
-### 4. Cualquier componente que liste billing_accounts o profiles
-- Agregar OID como primera columna visible
-
-## Resultado esperado
-
-- Cada cuenta de cobro tendra un numero secuencial facil de referenciar (#1, #2, #3...)
-- Cada usuario tendra un numero de identificacion interno
-- El OID se asigna automaticamente y es unico
-- No reemplaza el UUID (que sigue siendo la PK interna), es un identificador visual
-
-## Archivos afectados
+## Archivo afectado
 
 | Archivo | Cambio |
 |---------|--------|
-| Migracion SQL | Agregar columna `oid SERIAL` a `billing_accounts` y `profiles` |
-| `src/components/billing/BillingAccountsList.tsx` | Mostrar OID en tabla |
-| `src/components/billing/BillingReviewList.tsx` | Mostrar OID en listas de revision |
-| `src/pages/Users.tsx` | Mostrar OID en tabla de usuarios |
+| `src/pages/CreateContract.tsx` | Envolver las cards de Cliente (607-622), Descripcion (624-645) e Informacion Financiera (647-669) con `{userRole !== "employee" && (...)}` |
+
+## Resultado
+
+- **Employee**: solo ve la card "Contrato a Radicar" con datos pre-cargados de solo lectura, sin secciones editables redundantes
+- **Admin/Supervisor**: sigue viendo todas las secciones editables para crear contratos manualmente
 
