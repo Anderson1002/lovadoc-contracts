@@ -443,6 +443,9 @@ export default function Users() {
                   const RoleIcon = getRoleIcon(user.roles?.name || 'employee');
                   return (
                     <TableRow key={user.id} className="hover:bg-muted/50">
+                      <TableCell className="text-muted-foreground font-mono text-xs">
+                        {(user as any).oid}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
