@@ -467,6 +467,7 @@ export type Database = {
           MODIFIC_CREDITO: string | null
           MODIFIC_DEBITO: string | null
           "OBSERVACION RP": string | null
+          OID: number
           RP: number | null
           "SALDO RP": string | null
           TERCERO: string | null
@@ -482,6 +483,7 @@ export type Database = {
           MODIFIC_CREDITO?: string | null
           MODIFIC_DEBITO?: string | null
           "OBSERVACION RP"?: string | null
+          OID?: number
           RP?: number | null
           "SALDO RP"?: string | null
           TERCERO?: string | null
@@ -497,6 +499,7 @@ export type Database = {
           MODIFIC_CREDITO?: string | null
           MODIFIC_DEBITO?: string | null
           "OBSERVACION RP"?: string | null
+          OID?: number
           RP?: number | null
           "SALDO RP"?: string | null
           TERCERO?: string | null
