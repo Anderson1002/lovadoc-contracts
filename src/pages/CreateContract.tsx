@@ -604,69 +604,73 @@ export default function CreateContract() {
             </CardContent>
           </Card>
 
-          {/* Cliente */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Información del Cliente</CardTitle>
-              <CardDescription>
-                Seleccione el cliente o contratista para este contrato
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ClientSelector
-                value={watch("clientProfileId")}
-                onChange={(value) => setValue("clientProfileId", value)}
-                error={errors.clientProfileId?.message}
-              />
-            </CardContent>
-          </Card>
+          {userRole !== "employee" && (
+            <>
+              {/* Cliente */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Información del Cliente</CardTitle>
+                  <CardDescription>
+                    Seleccione el cliente o contratista para este contrato
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ClientSelector
+                    value={watch("clientProfileId")}
+                    onChange={(value) => setValue("clientProfileId", value)}
+                    error={errors.clientProfileId?.message}
+                  />
+                </CardContent>
+              </Card>
 
-          {/* Descripción */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Descripción del Contrato</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="description">Descripción / Objeto del Contrato</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Descripción detallada del contrato..."
-                  rows={4}
-                  {...register("description")}
-                />
-                {errors.description && (
-                  <p className="text-sm text-destructive">
-                    {errors.description.message}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              {/* Descripción */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Descripción del Contrato</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Descripción / Objeto del Contrato</Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Descripción detallada del contrato..."
+                      rows={4}
+                      {...register("description")}
+                    />
+                    {errors.description && (
+                      <p className="text-sm text-destructive">
+                        {errors.description.message}
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Monto Total */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Información Financiera</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="totalAmount">Valor Total del Contrato</Label>
-                <Input
-                  id="totalAmount"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  {...register("totalAmount")}
-                />
-                {errors.totalAmount && (
-                  <p className="text-sm text-destructive">
-                    {errors.totalAmount.message}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              {/* Monto Total */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Información Financiera</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Label htmlFor="totalAmount">Valor Total del Contrato</Label>
+                    <Input
+                      id="totalAmount"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      {...register("totalAmount")}
+                    />
+                    {errors.totalAmount && (
+                      <p className="text-sm text-destructive">
+                        {errors.totalAmount.message}
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
 
           
 
