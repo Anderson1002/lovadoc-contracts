@@ -414,6 +414,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-16">#</TableHead>
                   <TableHead>Número</TableHead>
                   <TableHead>Contrato</TableHead>
                   <TableHead>Contratista</TableHead>
