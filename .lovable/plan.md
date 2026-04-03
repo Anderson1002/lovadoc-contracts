@@ -1,88 +1,71 @@
 
-# Plan: Indicador de Re-envío + Historial de Auditoría de Cuentas de Cobro
 
-## Contexto del problema
+# Plan: Agregar OID a tablas principales del sistema
 
-La imagen muestra que la cuenta **COB-202512-001** regresó a "Pendientes Revisión" después de ser devuelta y corregida. El supervisor no tiene manera de saber que esta cuenta ya fue revisada antes, ni cuántas veces fue devuelta.
+## Analisis
 
-La base de datos **ya cuenta** con la tabla `billing_reviews` que almacena cada acción del supervisor (approved/rejected), el comentario, la fecha y el reviewer. Solo necesitamos aprovecharla.
+De las 17 tablas del sistema, solo 2 tienen OID:
+- `contract` (importada) - tiene `"OID"` 
+- `contracts` (sistema) - tiene `oid`
 
-## Estados disponibles en `billing_account_states`
+Las demas tablas usan solo UUID como identificador, que es largo y dificil de referenciar para los usuarios.
 
-| Código | Nombre | Descripción |
-|--------|--------|-------------|
-| BOR | borrador | Cuenta creada, pendiente de completar |
-| PEN | pendiente_revision | Cuenta enviada para revisión del supervisor |
-| APR | aprobada | Cuenta aprobada por el supervisor |
-| REC | rechazada | Cuenta rechazada por el supervisor |
-| CAU | causada | Cuenta causada/pagada por tesorería |
+## Tablas que necesitan OID
 
-No se requieren nuevos estados. El indicador de re-envío se muestra visualmente en la UI sin cambiar el estado de la base de datos.
+Las tablas donde el usuario interactua directamente y necesita un numero de referencia corto:
 
-## Cambios propuestos
+| Tabla | Justificacion | Registros actuales |
+|-------|--------------|-------------------|
+| `billing_accounts` | El usuario referencia cuentas de cobro constantemente (ej: #1, #2...) | Pocos |
+| `profiles` | Identificar usuarios rapidamente en listados | Pocos |
 
-### 1. Indicador "Re-enviada" en la tabla de Pendientes de Revisión
+Las siguientes tablas **NO necesitan OID** porque son tablas internas/de auditoria que el usuario no referencia directamente:
+- `billing_activities`, `billing_activity_evidence`, `billing_documents` (sub-registros)
+- `billing_reviews`, `historial_estado_cuenta` (auditoria)
+- `contract_state_history`, `contract_payments`, `documents` (auditoria/soporte)
+- `contract_states`, `billing_account_states`, `roles`, `permissions` (catalogos)
+- `activities` (log interno)
 
-**Archivo:** `src/components/billing/BillingReviewList.tsx`
+## Migracion SQL
 
-Al cargar las cuentas pendientes, también se consulta `billing_reviews` para obtener el conteo de devoluciones previas. Si `rejection_count > 0`, se muestra junto al número de cuenta un badge naranja/ámbar: **"Re-enviada · N devoluciones"**.
+```sql
+-- Agregar OID a billing_accounts
+ALTER TABLE public.billing_accounts ADD COLUMN oid SERIAL;
 
-Esto le indica claramente al supervisor que esta cuenta ya pasó por el proceso antes.
-
-```text
-Número           | Contrato | Contratista | ...
-COB-202512-001   | 1745-25  | UsuarioOPS  | ...
-[Re-enviada · 1 devolución]
+-- Agregar OID a profiles
+ALTER TABLE public.profiles ADD COLUMN oid SERIAL;
 ```
 
-### 2. Botón "Ver Historial" en la fila de revisión
+Los registros existentes reciben numeros automaticamente. Nuevos registros continuan la secuencia.
 
-**Archivo:** `src/components/billing/BillingReviewList.tsx`
+## Cambios en codigo
 
-Junto al botón de vista previa (FileText), agregar un botón de historial (History icon) que abre un Dialog con el historial completo de revisiones de esa cuenta.
+### 1. `src/components/billing/BillingAccountsList.tsx`
+- Mostrar columna OID (#1, #2...) en la tabla de cuentas de cobro junto al account_number
+- Incluir `oid` en la query de billing_accounts
 
-### 3. Nuevo componente: `BillingReviewHistory.tsx`
+### 2. `src/components/billing/BillingReviewList.tsx`
+- Mostrar OID de la cuenta en las listas de revision
 
-Crear un componente reutilizable que muestra el historial de auditoría de una cuenta de cobro, con el mismo estilo visual que `ContractStateHistory.tsx` (timeline con íconos, fechas, badges).
+### 3. `src/pages/Users.tsx`
+- Mostrar columna OID (#1, #2...) en la tabla de usuarios
 
-Cada entrada del historial mostrará:
-- Ícono de la acción (✅ Aprobado / ❌ Devuelto)
-- Fecha y hora
-- Nombre del supervisor revisor
-- Observaciones por documento con los badges de colores (usando `SupervisorObservations`)
-- Badge "Más reciente" en la primera entrada
+### 4. Cualquier componente que liste billing_accounts o profiles
+- Agregar OID como primera columna visible
 
-### 4. Integrar el historial en la vista previa de 3 documentos
+## Resultado esperado
 
-**Archivo:** `src/components/billing/BillingReviewList.tsx`
+- Cada cuenta de cobro tendra un numero secuencial facil de referenciar (#1, #2, #3...)
+- Cada usuario tendra un numero de identificacion interno
+- El OID se asigna automaticamente y es unico
+- No reemplaza el UUID (que sigue siendo la PK interna), es un identificador visual
 
-En el Dialog de vista previa (con las 3 pestañas), agregar una cuarta pestaña **"Historial"** que muestre el `BillingReviewHistory` de esa cuenta.
+## Archivos afectados
 
-### 5. Historial también visible para el EMPLOYEE en su vista de edición
+| Archivo | Cambio |
+|---------|--------|
+| Migracion SQL | Agregar columna `oid SERIAL` a `billing_accounts` y `profiles` |
+| `src/components/billing/BillingAccountsList.tsx` | Mostrar OID en tabla |
+| `src/components/billing/BillingReviewList.tsx` | Mostrar OID en listas de revision |
+| `src/pages/Users.tsx` | Mostrar OID en tabla de usuarios |
 
-**Archivo:** `src/pages/EditBillingAccount.tsx`
-
-Ya se muestra la alerta de observaciones cuando la cuenta está rechazada. Agregar un acordeón/sección "Ver historial completo" debajo de la alerta, que muestre el `BillingReviewHistory` para que el empleado pueda ver el historial completo de devoluciones.
-
-## Resumen de archivos a crear/modificar
-
-| Archivo | Operación | Descripción |
-|---------|-----------|-------------|
-| `src/components/billing/BillingReviewHistory.tsx` | Crear | Componente de timeline de auditoría de revisiones |
-| `src/components/billing/BillingReviewList.tsx` | Modificar | Añadir conteo de devoluciones previas, badge "Re-enviada", botón historial, y pestaña "Historial" en preview |
-| `src/pages/EditBillingAccount.tsx` | Modificar | Añadir historial colapsable debajo de la alerta de rechazo |
-
-## No se requieren cambios en la base de datos
-
-La tabla `billing_reviews` ya registra cada acción y ya tiene datos. Solo se necesita consultarla correctamente.
-
-## Resultado esperado para el Supervisor
-
-- Ve en la lista de pendientes si una cuenta es una re-envío (badge ámbar)
-- Puede abrir el historial con un clic para ver todas las devoluciones anteriores y sus observaciones
-- Al abrir la vista previa de documentos, la pestaña "Historial" muestra la auditoría completa
-
-## Resultado esperado para el Empleado
-
-- Al abrir una cuenta rechazada, ve la alerta de observaciones actuales (ya implementado)
-- Debajo, puede expandir el historial completo para ver el contexto de todas las devoluciones
