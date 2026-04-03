@@ -432,7 +432,7 @@ export default function Users() {
               {filteredUsers.length === 0 ? (
                 <TableRow>
                   <TableCell 
-                    colSpan={canEdit ? 7 : 6} 
+                    colSpan={canEdit ? 8 : 7} 
                     className="text-center py-8 text-muted-foreground"
                   >
                     No se encontraron usuarios
