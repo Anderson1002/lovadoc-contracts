@@ -122,6 +122,7 @@ export type Database = {
           invoice_number: string | null
           notes: string | null
           novedades: string | null
+          oid: number
           pension_planilla_fecha: string | null
           pension_planilla_numero: string | null
           pension_planilla_valor: number | null
@@ -182,6 +183,7 @@ export type Database = {
           invoice_number?: string | null
           notes?: string | null
           novedades?: string | null
+          oid?: number
           pension_planilla_fecha?: string | null
           pension_planilla_numero?: string | null
           pension_planilla_valor?: number | null
@@ -242,6 +244,7 @@ export type Database = {
           invoice_number?: string | null
           notes?: string | null
           novedades?: string | null
+          oid?: number
           pension_planilla_fecha?: string | null
           pension_planilla_numero?: string | null
           pension_planilla_valor?: number | null
@@ -980,6 +983,7 @@ export type Database = {
           last_login: string | null
           name: string
           nit: string | null
+          oid: number
           phone: string | null
           proceso_id: number | null
           role_id: string
@@ -1004,6 +1008,7 @@ export type Database = {
           last_login?: string | null
           name: string
           nit?: string | null
+          oid?: number
           phone?: string | null
           proceso_id?: number | null
           role_id: string
@@ -1028,6 +1033,7 @@ export type Database = {
           last_login?: string | null
           name?: string
           nit?: string | null
+          oid?: number
           phone?: string | null
           proceso_id?: number | null
           role_id?: string
