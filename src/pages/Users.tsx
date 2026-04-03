@@ -455,9 +455,6 @@ export default function Users() {
                           </Avatar>
                           <div>
                             <div className="font-medium">{user.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              ID: {user.id.slice(0, 8)}...
-                            </div>
                           </div>
                         </div>
                       </TableCell>
