@@ -418,6 +418,7 @@ export default function Users() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-16">#</TableHead>
                 <TableHead>Usuario</TableHead>
                 <TableHead>Rol</TableHead>
                 <TableHead>Proceso</TableHead>
@@ -431,7 +432,7 @@ export default function Users() {
               {filteredUsers.length === 0 ? (
                 <TableRow>
                   <TableCell 
-                    colSpan={canEdit ? 7 : 6} 
+                    colSpan={canEdit ? 8 : 7} 
                     className="text-center py-8 text-muted-foreground"
                   >
                     No se encontraron usuarios
@@ -442,6 +443,9 @@ export default function Users() {
                   const RoleIcon = getRoleIcon(user.roles?.name || 'employee');
                   return (
                     <TableRow key={user.id} className="hover:bg-muted/50">
+                      <TableCell className="text-muted-foreground font-mono text-xs">
+                        {(user as any).oid}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
@@ -451,9 +455,6 @@ export default function Users() {
                           </Avatar>
                           <div>
                             <div className="font-medium">{user.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              ID: {user.id.slice(0, 8)}...
-                            </div>
                           </div>
                         </div>
                       </TableCell>

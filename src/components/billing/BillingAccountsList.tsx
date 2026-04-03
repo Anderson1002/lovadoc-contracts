@@ -212,6 +212,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-16">#</TableHead>
                 <TableHead>Número</TableHead>
                 <TableHead>Contrato</TableHead>
                 <TableHead>Período</TableHead>
@@ -227,6 +228,9 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
             <TableBody>
               {billingAccounts.map((billing) => (
                 <TableRow key={billing.id}>
+                  <TableCell className="text-muted-foreground font-mono text-xs">
+                    {billing.oid}
+                  </TableCell>
                   <TableCell className="font-medium">
                     {billing.account_number}
                   </TableCell>

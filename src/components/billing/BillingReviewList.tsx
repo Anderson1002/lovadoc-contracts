@@ -414,6 +414,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-16">#</TableHead>
                   <TableHead>Número</TableHead>
                   <TableHead>Contrato</TableHead>
                   <TableHead>Contratista</TableHead>
@@ -426,6 +427,9 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
               <TableBody>
                 {billingAccounts.map((billing) => (
                   <TableRow key={billing.id}>
+                    <TableCell className="text-muted-foreground font-mono text-xs">
+                      {billing.oid}
+                    </TableCell>
                     <TableCell className="font-medium">
                       <div className="flex flex-col gap-1">
                         {billing.account_number}
