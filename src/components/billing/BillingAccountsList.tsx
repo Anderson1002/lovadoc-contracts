@@ -212,6 +212,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-16">#</TableHead>
                 <TableHead>Número</TableHead>
                 <TableHead>Contrato</TableHead>
                 <TableHead>Período</TableHead>
