@@ -17,9 +17,9 @@ export default function ContractDetails() {
   const { toast } = useToast();
   const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is employee and redirect to edit view
     const checkRoleAndRedirect = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -28,7 +28,9 @@ export default function ContractDetails() {
           .select('roles!profiles_role_id_fkey(name)')
           .eq('user_id', user.id)
           .maybeSingle();
-        if (profile?.roles && (profile.roles as any).name === 'employee') {
+        const roleName = (profile?.roles as any)?.name || 'employee';
+        setUserRole(roleName);
+        if (roleName === 'employee') {
           navigate(`/contracts/${id}/edit`, { replace: true });
           return;
         }
