@@ -716,7 +716,109 @@ export default function Profile() {
                     </CardContent>
                   </Card>
 
-                  {/* Signature Section */}
+                  {/* Password Change Section */}
+                  <Card className="border-2 shadow-lg">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <KeyRound className="w-5 h-5" />
+                            Seguridad
+                          </CardTitle>
+                          <CardDescription>
+                            Cambia tu contraseña de acceso al sistema
+                          </CardDescription>
+                        </div>
+                        {!isChangingPassword && (
+                          <Button
+                            variant="outline"
+                            onClick={() => setIsChangingPassword(true)}
+                            className="flex items-center gap-2"
+                          >
+                            <Lock className="w-4 h-4" />
+                            Cambiar Contraseña
+                          </Button>
+                        )}
+                      </div>
+                    </CardHeader>
+                    {isChangingPassword && (
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="newPassword" className="text-base font-semibold">Nueva Contraseña</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="newPassword"
+                              type={showNewPassword ? "text" : "password"}
+                              placeholder="Mínimo 6 caracteres"
+                              value={passwordData.newPassword}
+                              onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                              className="pl-10 pr-10"
+                              minLength={6}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                            >
+                              {showNewPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="confirmNewPassword" className="text-base font-semibold">Confirmar Nueva Contraseña</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="confirmNewPassword"
+                              type={showConfirmNewPassword ? "text" : "password"}
+                              placeholder="Repite la nueva contraseña"
+                              value={passwordData.confirmNewPassword}
+                              onChange={(e) => setPasswordData(prev => ({ ...prev, confirmNewPassword: e.target.value }))}
+                              className="pl-10 pr-10"
+                              minLength={6}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                              onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                            >
+                              {showConfirmNewPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                            </Button>
+                          </div>
+                        </div>
+
+                        <Separator />
+                        <div className="flex justify-end gap-4">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setIsChangingPassword(false);
+                              setPasswordData({ newPassword: "", confirmNewPassword: "" });
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            onClick={handleChangePassword}
+                            disabled={passwordLoading || !passwordData.newPassword || !passwordData.confirmNewPassword}
+                            className="flex items-center gap-2"
+                          >
+                            <Save className="w-4 h-4" />
+                            {passwordLoading ? "Guardando..." : "Actualizar Contraseña"}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+
+
                   <Card className="border-2 shadow-lg">
                     <CardHeader>
                       <div className="flex items-center justify-between">
