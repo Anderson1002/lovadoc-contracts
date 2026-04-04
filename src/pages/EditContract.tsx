@@ -87,8 +87,15 @@ export default function EditContract() {
   }, []);
 
   const isEmployee = userRole === 'employee';
-  const isSupervisor = userRole === 'supervisor';
-  const canEdit = !isEmployee && !isSupervisor || (isEmployee && formData.status === 'devuelto');
+
+  // Redirect supervisor to review page
+  useEffect(() => {
+    if (userRole === 'supervisor' && id) {
+      navigate(`/contracts/${id}/review`, { replace: true });
+    }
+  }, [userRole, id, navigate]);
+
+  const canEdit = !isEmployee || (isEmployee && formData.status === 'devuelto');
 
   useEffect(() => {
     if (id) {
