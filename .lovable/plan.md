@@ -1,27 +1,36 @@
 
 
-# Plan: Crear usuario Super Admin
+# Plan: Arreglar boton "Crear Contrato" para empleados
 
-## Datos del usuario
-- **Nombre**: Anderson Salazar Acosta
-- **Email**: anderson_acosta1602@hotmail.com
-- **Rol**: super_admin
+## Problema
 
-## Accion
+El schema Zod exige `clientProfileId`, `description` y `totalAmount` como obligatorios, pero esos campos estan ocultos para el rol employee. Al hacer click en "Crear Contrato", la validacion falla silenciosamente y no pasa nada.
 
-Llamar la edge function `create-user` existente usando `supabase--curl_edge_functions` con los datos del usuario. La funcion:
+## Solucion
 
-1. Envia una invitacion por email al usuario
-2. Crea el perfil con rol super_admin
-3. El usuario configura su contrasena desde el enlace en el email
+En `src/pages/CreateContract.tsx`:
 
-## Pasos
+1. **Auto-asignar valores ocultos cuando el empleado selecciona un contrato activo**: al seleccionar un contrato de la tabla `contract`, ya se tienen los datos pre-cargados. Usar `setValue()` de react-hook-form para asignar automaticamente:
+   - `clientProfileId` = profile.id del empleado logueado
+   - `description` = `OBSERVACION RP` del contrato seleccionado
+   - `totalAmount` = `VALOR_INICIAL` del contrato seleccionado
+   - `contractType` = `"contractor"` (por defecto para empleados)
 
-1. Obtener el `role_id` del rol `super_admin` de la tabla `roles`
-2. Invocar la edge function `create-user` con nombre, email y roleId
-3. Verificar que el perfil se creo correctamente en la tabla `profiles`
+2. **Agregar handler de errores de validacion**: agregar segundo parametro a `handleSubmit` para mostrar un toast con los errores, facilitando depuracion futura:
+   ```tsx
+   <form onSubmit={handleSubmit(onSubmit, (errors) => {
+     console.log("Errores de validacion:", errors);
+     toast({ title: "Campos faltantes", description: "Revise los campos requeridos", variant: "destructive" });
+   })}>
+   ```
 
-## Nota importante
+## Archivo afectado
 
-El usuario recibira un email de invitacion en anderson_acosta1602@hotmail.com para configurar su contrasena. No es posible copiar la contrasena de otro usuario por seguridad.
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/CreateContract.tsx` | Auto-asignar campos ocultos con `setValue` al seleccionar contrato; agregar onError en handleSubmit |
+
+## Resultado
+
+El empleado selecciona contrato, fechas, y el boton "Crear Contrato" funciona correctamente sin necesidad de llenar campos ocultos.
 
