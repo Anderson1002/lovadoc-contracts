@@ -77,7 +77,8 @@ export default function Dashboard() {
   const [contracts, setContracts] = useState<any[]>([]);
   const [recentContracts, setRecentContracts] = useState([]);
   const [chartData, setChartData] = useState([]);
-  const [userRole, setUserRole] = useState("employee");
+  const [billingSummary, setBillingSummary] = useState({ drafts: 0, pending: 0, approved: 0, rejected: 0 });
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
