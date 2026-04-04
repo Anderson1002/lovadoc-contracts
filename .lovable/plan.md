@@ -1,63 +1,31 @@
 
 
-# Plan: Eliminar auto-completado de contratos y corregir visibilidad
+# Plan: Redirigir empleados directamente a la vista de edicion
 
 ## Problema
 
-Hay un trigger en la base de datos (`check_contract_estado_on_change`) que automaticamente cambia el estado de un contrato a "completado" cuando `end_date < CURRENT_DATE`. Esto hace que contratos con fechas pasadas (usados para pruebas o registros historicos) aparezcan como "completado" inmediatamente, sin que el supervisor los haya gestionado.
-
-El flujo correcto es: un contrato debe permanecer en estado "registrado" hasta que un supervisor lo apruebe, devuelva o cambie su estado manualmente.
-
-## Donde ve el supervisor los contratos
-
-El supervisor accede a:
-- **Gestionar Contratos** (`/contracts`) - lista de contratos de su proceso
-- **Pendientes Aprobacion** (`/contracts/pending`) - contratos esperando gestion
-
-El employee solo ve **Consulta Avanzada** (`/contracts/query`).
+Cuando el empleado hace clic en "Ver detalles" desde el Dashboard, va a `/contracts/{id}` (ContractDetails) que es una vista de solo lectura. Luego tiene que hacer clic en "Editar" para ir a `/contracts/{id}/edit` (EditContract). Son dos pantallas para lo mismo: la primera solo muestra datos y la segunda los muestra Y permite editar.
 
 ## Solucion
 
-### 1. Modificar el trigger `check_contract_estado_on_change`
-Eliminar la logica que auto-completa contratos por fecha. El trigger solo debe actualizar `updated_at`.
+Simplificar el flujo para el empleado: que "Ver detalles" lo lleve directamente a la vista de edicion (`/contracts/{id}/edit`), eliminando el paso intermedio innecesario.
 
-```sql
-CREATE OR REPLACE FUNCTION public.check_contract_estado_on_change()
-RETURNS trigger
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$;
-```
+### Cambios
 
-### 2. Corregir contratos ya marcados incorrectamente
-Actualizar el contrato OID 3 (y cualquier otro) que fue auto-completado de vuelta a "registrado":
-
-```sql
-UPDATE contracts 
-SET estado = 'registrado', state_code = 'REG' 
-WHERE estado = 'completado' 
-  AND id NOT IN (
-    SELECT contract_id FROM contract_state_history 
-    WHERE estado_nuevo = 'completado'
-  );
-```
-
-### 3. Agregar `/contracts/query` al sidebar del supervisor
-Actualmente "Consulta Avanzada" solo esta visible para `super_admin`, `admin` y `employee`. Agregar `supervisor` para que tambien pueda consultar contratos ahi.
-
-## Archivos afectados
-
-| Recurso | Cambio |
+| Archivo | Cambio |
 |---------|--------|
-| Migracion SQL | Modificar trigger + corregir estados |
-| `src/components/ui/app-sidebar.tsx` | Agregar rol `supervisor` a Consulta Avanzada |
+| `src/pages/Dashboard.tsx` (~linea 317) | Cambiar el link de "Ver detalles" para que, si el usuario es employee, navegue a `/contracts/{id}/edit` en vez de `/contracts/{id}` |
+| `src/pages/ContractDetails.tsx` (~linea 14) | Agregar logica para que si el usuario es employee, redirija automaticamente a `/contracts/{id}/edit` (por si accede directamente a la URL) |
+
+### Detalle tecnico
+
+1. En **Dashboard.tsx**: obtener el `userRole` (ya deberia estar disponible en el componente) y condicionar el href:
+   - Employee: `/contracts/${contract.id}/edit`
+   - Otros roles: `/contracts/${contract.id}` (sin cambio)
+
+2. En **ContractDetails.tsx**: agregar un `useEffect` que detecte si el usuario es employee y haga `navigate(`/contracts/${id}/edit`, { replace: true })` automaticamente.
 
 ## Resultado
 
-- Contratos con fechas pasadas permanecen en "registrado" hasta gestion manual
-- El supervisor puede ver y gestionar contratos desde `/contracts`, `/contracts/pending` y `/contracts/query`
+El empleado va directo a editar su contrato sin pasar por una vista de solo lectura redundante. Admin y supervisor siguen viendo la vista de detalle con boton "Editar".
 
