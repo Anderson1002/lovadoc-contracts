@@ -12,8 +12,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ArrowLeft, Save, FileText, Upload, X, AlertTriangle, User } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ClientSelector } from "@/components/contracts/ClientSelector";
-import { ContractStateActions } from "@/components/contracts/ContractStateActions";
-import { ContractStateHistory } from "@/components/contracts/ContractStateHistory";
 
 export default function EditContract() {
   const { id } = useParams();
