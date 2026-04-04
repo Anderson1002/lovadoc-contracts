@@ -97,17 +97,20 @@ export default function Dashboard() {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (profile && profile.roles) {
-        setUserRole((profile.roles as any).name);
-      }
+      const roleName = profile?.roles ? (profile.roles as any).name : 'employee';
+      setUserRole(roleName);
 
-      // Estados se actualizan automáticamente por triggers de base de datos
-
-      // Load contracts
-      const { data: contracts, error: contractsError } = await supabase
+      // Load contracts - employees only see their own
+      let contractsQuery = supabase
         .from('contracts')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (roleName === 'employee') {
+        contractsQuery = contractsQuery.eq('created_by', profile.id);
+      }
+
+      const { data: contracts, error: contractsError } = await contractsQuery;
 
       if (contractsError) throw contractsError;
 
