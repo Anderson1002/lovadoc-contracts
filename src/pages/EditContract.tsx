@@ -89,7 +89,8 @@ export default function EditContract() {
   }, []);
 
   const isEmployee = userRole === 'employee';
-  const canEdit = !isEmployee || formData.status === 'devuelto';
+  const isSupervisor = userRole === 'supervisor';
+  const canEdit = !isEmployee && !isSupervisor || (isEmployee && formData.status === 'devuelto');
 
   useEffect(() => {
     if (id) {
