@@ -478,18 +478,20 @@ export default function EditContract() {
               </CardContent>
             </Card>
 
-            {/* Client Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Información del Cliente</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ClientSelector
-                  value={formData.client_profile_id}
-                  onChange={(value) => handleChange('client_profile_id', value)}
-                />
-              </CardContent>
-            </Card>
+            {/* Client Information - hidden for employees */}
+            {!isEmployee && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Información del Cliente</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ClientSelector
+                    value={formData.client_profile_id}
+                    onChange={(value) => handleChange('client_profile_id', value)}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             {/* Financial and Dates */}
             <Card className="md:col-span-2">
