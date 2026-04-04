@@ -512,7 +512,7 @@ export default function EditContract() {
                     value={formData.contract_number}
                     onChange={(e) => handleChange('contract_number', e.target.value)}
                     required
-                    disabled={!canEdit}
+                    disabled={isEmployee || !canEdit}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -522,7 +522,7 @@ export default function EditContract() {
                       id="cdp"
                       value={formData.cdp}
                       onChange={(e) => handleChange('cdp', e.target.value)}
-                      disabled={!canEdit}
+                      disabled={isEmployee || !canEdit}
                       placeholder="Sin CDP"
                     />
                   </div>
@@ -532,7 +532,7 @@ export default function EditContract() {
                       id="rp"
                       value={formData.rp}
                       onChange={(e) => handleChange('rp', e.target.value)}
-                      disabled={!canEdit}
+                      disabled={isEmployee || !canEdit}
                       placeholder="Sin RP"
                     />
                   </div>
@@ -557,7 +557,7 @@ export default function EditContract() {
                     value={formData.description}
                     onChange={(e) => handleChange('description', e.target.value)}
                     rows={3}
-                    disabled={!canEdit}
+                    disabled={isEmployee || !canEdit}
                   />
                 </div>
               </CardContent>
@@ -616,7 +616,7 @@ export default function EditContract() {
                       value={formData.total_amount}
                       onChange={(e) => handleChange('total_amount', e.target.value)}
                       required
-                      disabled={!canEdit}
+                      disabled={isEmployee || !canEdit}
                     />
                   </div>
                   <div>
