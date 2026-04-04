@@ -1,74 +1,31 @@
 
 
-# Plan: Filtrar datos por usuario para el rol Employee
+# Plan: "Ver detalles" debe llevar al empleado a editar su contrato
 
-## Problema critico
+## Problema
 
-Tanto el Dashboard como ContractQuery cargan `supabase.from('contracts').select('*')` sin ningun filtro. Un empleado ve TODOS los contratos del sistema cuando solo deberia ver los suyos.
-
-## Que deberia hacer cada pagina para el Employee
-
-### Dashboard (`/`) - Resumen personal
-- Stats cards: solo sus contratos (total, en ejecucion, devueltos, valor)
-- Grafica: distribucion de estados de SUS contratos
-- "Mis Ultimos Contratos": sus ultimos 5 contratos
-- Acciones rapidas: crear contrato, ver cuentas de cobro, consultar contratos
-
-### ContractQuery (`/contracts/query`) - Consulta de sus contratos
-- Tabla con filtros y busqueda, pero solo de SUS contratos
-- Exportar CSV solo de sus contratos
-- Stats de la consulta solo de sus contratos
+Actualmente, "Ver detalles" en `/contracts/query` abre un panel lateral (`setSelectedContract`) con informacion de solo lectura. Para el empleado esto es redundante — ya se decidio que los empleados van directo a la vista de edicion (`/contracts/{id}/edit`).
 
 ## Solucion
 
-### 1. Dashboard.tsx
+En `src/components/contracts/ContractQueryTable.tsx`:
 
-En `loadDashboardData`, despues de obtener el perfil y rol, condicionar la query:
+1. Agregar una prop `userRole` al componente
+2. En el click de "Ver detalles": si `userRole === 'employee'`, hacer `navigate(/contracts/${contract.id}/edit)` en vez de `setSelectedContract(contract)`
+3. Mismo cambio en el boton de la columna de acciones rapidas (linea 457)
 
-```tsx
-let contractsQuery = supabase.from('contracts').select('*').order('created_at', { ascending: false });
+En `src/pages/ContractQuery.tsx`:
 
-if ((profile.roles as any).name === 'employee') {
-  contractsQuery = contractsQuery.eq('created_by', user.id);
-}
+4. Pasar `userRole` como prop al componente `ContractQueryTable`
 
-const { data: contracts } = await contractsQuery;
-```
-
-Mismo filtro para payments:
-```tsx
-if (roleName === 'employee') {
-  paymentsQuery = paymentsQuery.eq('contract_id', /* in user contracts */);
-}
-```
-
-### 2. ContractQuery.tsx
-
-En `loadContracts`, agregar filtro cuando el rol es employee:
-
-```tsx
-let query = supabase.from('contracts').select(`*, creator:profiles!contracts_created_by_fkey(...)`).order('created_at', { ascending: false });
-
-if (userRole === 'employee') {
-  const { data: { user } } = await supabase.auth.getUser();
-  query = query.eq('created_by', user.id);
-}
-
-const { data: contracts } = await query;
-```
-
-Problema: `loadContracts` se llama antes de que `userRole` se actualice. Solucion: pasar el userId y rol directamente a `loadContracts`.
-
-## Archivos afectados
+## Archivo afectado
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/pages/Dashboard.tsx` | Filtrar contracts y payments por `created_by = user.id` cuando el rol es employee |
-| `src/pages/ContractQuery.tsx` | Filtrar contracts por `created_by = user.id` cuando el rol es employee; pasar rol a loadContracts |
+| `src/components/contracts/ContractQueryTable.tsx` | Agregar prop `userRole`, condicionar navegacion en "Ver detalles" |
+| `src/pages/ContractQuery.tsx` | Pasar `userRole` a `ContractQueryTable` |
 
 ## Resultado
 
-- Employee solo ve SUS contratos en Dashboard y ContractQuery
-- Admin, supervisor y super_admin siguen viendo todos los contratos
-- Los stats, graficas y tablas reflejan datos correctos segun el rol
+El empleado hace clic en "Ver detalles" y va directo a `/contracts/{id}/edit` donde puede ver sus datos y editar lo permitido.
 
