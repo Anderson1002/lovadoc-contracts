@@ -218,7 +218,7 @@ export default function Contracts() {
             </div>
             <ContractTable
               contracts={contracts}
-              userRole={userRole}
+              userRole={userRole || 'employee'}
               onView={handleView}
               onEdit={handleEdit}
               onRefresh={() => loadContracts(user?.id || '')}
