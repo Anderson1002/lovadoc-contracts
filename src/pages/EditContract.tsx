@@ -457,13 +457,25 @@ export default function EditContract() {
         </div>
 
         {/* Alerta para contratos devueltos */}
-        {formData.status === 'devuelto' && (
+        {isEmployee && formData.status === 'devuelto' && (
           <Alert variant="destructive" className="border-2">
             <AlertTriangle className="h-5 w-5" />
             <AlertTitle className="text-lg font-semibold">Contrato Devuelto - Requiere Corrección</AlertTitle>
             <AlertDescription className="text-base mt-2">
               Este contrato fue devuelto por el supervisor y necesita ser corregido. 
               Al guardar los cambios, el contrato se enviará automáticamente para una nueva revisión.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Alerta de solo lectura para empleados */}
+        {isEmployee && !canEdit && (
+          <Alert className="border-2 border-muted-foreground/30">
+            <AlertTriangle className="h-5 w-5" />
+            <AlertTitle className="text-lg font-semibold">Contrato en revisión</AlertTitle>
+            <AlertDescription className="text-base mt-2">
+              Este contrato ya fue registrado y está pendiente de revisión por el supervisor. 
+              No se puede editar hasta que el supervisor lo devuelva para correcciones.
             </AlertDescription>
           </Alert>
         )}
