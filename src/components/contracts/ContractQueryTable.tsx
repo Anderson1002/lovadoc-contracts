@@ -85,7 +85,8 @@ export function ContractQueryTable({
   onPageChange,
   onSort,
   sortColumn,
-  sortDirection
+  sortDirection,
+  userRole
 }: ContractQueryTableProps) {
   const navigate = useNavigate();
   const [selectedContract, setSelectedContract] = useState<any>(null);
