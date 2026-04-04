@@ -177,6 +177,23 @@ export default function Dashboard() {
 
       setChartData(chartDataFormatted);
 
+      // Load billing summary for employees
+      if (roleName === 'employee' && contracts && contracts.length > 0) {
+        const contractIds = contracts.map(c => c.id);
+        const { data: billingAccounts } = await supabase
+          .from('billing_accounts')
+          .select('status')
+          .in('contract_id', contractIds);
+
+        if (billingAccounts) {
+          setBillingSummary({
+            drafts: billingAccounts.filter(b => b.status === 'borrador').length,
+            pending: billingAccounts.filter(b => b.status === 'pendiente_revision').length,
+            approved: billingAccounts.filter(b => b.status === 'aprobada').length,
+            rejected: billingAccounts.filter(b => b.status === 'rechazada').length,
+          });
+        }
+      }
     } catch (error: any) {
       console.error('Error loading dashboard:', error);
       toast({
