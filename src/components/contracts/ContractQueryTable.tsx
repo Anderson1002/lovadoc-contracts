@@ -566,7 +566,13 @@ export function ContractQueryTable({
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             className="cursor-pointer hover:bg-muted"
-                            onClick={() => setSelectedContract(contract)}
+                            onClick={() => {
+                              if (userRole === 'employee') {
+                                navigate(`/contracts/${contract.id}/edit`);
+                              } else {
+                                setSelectedContract(contract);
+                              }
+                            }}
                           >
                             <FileText className="w-4 h-4 mr-2" />
                             Ver detalles
