@@ -1,45 +1,60 @@
 
 
-# Plan: Usar la vista tipo formulario (EditContract) para el supervisor, totalmente bloqueada
+# Plan: Crear vista independiente para el supervisor
 
 ## Problema
 
-La vista actual de ContractDetails para el supervisor (imagen 1) muestra los datos en cards separadas con estilo de "ficha informativa" que no es visualmente agradable. El usuario prefiere la vista tipo formulario de EditContract (imagen 2) que ya tiene el estilo consistente con el resto de la app, pero totalmente bloqueada.
+El supervisor comparte la ruta `/contracts/:id/edit` con el empleado, lo que causa:
+1. El supervisor ve la alerta "Contrato en revision" que es solo para empleados
+2. La logica de ambos roles se mezcla en un solo archivo, generando confusiones
+3. El historial de estados no se muestra correctamente
 
 ## Solucion
 
-En lugar de redirigir al supervisor a ContractDetails, dejarlo en EditContract pero con todo deshabilitado y sin boton "Guardar". Agregar las acciones de gestion de estado (Aprobar/Devolver/Cancelar) y el historial de estados directamente en EditContract.
+Crear una nueva pagina `SupervisorContractReview.tsx` con su propia ruta `/contracts/:id/review`. Esta pagina replica el layout visual del formulario de EditContract pero:
+- Todos los campos siempre deshabilitados (sin logica de `canEdit`)
+- Sin boton "Guardar"
+- Con `ContractStateActions` en el header (Aprobar/Devolver/Cancelar)
+- Con `ContractStateHistory` al final
+- Sin alertas de empleado
 
-### Cambios en `src/pages/EditContract.tsx`:
+### Cambios:
 
-1. **Quitar la redireccion del supervisor** a `/contracts/{id}` (lineas 72-74). Dejarlo permanecer en la vista de edicion.
+**1. Crear `src/pages/SupervisorContractReview.tsx`** (nuevo archivo)
+- Copia simplificada de EditContract: carga el contrato, muestra los mismos campos en el mismo layout de formulario con Cards
+- Todos los campos `disabled` siempre
+- Header con titulo "Revision de Contrato" + `ContractStateActions`
+- Al final del formulario: `ContractStateHistory`
+- Boton solo "Volver", sin "Guardar"
+- Sin alertas de "Contrato en revision" ni "Contrato devuelto"
 
-2. **Agregar logica de bloqueo para supervisor**: todos los campos disabled, sin boton "Guardar". Variable `canEdit` ya existe, ajustarla:
-   - `const canEdit = !isEmployee && userRole !== 'supervisor' || (isEmployee && formData.status === 'devuelto');`
-   - Simplificado: el supervisor nunca puede editar, el employee solo si esta devuelto, admin/super_admin siempre.
+**2. Actualizar `src/App.tsx`**
+- Agregar ruta: `/contracts/:id/review` -> `SupervisorContractReview`
 
-3. **Agregar ContractStateActions en el header** para el supervisor (y admin), al lado del titulo, para que pueda Aprobar/Devolver/Cancelar desde ahi.
+**3. Actualizar `src/pages/ContractDetails.tsx`**
+- Cambiar redirect del supervisor: de `/contracts/${id}/edit` a `/contracts/${id}/review`
 
-4. **Agregar ContractStateHistory al final del formulario** para supervisor (y admin), despues de la seccion de "Contrato Firmado".
+**4. Actualizar `src/pages/EditContract.tsx`**
+- Quitar toda la logica de supervisor (isSupervisor, ContractStateActions, ContractStateHistory)
+- Si un supervisor intenta acceder a `/edit`, redirigir a `/review`
+- Dejar EditContract limpio solo para employee y admin
 
-5. **Cambiar el mensaje de alerta**: para supervisor no mostrar "Contrato en revision" (ese es para employee). El supervisor no necesita alerta informativa, solo las acciones.
-
-### Cambios en `src/pages/ContractDetails.tsx`:
-
-6. **Redirigir supervisor a edit**: invertir la logica. Ahora el supervisor tambien va a `/contracts/{id}/edit`. Solo admin y super_admin se quedan en ContractDetails.
-
-   Actualizar el useEffect: si `roleName === 'employee' || roleName === 'supervisor'`, redirigir a edit.
+**5. Actualizar `src/components/contracts/ContractQueryTable.tsx`**
+- Para supervisor, "Ver detalles" navega a `/contracts/${id}/review`
 
 ## Archivos afectados
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/pages/EditContract.tsx` | Quitar redirect de supervisor, agregar ContractStateActions + ContractStateHistory, ajustar canEdit |
-| `src/pages/ContractDetails.tsx` | Redirigir supervisor a /edit tambien |
+| `src/pages/SupervisorContractReview.tsx` | Nuevo - vista de solo lectura con acciones de estado e historial |
+| `src/App.tsx` | Agregar ruta `/contracts/:id/review` |
+| `src/pages/ContractDetails.tsx` | Redirect supervisor a `/review` en vez de `/edit` |
+| `src/pages/EditContract.tsx` | Quitar logica de supervisor, redirect a `/review` si es supervisor |
+| `src/components/contracts/ContractQueryTable.tsx` | Supervisor navega a `/review` |
 
 ## Resultado
 
-- Supervisor ve el formulario tipo EditContract con todos los campos bloqueados + botones de gestion de estado + historial
-- Misma visual consistente que ve el empleado cuando su contrato esta bloqueado
-- Admin/super_admin siguen en ContractDetails con opcion de ir a editar
+- Supervisor: `/contracts/:id/review` - formulario bloqueado + acciones + historial, sin mensajes de empleado
+- Empleado: `/contracts/:id/edit` - logica limpia sin mezcla de roles
+- Admin: `/contracts/:id` (ContractDetails) con opcion de ir a editar
 
