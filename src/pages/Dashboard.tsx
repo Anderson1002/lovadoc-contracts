@@ -97,24 +97,39 @@ export default function Dashboard() {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (profile && profile.roles) {
-        setUserRole((profile.roles as any).name);
-      }
+      const roleName = profile?.roles ? (profile.roles as any).name : 'employee';
+      setUserRole(roleName);
 
-      // Estados se actualizan automáticamente por triggers de base de datos
-
-      // Load contracts
-      const { data: contracts, error: contractsError } = await supabase
+      // Load contracts - employees only see their own
+      let contractsQuery = supabase
         .from('contracts')
         .select('*')
         .order('created_at', { ascending: false });
 
+      if (roleName === 'employee') {
+        contractsQuery = contractsQuery.eq('created_by', profile.id);
+      }
+
+      const { data: contracts, error: contractsError } = await contractsQuery;
+
       if (contractsError) throw contractsError;
 
-      // Load payments
-      const { data: payments, error: paymentsError } = await supabase
-        .from('contract_payments')
-        .select('*');
+      // Load payments - employees only see payments for their contracts
+      let paymentsQuery = supabase.from('contract_payments').select('*');
+
+      if (roleName === 'employee' && contracts && contracts.length > 0) {
+        const contractIds = contracts.map(c => c.id);
+        paymentsQuery = paymentsQuery.in('contract_id', contractIds);
+      } else if (roleName === 'employee') {
+        // No contracts = no payments
+        setStats({ totalContracts: 0, activeContracts: 0, pendingReview: 0, cancelledContracts: 0, totalAmount: 0, completedPayments: 0, returnedContracts: 0 });
+        setContracts([]);
+        setRecentContracts([]);
+        setChartData([]);
+        return;
+      }
+
+      const { data: payments, error: paymentsError } = await paymentsQuery;
 
       if (paymentsError) throw paymentsError;
 

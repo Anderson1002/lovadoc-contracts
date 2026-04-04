@@ -77,12 +77,16 @@ export default function ContractQuery() {
         .eq('user_id', userId)
         .maybeSingle();
 
+      let role = 'employee';
+      let profileId: string | null = null;
       if (profile && profile.roles) {
-        setUserRole((profile.roles as any).name);
+        role = (profile.roles as any).name;
+        profileId = profile.id;
       }
+      setUserRole(role);
 
-      // Load contracts
-      await loadContracts();
+      // Load contracts with role filter
+      await loadContracts(role, profileId);
     } catch (error) {
       console.error('Error loading profile:', error);
       toast({
@@ -93,14 +97,11 @@ export default function ContractQuery() {
     }
   };
 
-  const loadContracts = async () => {
+  const loadContracts = async (role?: string, profileId?: string | null) => {
     try {
       setIsLoadingContracts(true);
       
-      // Actualizar estados de contratos basándose en fechas antes de cargarlos
-      // Estados se actualizan automáticamente por triggers
-      
-      const { data: contracts, error } = await supabase
+      let query = supabase
         .from('contracts')
         .select(`
           *,
@@ -111,6 +112,13 @@ export default function ContractQuery() {
           )
         `)
         .order('created_at', { ascending: false });
+
+      // Employee only sees their own contracts
+      if (role === 'employee' && profileId) {
+        query = query.eq('created_by', profileId);
+      }
+
+      const { data: contracts, error } = await query;
 
       if (error) throw error;
 
