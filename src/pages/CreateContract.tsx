@@ -565,7 +565,8 @@ export default function CreateContract() {
             </Card>
           )}
 
-          {/* Tipo de Contrato */}
+          {/* Tipo de Contrato - Solo para admin/supervisor */}
+          {userRole !== "employee" && (
           <Card>
             <CardHeader>
               <CardTitle>Tipo de Contrato</CardTitle>
@@ -625,6 +626,7 @@ export default function CreateContract() {
               )}
             </CardContent>
           </Card>
+          )}
 
           {userRole !== "employee" && (
             <>
@@ -705,7 +707,7 @@ export default function CreateContract() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {selectedContractType === "variable_amount" && (
+              {userRole !== "employee" && selectedContractType === "variable_amount" && (
                 <div className="space-y-2">
                   <Label htmlFor="hourlyRate">Tarifa por Hora</Label>
                   <Input
