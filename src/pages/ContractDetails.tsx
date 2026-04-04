@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, DollarSign, User, FileText, Edit, AlertTriangle } from "lucide-react";
 import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
 import { ContractStateHistory } from "@/components/contracts/ContractStateHistory";
+import { ContractStateActions } from "@/components/contracts/ContractStateActions";
 import { formatCurrency } from "@/lib/utils";
 import { Layout } from "@/components/Layout";
 
