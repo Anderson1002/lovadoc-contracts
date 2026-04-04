@@ -610,8 +610,8 @@ export default function EditContract() {
                       value={formData.start_date}
                       onChange={(e) => handleChange('start_date', e.target.value)}
                       required
+                      disabled={isEmployee && !canEdit}
                     />
-                  </div>
                   <div>
                     <Label htmlFor="end_date">Fecha de Fin</Label>
                     <Input
