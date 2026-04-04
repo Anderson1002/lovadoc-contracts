@@ -568,7 +568,7 @@ export default function EditContract() {
                 <CardTitle>Información del Cliente</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isEmployee ? (
+                {(isEmployee || isSupervisor) ? (
                   <div className="space-y-3">
                     <Label className="flex items-center gap-2">
                       <User className="h-4 w-4" />
