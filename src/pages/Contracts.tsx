@@ -14,7 +14,7 @@ export default function Contracts() {
   const [contracts, setContracts] = useState<any[]>([]);
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
-  const [userRole, setUserRole] = useState("employee");
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     total: 0,

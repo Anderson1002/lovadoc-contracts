@@ -45,13 +45,18 @@ export default function SupervisorContractReview() {
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('roles:role_id(name)')
+          .select('*, roles!profiles_role_id_fkey(name)')
           .eq('user_id', user.id)
           .maybeSingle();
 
         const roleName = (profile as any)?.roles?.name;
         if (isMounted) {
-          const resolved = typeof roleName === 'string' ? roleName : 'employee';
+          if (typeof roleName !== 'string') {
+            console.error('Could not resolve role for supervisor review');
+            navigate('/auth');
+            return;
+          }
+          const resolved = roleName;
           // Only supervisor should be here
           if (resolved !== 'supervisor') {
             if (resolved === 'employee') {
