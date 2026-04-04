@@ -5,6 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ContractStatusChart } from "@/components/dashboard/ContractStatusChart";
 import { ProcessCard } from "@/components/dashboard/ProcessCard";
+import { UpcomingExpirations } from "@/components/dashboard/UpcomingExpirations";
+import { BillingSummaryCard } from "@/components/dashboard/BillingSummaryCard";
 import { 
   FileText, 
   DollarSign, 
