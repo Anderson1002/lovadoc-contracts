@@ -521,7 +521,7 @@ export default function EditContract() {
                       id="cdp"
                       value={formData.cdp}
                       onChange={(e) => handleChange('cdp', e.target.value)}
-                      disabled={isEmployee}
+                      disabled={!canEdit}
                       placeholder="Sin CDP"
                     />
                   </div>
