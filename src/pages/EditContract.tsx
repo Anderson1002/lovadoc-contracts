@@ -753,10 +753,7 @@ export default function EditContract() {
           </div>
         </form>
 
-        {/* Historial de Estados - fuera del form, visible para supervisor y admin */}
-        {userRole && ['supervisor', 'admin', 'super_admin'].includes(userRole) && id && (
-          <ContractStateHistory contractId={id} />
-        )}
+
       </div>
     </Layout>
   );
