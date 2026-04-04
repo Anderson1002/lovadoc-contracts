@@ -556,7 +556,7 @@ export default function EditContract() {
                     value={formData.description}
                     onChange={(e) => handleChange('description', e.target.value)}
                     rows={3}
-                    disabled={isEmployee}
+                    disabled={!canEdit}
                   />
                 </div>
               </CardContent>
