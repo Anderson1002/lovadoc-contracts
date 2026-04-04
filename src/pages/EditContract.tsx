@@ -42,18 +42,47 @@ export default function EditContract() {
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        if (userError) throw userError;
+
+        if (!user) {
+          if (isMounted) setUserRole('employee');
+          return;
+        }
+
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('role_id, roles:role_id(name)')
+          .select('roles:role_id(name)')
           .eq('user_id', user.id)
-          .single();
-        if (profile) setUserRole((profile as any).roles?.name);
+          .maybeSingle();
+
+        if (profileError) {
+          console.error('Error fetching user role:', profileError);
+        }
+
+        const roleName = (profile as any)?.roles?.name;
+
+        if (isMounted) {
+          setUserRole(typeof roleName === 'string' ? roleName : 'employee');
+        }
+      } catch (error) {
+        console.error('Error resolving user role:', error);
+        if (isMounted) {
+          setUserRole('employee');
+        }
       }
     };
+
     fetchRole();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const isEmployee = userRole === 'employee';
