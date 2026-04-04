@@ -131,6 +131,7 @@ export default function Contracts() {
   };
 
   const handleView = (contract: any) => {
+    if (!userRole) return; // Role not yet resolved
     if (userRole === 'employee') {
       navigate(`/contracts/${contract.id}/edit`);
     } else if (userRole === 'supervisor') {

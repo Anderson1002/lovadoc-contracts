@@ -78,7 +78,7 @@ export default function EditContract() {
       } catch (error) {
         console.error('Error resolving user role:', error);
         if (isMounted) {
-          setUserRole('employee');
+          navigate('/auth');
         }
       }
     };
