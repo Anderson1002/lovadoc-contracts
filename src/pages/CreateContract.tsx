@@ -782,6 +782,9 @@ export default function CreateContract() {
                         disabled={(date) =>
                           selectedStartDate ? date < selectedStartDate : false
                         }
+                        fromYear={2020}
+                        toYear={2030}
+                        captionLayout="dropdown-buttons"
                         className="pointer-events-auto"
                       />
                     </PopoverContent>
