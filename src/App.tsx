@@ -12,6 +12,7 @@ import Contracts from "./pages/Contracts";
 import CreateContract from "./pages/CreateContract";
 import ContractDetails from "./pages/ContractDetails";
 import EditContract from "./pages/EditContract";
+import SupervisorContractReview from "./pages/SupervisorContractReview";
 import ContractQuery from "./pages/ContractQuery";
 import BillingAccounts from "./pages/BillingAccounts";
 import Users from "./pages/Users";
