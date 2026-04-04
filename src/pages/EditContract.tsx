@@ -522,7 +522,7 @@ export default function EditContract() {
                 </div>
                 <div>
                   <Label htmlFor="contract_type">Tipo de Contrato</Label>
-                  <Select value={formData.contract_type} onValueChange={(value) => handleChange('contract_type', value)}>
+                  <Select value={formData.contract_type} onValueChange={(value) => handleChange('contract_type', value)} disabled={!canEdit}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar tipo" />
                     </SelectTrigger>
