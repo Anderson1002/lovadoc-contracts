@@ -19,10 +19,26 @@ export default function ContractDetails() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      loadContract(id);
-    }
-  }, [id]);
+    // Check if user is employee and redirect to edit view
+    const checkRoleAndRedirect = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('roles!profiles_role_id_fkey(name)')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (profile?.roles && (profile.roles as any).name === 'employee') {
+          navigate(`/contracts/${id}/edit`, { replace: true });
+          return;
+        }
+      }
+      if (id) {
+        loadContract(id);
+      }
+    };
+    checkRoleAndRedirect();
+  }, [id, navigate]);
 
   const loadContract = async (contractId: string) => {
     try {

@@ -314,7 +314,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <Button variant="ghost" size="sm" asChild>
-                      <Link to={`/contracts/${contract.id}`}>
+                      <Link to={userRole === 'employee' ? `/contracts/${contract.id}/edit` : `/contracts/${contract.id}`}>
                         Ver detalles
                       </Link>
                     </Button>
