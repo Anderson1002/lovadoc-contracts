@@ -338,6 +338,51 @@ export default function Profile() {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "La nueva contraseña debe tener al menos 6 caracteres",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmNewPassword) {
+      toast({
+        title: "Error",
+        description: "Las contraseñas no coinciden",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "¡Contraseña actualizada!",
+        description: "Tu contraseña ha sido cambiada exitosamente",
+      });
+
+      setIsChangingPassword(false);
+      setPasswordData({ newPassword: "", confirmNewPassword: "" });
+    } catch (error: any) {
+      toast({
+        title: "Error al cambiar contraseña",
+        description: error.message || "No se pudo actualizar la contraseña",
+        variant: "destructive"
+      });
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
