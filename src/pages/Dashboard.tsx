@@ -5,6 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ContractStatusChart } from "@/components/dashboard/ContractStatusChart";
 import { ProcessCard } from "@/components/dashboard/ProcessCard";
+import { UpcomingExpirations } from "@/components/dashboard/UpcomingExpirations";
+import { BillingSummaryCard } from "@/components/dashboard/BillingSummaryCard";
 import { 
   FileText, 
   DollarSign, 
@@ -75,7 +77,8 @@ export default function Dashboard() {
   const [contracts, setContracts] = useState<any[]>([]);
   const [recentContracts, setRecentContracts] = useState([]);
   const [chartData, setChartData] = useState([]);
-  const [userRole, setUserRole] = useState("employee");
+  const [billingSummary, setBillingSummary] = useState({ drafts: 0, pending: 0, approved: 0, rejected: 0 });
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -174,6 +177,23 @@ export default function Dashboard() {
 
       setChartData(chartDataFormatted);
 
+      // Load billing summary for employees
+      if (roleName === 'employee' && contracts && contracts.length > 0) {
+        const contractIds = contracts.map(c => c.id);
+        const { data: billingAccounts } = await supabase
+          .from('billing_accounts')
+          .select('status')
+          .in('contract_id', contractIds);
+
+        if (billingAccounts) {
+          setBillingSummary({
+            drafts: billingAccounts.filter(b => b.status === 'borrador').length,
+            pending: billingAccounts.filter(b => b.status === 'pendiente_revision').length,
+            approved: billingAccounts.filter(b => b.status === 'aprobada').length,
+            rejected: billingAccounts.filter(b => b.status === 'rechazada').length,
+          });
+        }
+      }
     } catch (error: any) {
       console.error('Error loading dashboard:', error);
       toast({
@@ -288,63 +308,115 @@ export default function Dashboard() {
       </div>
 
       {/* Charts and Recent Activity */}
-      <div className="grid gap-6 md:grid-cols-7">
-        <div className="md:col-span-3">
-          <ContractStatusChart data={chartData} />
+      {userRole === 'employee' ? (
+        <div className="grid gap-6 md:grid-cols-2">
+          <UpcomingExpirations contracts={contracts} />
+          <BillingSummaryCard {...billingSummary} />
         </div>
-        
-        <div className="md:col-span-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  {dashboardConfig.recentActivityTitle}
-                </CardTitle>
-                <CardDescription>
-                  {dashboardConfig.recentActivityDescription}
-                </CardDescription>
-              </div>
-              <Button variant="outline" size="sm" asChild>
-                <Link to={userRole === 'employee' ? '/contracts/query' : '/contracts'}>
-                  Ver todos
-                </Link>
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {recentContracts.length > 0 ? (
-                recentContracts.map((contract: any) => (
-                  <div key={contract.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{contract.contract_number_original || contract.contract_number}</p>
-                        <ContractStatusBadge status={contract.estado || 'registrado'} />
-                      </div>
-                      <p className="text-sm text-muted-foreground">{contract.client_name}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="font-mono">{formatCurrency(contract.total_amount)}</span>
-                        {contract.area_responsable && (
-                          <span>• {contract.area_responsable.replace(/_/g, ' ')}</span>
-                        )}
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to={userRole === 'employee' ? `/contracts/${contract.id}/edit` : `/contracts/${contract.id}`}>
-                        Ver detalles
-                      </Link>
-                    </Button>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                  <p>No hay contratos registrados aún</p>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-7">
+          <div className="md:col-span-3">
+            <ContractStatusChart data={chartData} />
+          </div>
+          <div className="md:col-span-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    {dashboardConfig.recentActivityTitle}
+                  </CardTitle>
+                  <CardDescription>
+                    {dashboardConfig.recentActivityDescription}
+                  </CardDescription>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={'/contracts'}>
+                    Ver todos
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {recentContracts.length > 0 ? (
+                  recentContracts.map((contract: any) => (
+                    <div key={contract.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{contract.contract_number_original || contract.contract_number}</p>
+                          <ContractStatusBadge status={contract.estado || 'registrado'} />
+                        </div>
+                        <p className="text-sm text-muted-foreground">{contract.client_name}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span className="font-mono">{formatCurrency(contract.total_amount)}</span>
+                          {contract.area_responsable && (
+                            <span>• {contract.area_responsable.replace(/_/g, ' ')}</span>
+                          )}
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link to={`/contracts/${contract.id}`}>
+                          Ver detalles
+                        </Link>
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                    <p>No hay contratos registrados aún</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Recent Contracts for Employee */}
+      {userRole === 'employee' && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                {dashboardConfig.recentActivityTitle}
+              </CardTitle>
+              <CardDescription>
+                {dashboardConfig.recentActivityDescription}
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/contracts/query">Ver todos</Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {recentContracts.length > 0 ? (
+              recentContracts.map((contract: any) => (
+                <div key={contract.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{contract.contract_number_original || contract.contract_number}</p>
+                      <ContractStatusBadge status={contract.estado || 'registrado'} />
+                    </div>
+                    <p className="text-sm text-muted-foreground">{contract.client_name}</p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span className="font-mono">{formatCurrency(contract.total_amount)}</span>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link to={`/contracts/${contract.id}/edit`}>Ver detalles</Link>
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                <p>No hay contratos registrados aún</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Actions */}
       {userRole === 'employee' ? (
