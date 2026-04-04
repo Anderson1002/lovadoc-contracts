@@ -29,7 +29,9 @@ export default function EditContract() {
     end_date: '',
     description: '',
     area_responsable: '',
-    supervisor_asignado: ''
+    supervisor_asignado: '',
+    cdp: '',
+    rp: ''
   });
   const [originalContractData, setOriginalContractData] = useState<any>(null);
   const [clientData, setClientData] = useState<any>(null);
