@@ -12,6 +12,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ArrowLeft, Save, FileText, Upload, X, AlertTriangle, User } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ClientSelector } from "@/components/contracts/ClientSelector";
+import { ContractStateActions } from "@/components/contracts/ContractStateActions";
+import { ContractStateHistory } from "@/components/contracts/ContractStateHistory";
 
 export default function EditContract() {
   const { id } = useParams();
@@ -69,10 +71,6 @@ export default function EditContract() {
 
         if (isMounted) {
           const resolvedRole = typeof roleName === 'string' ? roleName : 'employee';
-          if (resolvedRole === 'supervisor') {
-            navigate(`/contracts/${id}`, { replace: true });
-            return;
-          }
           setUserRole(resolvedRole);
         }
       } catch (error) {
@@ -91,7 +89,8 @@ export default function EditContract() {
   }, []);
 
   const isEmployee = userRole === 'employee';
-  const canEdit = !isEmployee || formData.status === 'devuelto';
+  const isSupervisor = userRole === 'supervisor';
+  const canEdit = !isEmployee && !isSupervisor || (isEmployee && formData.status === 'devuelto');
 
   useEffect(() => {
     if (id) {
@@ -445,20 +444,32 @@ export default function EditContract() {
     <Layout>
       <div className="container mx-auto px-4 py-8 space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate('/contracts')}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Volver
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Editar Contrato</h1>
-            <p className="text-muted-foreground">{formData.contract_number}</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate('/contracts')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Volver
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">
+                {canEdit ? 'Editar Contrato' : 'Detalle del Contrato'}
+              </h1>
+              <p className="text-muted-foreground">{formData.contract_number}</p>
+            </div>
           </div>
+          {/* State actions for supervisor/admin */}
+          {userRole && ['supervisor', 'admin', 'super_admin'].includes(userRole) && originalContractData && (
+            <ContractStateActions 
+              contract={originalContractData} 
+              userRole={userRole} 
+              onStateChange={() => id && loadContract(id)} 
+            />
+          )}
         </div>
 
         {/* Alerta para contratos devueltos */}
@@ -500,7 +511,7 @@ export default function EditContract() {
                     value={formData.contract_number}
                     onChange={(e) => handleChange('contract_number', e.target.value)}
                     required
-                    disabled={isEmployee}
+                    disabled={!canEdit}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -510,7 +521,7 @@ export default function EditContract() {
                       id="cdp"
                       value={formData.cdp}
                       onChange={(e) => handleChange('cdp', e.target.value)}
-                      disabled={isEmployee}
+                      disabled={!canEdit}
                       placeholder="Sin CDP"
                     />
                   </div>
@@ -520,7 +531,7 @@ export default function EditContract() {
                       id="rp"
                       value={formData.rp}
                       onChange={(e) => handleChange('rp', e.target.value)}
-                      disabled={isEmployee}
+                      disabled={!canEdit}
                       placeholder="Sin RP"
                     />
                   </div>
@@ -545,7 +556,7 @@ export default function EditContract() {
                     value={formData.description}
                     onChange={(e) => handleChange('description', e.target.value)}
                     rows={3}
-                    disabled={isEmployee}
+                    disabled={!canEdit}
                   />
                 </div>
               </CardContent>
@@ -557,7 +568,7 @@ export default function EditContract() {
                 <CardTitle>Información del Cliente</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isEmployee ? (
+                {(isEmployee || isSupervisor) ? (
                   <div className="space-y-3">
                     <Label className="flex items-center gap-2">
                       <User className="h-4 w-4" />
@@ -604,7 +615,7 @@ export default function EditContract() {
                       value={formData.total_amount}
                       onChange={(e) => handleChange('total_amount', e.target.value)}
                       required
-                      disabled={isEmployee}
+                      disabled={!canEdit}
                     />
                   </div>
                   <div>
@@ -615,7 +626,7 @@ export default function EditContract() {
                       value={formData.start_date}
                       onChange={(e) => handleChange('start_date', e.target.value)}
                       required
-                      disabled={isEmployee && !canEdit}
+                      disabled={!canEdit}
                     />
                   </div>
                   <div>
@@ -626,7 +637,7 @@ export default function EditContract() {
                       value={formData.end_date}
                       onChange={(e) => handleChange('end_date', e.target.value)}
                       required
-                      disabled={isEmployee && !canEdit}
+                      disabled={!canEdit}
                     />
                   </div>
                   
@@ -725,6 +736,11 @@ export default function EditContract() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Historial de Estados - visible para supervisor y admin */}
+          {userRole && ['supervisor', 'admin', 'super_admin'].includes(userRole) && id && (
+            <ContractStateHistory contractId={id} />
+          )}
 
           {/* Actions */}
           <div className="flex justify-end gap-4">
