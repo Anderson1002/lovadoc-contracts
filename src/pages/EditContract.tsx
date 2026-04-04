@@ -700,6 +700,7 @@ export default function EditContract() {
                 )}
 
                 {/* Input para subir nuevo archivo */}
+                {canEdit && (
                 <div>
                   <Label htmlFor="signedContract">
                     {currentPdfUrl ? 'Reemplazar contrato firmado' : 'Subir contrato firmado'}
@@ -715,6 +716,7 @@ export default function EditContract() {
                     Formatos permitidos: PDF, Word (máx. 10MB)
                   </p>
                 </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -726,13 +728,15 @@ export default function EditContract() {
               variant="outline" 
               onClick={() => navigate('/contracts')}
             >
-              Cancelar
+              {canEdit ? 'Cancelar' : 'Volver'}
             </Button>
-            <Button type="submit" disabled={saving}>
-              {saving && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />}
-              <Save className="h-4 w-4 mr-2" />
-              Guardar Cambios
-            </Button>
+            {canEdit && (
+              <Button type="submit" disabled={saving}>
+                {saving && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />}
+                <Save className="h-4 w-4 mr-2" />
+                Guardar Cambios
+              </Button>
+            )}
           </div>
         </form>
       </div>
