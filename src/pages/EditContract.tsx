@@ -737,11 +737,6 @@ export default function EditContract() {
             </Card>
           </div>
 
-          {/* Historial de Estados - visible para supervisor y admin */}
-          {userRole && ['supervisor', 'admin', 'super_admin'].includes(userRole) && id && (
-            <ContractStateHistory contractId={id} />
-          )}
-
           {/* Actions */}
           <div className="flex justify-end gap-4">
             <Button 
@@ -760,6 +755,11 @@ export default function EditContract() {
             )}
           </div>
         </form>
+
+        {/* Historial de Estados - fuera del form, visible para supervisor y admin */}
+        {userRole && ['supervisor', 'admin', 'super_admin'].includes(userRole) && id && (
+          <ContractStateHistory contractId={id} />
+        )}
       </div>
     </Layout>
   );
