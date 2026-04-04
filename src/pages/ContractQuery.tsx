@@ -77,12 +77,16 @@ export default function ContractQuery() {
         .eq('user_id', userId)
         .maybeSingle();
 
+      let role = 'employee';
+      let profileId: string | null = null;
       if (profile && profile.roles) {
-        setUserRole((profile.roles as any).name);
+        role = (profile.roles as any).name;
+        profileId = profile.id;
       }
+      setUserRole(role);
 
-      // Load contracts
-      await loadContracts();
+      // Load contracts with role filter
+      await loadContracts(role, profileId);
     } catch (error) {
       console.error('Error loading profile:', error);
       toast({

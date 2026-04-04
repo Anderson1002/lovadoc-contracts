@@ -114,10 +114,22 @@ export default function Dashboard() {
 
       if (contractsError) throw contractsError;
 
-      // Load payments
-      const { data: payments, error: paymentsError } = await supabase
-        .from('contract_payments')
-        .select('*');
+      // Load payments - employees only see payments for their contracts
+      let paymentsQuery = supabase.from('contract_payments').select('*');
+
+      if (roleName === 'employee' && contracts && contracts.length > 0) {
+        const contractIds = contracts.map(c => c.id);
+        paymentsQuery = paymentsQuery.in('contract_id', contractIds);
+      } else if (roleName === 'employee') {
+        // No contracts = no payments
+        setStats({ totalContracts: 0, activeContracts: 0, pendingReview: 0, cancelledContracts: 0, totalAmount: 0, completedPayments: 0, returnedContracts: 0 });
+        setContracts([]);
+        setRecentContracts([]);
+        setChartData([]);
+        return;
+      }
+
+      const { data: payments, error: paymentsError } = await paymentsQuery;
 
       if (paymentsError) throw paymentsError;
 
