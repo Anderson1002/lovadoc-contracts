@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, DollarSign, User, FileText, Edit, AlertTriangle } from "lucide-react";
 import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
 import { ContractStateHistory } from "@/components/contracts/ContractStateHistory";
+import { ContractStateActions } from "@/components/contracts/ContractStateActions";
 import { formatCurrency } from "@/lib/utils";
 import { Layout } from "@/components/Layout";
 
@@ -17,9 +18,9 @@ export default function ContractDetails() {
   const { toast } = useToast();
   const [contract, setContract] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is employee and redirect to edit view
     const checkRoleAndRedirect = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -28,7 +29,9 @@ export default function ContractDetails() {
           .select('roles!profiles_role_id_fkey(name)')
           .eq('user_id', user.id)
           .maybeSingle();
-        if (profile?.roles && (profile.roles as any).name === 'employee') {
+        const roleName = (profile?.roles as any)?.name || 'employee';
+        setUserRole(roleName);
+        if (roleName === 'employee') {
           navigate(`/contracts/${id}/edit`, { replace: true });
           return;
         }
@@ -154,13 +157,22 @@ export default function ContractDetails() {
               <p className="text-muted-foreground font-mono text-sm">{contract.contract_number_original || contract.contract_number}</p>
             </div>
           </div>
-          <Button 
-            onClick={() => navigate(`/contracts/${contract.id}/edit`)}
-            className="flex items-center gap-2"
-          >
-            <Edit className="h-4 w-4" />
-            Editar
-          </Button>
+          <div className="flex items-center gap-2">
+            {userRole && ['super_admin', 'admin'].includes(userRole) && (
+              <Button 
+                onClick={() => navigate(`/contracts/${contract.id}/edit`)}
+                className="flex items-center gap-2"
+              >
+                <Edit className="h-4 w-4" />
+                Editar
+              </Button>
+            )}
+            {userRole && <ContractStateActions 
+              contract={contract} 
+              userRole={userRole} 
+              onStateChange={() => id && loadContract(id)} 
+            />}
+          </div>
         </div>
 
         {/* Alert de Devolución */}

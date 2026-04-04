@@ -68,7 +68,12 @@ export default function EditContract() {
         const roleName = (profile as any)?.roles?.name;
 
         if (isMounted) {
-          setUserRole(typeof roleName === 'string' ? roleName : 'employee');
+          const resolvedRole = typeof roleName === 'string' ? roleName : 'employee';
+          if (resolvedRole === 'supervisor') {
+            navigate(`/contracts/${id}`, { replace: true });
+            return;
+          }
+          setUserRole(resolvedRole);
         }
       } catch (error) {
         console.error('Error resolving user role:', error);
