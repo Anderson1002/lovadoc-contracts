@@ -350,6 +350,7 @@ export default function ContractQuery() {
             onSort={handleSort}
             sortColumn={sortColumn}
             sortDirection={sortDirection}
+            userRole={userRole}
           />
         </div>
       </div>
