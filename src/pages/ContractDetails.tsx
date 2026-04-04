@@ -157,13 +157,22 @@ export default function ContractDetails() {
               <p className="text-muted-foreground font-mono text-sm">{contract.contract_number_original || contract.contract_number}</p>
             </div>
           </div>
-          <Button 
-            onClick={() => navigate(`/contracts/${contract.id}/edit`)}
-            className="flex items-center gap-2"
-          >
-            <Edit className="h-4 w-4" />
-            Editar
-          </Button>
+          <div className="flex items-center gap-2">
+            {userRole && ['super_admin', 'admin'].includes(userRole) && (
+              <Button 
+                onClick={() => navigate(`/contracts/${contract.id}/edit`)}
+                className="flex items-center gap-2"
+              >
+                <Edit className="h-4 w-4" />
+                Editar
+              </Button>
+            )}
+            {userRole && <ContractStateActions 
+              contract={contract} 
+              userRole={userRole} 
+              onStateChange={() => id && loadContract(id)} 
+            />}
+          </div>
         </div>
 
         {/* Alert de Devolución */}
