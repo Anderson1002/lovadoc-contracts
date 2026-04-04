@@ -27,8 +27,11 @@ import {
   Camera,
   PenTool,
   Eye,
+  EyeOff,
   Trash2,
-  Loader2
+  Loader2,
+  Lock,
+  KeyRound
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
