@@ -14,7 +14,7 @@ export default function Contracts() {
   const [contracts, setContracts] = useState<any[]>([]);
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
-  const [userRole, setUserRole] = useState("employee");
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     total: 0,
@@ -131,6 +131,7 @@ export default function Contracts() {
   };
 
   const handleView = (contract: any) => {
+    if (!userRole) return; // Role not yet resolved
     if (userRole === 'employee') {
       navigate(`/contracts/${contract.id}/edit`);
     } else if (userRole === 'supervisor') {
@@ -167,7 +168,7 @@ export default function Contracts() {
               Gestiona todos los contratos del hospital
             </p>
           </div>
-          {["super_admin", "admin", "employee"].includes(userRole) && (
+          {userRole && ["super_admin", "admin", "employee"].includes(userRole) && (
             <Button 
               onClick={() => navigate("/contracts/new")}
               className="flex items-center gap-2"
@@ -217,7 +218,7 @@ export default function Contracts() {
             </div>
             <ContractTable
               contracts={contracts}
-              userRole={userRole}
+              userRole={userRole || 'employee'}
               onView={handleView}
               onEdit={handleEdit}
               onRefresh={() => loadContracts(user?.id || '')}

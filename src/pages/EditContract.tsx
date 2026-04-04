@@ -57,7 +57,7 @@ export default function EditContract() {
 
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('roles:role_id(name)')
+          .select('*, roles!profiles_role_id_fkey(name)')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -68,13 +68,17 @@ export default function EditContract() {
         const roleName = (profile as any)?.roles?.name;
 
         if (isMounted) {
-          const resolvedRole = typeof roleName === 'string' ? roleName : 'employee';
-          setUserRole(resolvedRole);
+          if (typeof roleName !== 'string') {
+            console.error('Could not resolve role, got:', roleName);
+            navigate('/auth');
+            return;
+          }
+          setUserRole(roleName);
         }
       } catch (error) {
         console.error('Error resolving user role:', error);
         if (isMounted) {
-          setUserRole('employee');
+          navigate('/auth');
         }
       }
     };
