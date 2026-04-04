@@ -1,32 +1,26 @@
 
 
-# Plan: Asegurar que CDP, RP, Descripción y Valor Total no sean editables para empleados
+# Plan: Restaurar visual de "Información del Cliente" para empleados
 
 ## Problema
 
-Los campos ya tienen `disabled={isEmployee}`, pero hay una condicion de carrera (race condition): el rol del usuario se carga de forma asincrona. Si el formulario se renderiza antes de que el rol se cargue, `isEmployee` es `false` y los campos aparecen editables.
+La seccion "Información del Cliente" para empleados se cambio a texto plano simple (labels + texto), pero el usuario quiere que se vea como en la imagen: con el mismo estilo visual que tiene el `ClientSelector` (el cuadro con borde mostrando Nombre, Documento, Email, Teléfono), pero sin que sea editable.
 
 ## Solucion
 
-En `src/pages/EditContract.tsx`:
+En `src/pages/EditContract.tsx`, lineas 542-560, reemplazar los labels planos por una version que imite el estilo visual del `ClientSelector`:
 
-1. **No renderizar el formulario hasta que el rol este cargado** - Agregar una condicion que espere a que `userRole` no sea `null` antes de mostrar el formulario. Mientras tanto, mostrar el spinner de carga.
+1. Mostrar un input/trigger deshabilitado con el nombre del cliente (similar al SelectTrigger)
+2. Debajo, mostrar el cuadro con borde (Alert) con los datos: Nombre, Documento, Email, Teléfono — igual que lo hace el `ClientSelector` cuando hay un perfil seleccionado
 
-2. **Cambiar la condicion de loading** - Actualmente `loading` se pone en `false` cuando el contrato se carga, pero no espera al rol. Combinar ambas condiciones:
-
-```tsx
-if (loading || userRole === null) {
-  return <Layout><div className="min-h-screen flex items-center justify-center">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-  </div></Layout>;
-}
-```
-
-Esto garantiza que cuando el formulario se muestra, `isEmployee` ya tiene el valor correcto y los campos CDP, RP, Descripcion y Valor Total estaran correctamente deshabilitados.
+Basicamente replicar la vista del `ClientSelector` en modo solo lectura, con:
+- Label "Cliente / Contratista" con icono User
+- Un div estilo trigger deshabilitado mostrando nombre y documento
+- Un Alert con los datos detallados
 
 ## Archivo afectado
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/pages/EditContract.tsx` | Agregar `userRole === null` a la condicion de loading para evitar renderizar el formulario antes de conocer el rol |
+| `src/pages/EditContract.tsx` | Reemplazar vista plana de empleado por vista estilizada que replica el look del ClientSelector |
 
