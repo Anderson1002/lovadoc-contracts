@@ -565,7 +565,8 @@ export default function CreateContract() {
             </Card>
           )}
 
-          {/* Tipo de Contrato */}
+          {/* Tipo de Contrato - Solo para admin/supervisor */}
+          {userRole !== "employee" && (
           <Card>
             <CardHeader>
               <CardTitle>Tipo de Contrato</CardTitle>
