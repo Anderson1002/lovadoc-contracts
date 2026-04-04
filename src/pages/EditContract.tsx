@@ -512,7 +512,7 @@ export default function EditContract() {
                     value={formData.contract_number}
                     onChange={(e) => handleChange('contract_number', e.target.value)}
                     required
-                    disabled={!canEdit}
+                    disabled={isEmployee || !canEdit}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
