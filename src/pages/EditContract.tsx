@@ -37,6 +37,24 @@ export default function EditContract() {
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | null>(null);
   const [newPdfFile, setNewPdfFile] = useState<File | null>(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role_id, roles:role_id(name)')
+          .eq('user_id', user.id)
+          .single();
+        if (profile) setUserRole((profile as any).roles?.name);
+      }
+    };
+    fetchRole();
+  }, []);
+
+  const isEmployee = userRole === 'employee';
 
   useEffect(() => {
     if (id) {
