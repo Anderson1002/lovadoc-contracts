@@ -1,52 +1,45 @@
 
 
-# Plan: Separar las vistas de Supervisor y Empleado en la gestion de contratos
+# Plan: Usar la vista tipo formulario (EditContract) para el supervisor, totalmente bloqueada
 
-## Problemas identificados
+## Problema
 
-1. **Supervisor y empleado usan la misma ruta** (`/contracts/{id}/edit`). El supervisor NO deberia estar en una vista de "Editar Contrato" — su funcion es **revisar y gestionar estados** (aprobar, devolver, poner en ejecucion), no editar datos.
-
-2. **Imagen 1** (ContractDetails): Esta es la vista correcta para el supervisor — muestra los datos de solo lectura. Pero el boton "Editar" no deberia aparecer para supervisores porque no les corresponde editar lo que registro el empleado.
-
-3. **Imagen 2** (EditContract como supervisor): El mensaje "Contrato en revision" NO aplica para supervisores — ese mensaje es para empleados. El supervisor no deberia ver este formulario de edicion.
-
-## Funcion del Supervisor
-
-El supervisor debe:
-- **Ver** los detalles del contrato (vista de solo lectura, ContractDetails)
-- **Gestionar estados**: Aprobar (pasar a "en_ejecucion"), Devolver (con comentarios), Cancelar
-- **NO editar** los datos que registro el empleado (numero, descripcion, fechas, PDF, etc.)
+La vista actual de ContractDetails para el supervisor (imagen 1) muestra los datos en cards separadas con estilo de "ficha informativa" que no es visualmente agradable. El usuario prefiere la vista tipo formulario de EditContract (imagen 2) que ya tiene el estilo consistente con el resto de la app, pero totalmente bloqueada.
 
 ## Solucion
 
-### 1. ContractDetails.tsx — Quitar boton "Editar" para supervisor
+En lugar de redirigir al supervisor a ContractDetails, dejarlo en EditContract pero con todo deshabilitado y sin boton "Guardar". Agregar las acciones de gestion de estado (Aprobar/Devolver/Cancelar) y el historial de estados directamente en EditContract.
 
-Actualmente el boton "Editar" aparece para todos. Cambiarlo para que solo sea visible para `admin` y `super_admin`. El supervisor ve los datos pero no edita — solo gestiona estados.
+### Cambios en `src/pages/EditContract.tsx`:
 
-- Agregar deteccion de rol (similar a como se hizo en EditContract)
-- Condicionar el boton: `{['admin', 'super_admin'].includes(userRole) && <Button>Editar</Button>}`
-- Agregar el componente `ContractStateActions` para que el supervisor pueda aprobar/devolver/cambiar estado directamente desde esta vista
+1. **Quitar la redireccion del supervisor** a `/contracts/{id}` (lineas 72-74). Dejarlo permanecer en la vista de edicion.
 
-### 2. EditContract.tsx — Redirigir supervisor a ContractDetails
+2. **Agregar logica de bloqueo para supervisor**: todos los campos disabled, sin boton "Guardar". Variable `canEdit` ya existe, ajustarla:
+   - `const canEdit = !isEmployee && userRole !== 'supervisor' || (isEmployee && formData.status === 'devuelto');`
+   - Simplificado: el supervisor nunca puede editar, el employee solo si esta devuelto, admin/super_admin siempre.
 
-Si el supervisor intenta acceder a `/contracts/{id}/edit` directamente (por URL), redirigirlo a `/contracts/{id}` porque esa es su vista correcta.
+3. **Agregar ContractStateActions en el header** para el supervisor (y admin), al lado del titulo, para que pueda Aprobar/Devolver/Cancelar desde ahi.
 
-- En el `useEffect` de carga de rol, si `userRole === 'supervisor'`, hacer `navigate(`/contracts/${id}`, { replace: true })`
+4. **Agregar ContractStateHistory al final del formulario** para supervisor (y admin), despues de la seccion de "Contrato Firmado".
 
-### 3. ContractQueryTable.tsx — Supervisor usa "Ver detalles" hacia ContractDetails
+5. **Cambiar el mensaje de alerta**: para supervisor no mostrar "Contrato en revision" (ese es para employee). El supervisor no necesita alerta informativa, solo las acciones.
 
-Actualmente ya funciona asi para no-employees. Verificar que el supervisor va a `/contracts/{id}` (ContractDetails) y no a edit.
+### Cambios en `src/pages/ContractDetails.tsx`:
+
+6. **Redirigir supervisor a edit**: invertir la logica. Ahora el supervisor tambien va a `/contracts/{id}/edit`. Solo admin y super_admin se quedan en ContractDetails.
+
+   Actualizar el useEffect: si `roleName === 'employee' || roleName === 'supervisor'`, redirigir a edit.
 
 ## Archivos afectados
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/pages/ContractDetails.tsx` | Agregar deteccion de rol, ocultar boton Editar para supervisor, agregar ContractStateActions |
-| `src/pages/EditContract.tsx` | Redirigir supervisor a ContractDetails si intenta acceder a /edit |
+| `src/pages/EditContract.tsx` | Quitar redirect de supervisor, agregar ContractStateActions + ContractStateHistory, ajustar canEdit |
+| `src/pages/ContractDetails.tsx` | Redirigir supervisor a /edit tambien |
 
 ## Resultado
 
-- **Empleado**: va a `/contracts/{id}/edit` (ve datos, edita solo si devuelto)
-- **Supervisor**: va a `/contracts/{id}` (ve datos de solo lectura + botones de gestion de estado)
-- **Admin**: va a `/contracts/{id}` (ve datos + boton Editar + gestion de estado)
+- Supervisor ve el formulario tipo EditContract con todos los campos bloqueados + botones de gestion de estado + historial
+- Misma visual consistente que ve el empleado cuando su contrato esta bloqueado
+- Admin/super_admin siguen en ContractDetails con opcion de ir a editar
 
