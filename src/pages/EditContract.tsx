@@ -71,10 +71,6 @@ export default function EditContract() {
 
         if (isMounted) {
           const resolvedRole = typeof roleName === 'string' ? roleName : 'employee';
-          if (resolvedRole === 'supervisor') {
-            navigate(`/contracts/${id}`, { replace: true });
-            return;
-          }
           setUserRole(resolvedRole);
         }
       } catch (error) {
