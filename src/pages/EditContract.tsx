@@ -449,6 +449,7 @@ export default function EditContract() {
                     value={formData.contract_number}
                     onChange={(e) => handleChange('contract_number', e.target.value)}
                     required
+                    disabled={isEmployee}
                   />
                 </div>
                 <div>
