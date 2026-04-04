@@ -396,7 +396,7 @@ export default function EditContract() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  if (loading) {
+  if (loading || userRole === null) {
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
