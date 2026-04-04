@@ -86,6 +86,7 @@ export default function EditContract() {
   }, []);
 
   const isEmployee = userRole === 'employee';
+  const canEdit = !isEmployee || formData.status === 'devuelto';
 
   useEffect(() => {
     if (id) {
@@ -456,13 +457,25 @@ export default function EditContract() {
         </div>
 
         {/* Alerta para contratos devueltos */}
-        {formData.status === 'devuelto' && (
+        {isEmployee && formData.status === 'devuelto' && (
           <Alert variant="destructive" className="border-2">
             <AlertTriangle className="h-5 w-5" />
             <AlertTitle className="text-lg font-semibold">Contrato Devuelto - Requiere Corrección</AlertTitle>
             <AlertDescription className="text-base mt-2">
               Este contrato fue devuelto por el supervisor y necesita ser corregido. 
               Al guardar los cambios, el contrato se enviará automáticamente para una nueva revisión.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Alerta de solo lectura para empleados */}
+        {isEmployee && !canEdit && (
+          <Alert className="border-2 border-muted-foreground/30">
+            <AlertTriangle className="h-5 w-5" />
+            <AlertTitle className="text-lg font-semibold">Contrato en revisión</AlertTitle>
+            <AlertDescription className="text-base mt-2">
+              Este contrato ya fue registrado y está pendiente de revisión por el supervisor. 
+              No se puede editar hasta que el supervisor lo devuelva para correcciones.
             </AlertDescription>
           </Alert>
         )}
@@ -509,7 +522,7 @@ export default function EditContract() {
                 </div>
                 <div>
                   <Label htmlFor="contract_type">Tipo de Contrato</Label>
-                  <Select value={formData.contract_type} onValueChange={(value) => handleChange('contract_type', value)}>
+                  <Select value={formData.contract_type} onValueChange={(value) => handleChange('contract_type', value)} disabled={!canEdit}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar tipo" />
                     </SelectTrigger>
@@ -597,6 +610,7 @@ export default function EditContract() {
                       value={formData.start_date}
                       onChange={(e) => handleChange('start_date', e.target.value)}
                       required
+                      disabled={isEmployee && !canEdit}
                     />
                   </div>
                   <div>
@@ -607,6 +621,7 @@ export default function EditContract() {
                       value={formData.end_date}
                       onChange={(e) => handleChange('end_date', e.target.value)}
                       required
+                      disabled={isEmployee && !canEdit}
                     />
                   </div>
                   
@@ -685,6 +700,7 @@ export default function EditContract() {
                 )}
 
                 {/* Input para subir nuevo archivo */}
+                {canEdit && (
                 <div>
                   <Label htmlFor="signedContract">
                     {currentPdfUrl ? 'Reemplazar contrato firmado' : 'Subir contrato firmado'}
@@ -700,6 +716,7 @@ export default function EditContract() {
                     Formatos permitidos: PDF, Word (máx. 10MB)
                   </p>
                 </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -711,13 +728,15 @@ export default function EditContract() {
               variant="outline" 
               onClick={() => navigate('/contracts')}
             >
-              Cancelar
+              {canEdit ? 'Cancelar' : 'Volver'}
             </Button>
-            <Button type="submit" disabled={saving}>
-              {saving && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />}
-              <Save className="h-4 w-4 mr-2" />
-              Guardar Cambios
-            </Button>
+            {canEdit && (
+              <Button type="submit" disabled={saving}>
+                {saving && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />}
+                <Save className="h-4 w-4 mr-2" />
+                Guardar Cambios
+              </Button>
+            )}
           </div>
         </form>
       </div>
