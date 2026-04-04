@@ -456,6 +456,28 @@ export default function EditContract() {
                     disabled={isEmployee}
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="cdp">CDP</Label>
+                    <Input
+                      id="cdp"
+                      value={formData.cdp}
+                      onChange={(e) => handleChange('cdp', e.target.value)}
+                      disabled={isEmployee}
+                      placeholder="Sin CDP"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="rp">RP</Label>
+                    <Input
+                      id="rp"
+                      value={formData.rp}
+                      onChange={(e) => handleChange('rp', e.target.value)}
+                      disabled={isEmployee}
+                      placeholder="Sin RP"
+                    />
+                  </div>
+                </div>
                 <div>
                   <Label htmlFor="contract_type">Tipo de Contrato</Label>
                   <Select value={formData.contract_type} onValueChange={(value) => handleChange('contract_type', value)}>
@@ -470,7 +492,7 @@ export default function EditContract() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="description">Descripción</Label>
+                  <Label htmlFor="description">Descripción / Objeto del Contrato</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
@@ -482,20 +504,39 @@ export default function EditContract() {
               </CardContent>
             </Card>
 
-            {/* Client Information - hidden for employees */}
-            {!isEmployee && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Información del Cliente</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+            {/* Client Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Información del Cliente</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isEmployee ? (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Nombre</Label>
+                      <p className="font-medium">{clientData?.name || 'No asignado'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Documento</Label>
+                      <p className="font-medium">{clientData?.document_number || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Email</Label>
+                      <p className="font-medium">{clientData?.email || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Teléfono</Label>
+                      <p className="font-medium">{clientData?.phone || 'N/A'}</p>
+                    </div>
+                  </div>
+                ) : (
                   <ClientSelector
                     value={formData.client_profile_id}
                     onChange={(value) => handleChange('client_profile_id', value)}
                   />
-                </CardContent>
-              </Card>
-            )}
+                )}
+              </CardContent>
+            </Card>
 
             {/* Financial and Dates */}
             <Card className="md:col-span-2">
