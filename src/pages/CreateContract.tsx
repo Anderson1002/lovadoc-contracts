@@ -739,8 +739,11 @@ export default function CreateContract() {
                         selected={selectedStartDate}
                         onSelect={(date) => setValue("startDate", date!)}
                         disabled={(date) =>
-                          date < new Date() || date < new Date("1900-01-01")
+                          date < new Date("1900-01-01")
                         }
+                        fromYear={2020}
+                        toYear={2030}
+                        captionLayout="dropdown-buttons"
                         className="pointer-events-auto"
                       />
                     </PopoverContent>
