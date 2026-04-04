@@ -232,6 +232,12 @@ export default function CreateContract() {
     
     setSelectedActiveContract(contract);
 
+    // Auto-asignar campos ocultos para empleados
+    if (userRole === "employee" && userProfile?.id) {
+      setValue("clientProfileId", userProfile.id);
+      setValue("contractType", "contractor");
+    }
+
     toast({
       title: "Contrato seleccionado",
       description: `Datos pre-cargados del contrato ${contract.CONTRATO}`,
