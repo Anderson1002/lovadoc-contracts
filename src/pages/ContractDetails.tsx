@@ -31,8 +31,12 @@ export default function ContractDetails() {
           .maybeSingle();
         const roleName = (profile?.roles as any)?.name || 'employee';
         setUserRole(roleName);
-        if (roleName === 'employee' || roleName === 'supervisor') {
+        if (roleName === 'employee') {
           navigate(`/contracts/${id}/edit`, { replace: true });
+          return;
+        }
+        if (roleName === 'supervisor') {
+          navigate(`/contracts/${id}/review`, { replace: true });
           return;
         }
       }
