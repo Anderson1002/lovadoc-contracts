@@ -1,26 +1,74 @@
 
 
-# Plan: Restaurar visual de "Información del Cliente" para empleados
+# Plan: Filtrar datos por usuario para el rol Employee
 
-## Problema
+## Problema critico
 
-La seccion "Información del Cliente" para empleados se cambio a texto plano simple (labels + texto), pero el usuario quiere que se vea como en la imagen: con el mismo estilo visual que tiene el `ClientSelector` (el cuadro con borde mostrando Nombre, Documento, Email, Teléfono), pero sin que sea editable.
+Tanto el Dashboard como ContractQuery cargan `supabase.from('contracts').select('*')` sin ningun filtro. Un empleado ve TODOS los contratos del sistema cuando solo deberia ver los suyos.
+
+## Que deberia hacer cada pagina para el Employee
+
+### Dashboard (`/`) - Resumen personal
+- Stats cards: solo sus contratos (total, en ejecucion, devueltos, valor)
+- Grafica: distribucion de estados de SUS contratos
+- "Mis Ultimos Contratos": sus ultimos 5 contratos
+- Acciones rapidas: crear contrato, ver cuentas de cobro, consultar contratos
+
+### ContractQuery (`/contracts/query`) - Consulta de sus contratos
+- Tabla con filtros y busqueda, pero solo de SUS contratos
+- Exportar CSV solo de sus contratos
+- Stats de la consulta solo de sus contratos
 
 ## Solucion
 
-En `src/pages/EditContract.tsx`, lineas 542-560, reemplazar los labels planos por una version que imite el estilo visual del `ClientSelector`:
+### 1. Dashboard.tsx
 
-1. Mostrar un input/trigger deshabilitado con el nombre del cliente (similar al SelectTrigger)
-2. Debajo, mostrar el cuadro con borde (Alert) con los datos: Nombre, Documento, Email, Teléfono — igual que lo hace el `ClientSelector` cuando hay un perfil seleccionado
+En `loadDashboardData`, despues de obtener el perfil y rol, condicionar la query:
 
-Basicamente replicar la vista del `ClientSelector` en modo solo lectura, con:
-- Label "Cliente / Contratista" con icono User
-- Un div estilo trigger deshabilitado mostrando nombre y documento
-- Un Alert con los datos detallados
+```tsx
+let contractsQuery = supabase.from('contracts').select('*').order('created_at', { ascending: false });
 
-## Archivo afectado
+if ((profile.roles as any).name === 'employee') {
+  contractsQuery = contractsQuery.eq('created_by', user.id);
+}
+
+const { data: contracts } = await contractsQuery;
+```
+
+Mismo filtro para payments:
+```tsx
+if (roleName === 'employee') {
+  paymentsQuery = paymentsQuery.eq('contract_id', /* in user contracts */);
+}
+```
+
+### 2. ContractQuery.tsx
+
+En `loadContracts`, agregar filtro cuando el rol es employee:
+
+```tsx
+let query = supabase.from('contracts').select(`*, creator:profiles!contracts_created_by_fkey(...)`).order('created_at', { ascending: false });
+
+if (userRole === 'employee') {
+  const { data: { user } } = await supabase.auth.getUser();
+  query = query.eq('created_by', user.id);
+}
+
+const { data: contracts } = await query;
+```
+
+Problema: `loadContracts` se llama antes de que `userRole` se actualice. Solucion: pasar el userId y rol directamente a `loadContracts`.
+
+## Archivos afectados
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/pages/EditContract.tsx` | Reemplazar vista plana de empleado por vista estilizada que replica el look del ClientSelector |
+| `src/pages/Dashboard.tsx` | Filtrar contracts y payments por `created_by = user.id` cuando el rol es employee |
+| `src/pages/ContractQuery.tsx` | Filtrar contracts por `created_by = user.id` cuando el rol es employee; pasar rol a loadContracts |
+
+## Resultado
+
+- Employee solo ve SUS contratos en Dashboard y ContractQuery
+- Admin, supervisor y super_admin siguen viendo todos los contratos
+- Los stats, graficas y tablas reflejan datos correctos segun el rol
 
