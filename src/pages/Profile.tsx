@@ -73,6 +73,17 @@ export default function Profile() {
   const [isEditingSignature, setIsEditingSignature] = useState(false);
   const [isSavingSignature, setIsSavingSignature] = useState(false);
 
+  // Password change states
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    newPassword: "",
+    confirmNewPassword: ""
+  });
+
   const {
     register,
     handleSubmit,
