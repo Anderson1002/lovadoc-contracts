@@ -1,31 +1,79 @@
 
 
-# Plan: Redirigir empleados directamente a la vista de edicion
+# Plan: Hacer campos de origen externo no editables para empleados en EditContract
 
 ## Problema
 
-Cuando el empleado hace clic en "Ver detalles" desde el Dashboard, va a `/contracts/{id}` (ContractDetails) que es una vista de solo lectura. Luego tiene que hacer clic en "Editar" para ir a `/contracts/{id}/edit` (EditContract). Son dos pantallas para lo mismo: la primera solo muestra datos y la segunda los muestra Y permite editar.
+En `CreateContract`, cuando el empleado selecciona un contrato de la tabla externa `contract`, los siguientes datos se pre-cargan como **solo lectura** (disabled):
+- Numero de Contrato (`contract_number` / `CONTRATO`)
+- RP y CDP
+- Descripcion / Objeto del contrato (`OBSERVACION RP`)
+- Valor Total (`VALOR_INICIAL`)
+
+Sin embargo, en `EditContract` (`/contracts/{id}/edit`), **todos esos campos son editables**, permitiendo al empleado modificar datos que provienen del origen externo y no deberian ser manipulados.
+
+## Campos que deben ser no editables para employee
+
+| Campo en EditContract | Origen externo (tabla `contract`) | Debe ser editable? |
+|---|---|---|
+| Numero de Contrato | `CONTRATO` | No |
+| Tipo de Contrato | No viene del origen | Si (ya fue seleccionado al crear) |
+| Descripcion | `OBSERVACION RP` | No |
+| Cliente (ClientSelector) | Asociado por `TERCERO` | No |
+| Valor Total | `VALOR_INICIAL` | No |
+| Fechas inicio/fin | Ingresadas por el empleado | Si |
+| Contrato firmado (PDF) | Subido por el empleado | Si |
 
 ## Solucion
 
-Simplificar el flujo para el empleado: que "Ver detalles" lo lleve directamente a la vista de edicion (`/contracts/{id}/edit`), eliminando el paso intermedio innecesario.
+En `src/pages/EditContract.tsx`:
 
-### Cambios
-
-| Archivo | Cambio |
-|---------|--------|
-| `src/pages/Dashboard.tsx` (~linea 317) | Cambiar el link de "Ver detalles" para que, si el usuario es employee, navegue a `/contracts/{id}/edit` en vez de `/contracts/{id}` |
-| `src/pages/ContractDetails.tsx` (~linea 14) | Agregar logica para que si el usuario es employee, redirija automaticamente a `/contracts/{id}/edit` (por si accede directamente a la URL) |
+1. **Detectar rol del usuario** - Consultar el rol del usuario logueado (igual que en ContractDetails)
+2. **Deshabilitar campos de origen externo para employee**:
+   - `contract_number`: Input con `disabled`
+   - `description`: Textarea con `disabled`
+   - `client_profile_id` (ClientSelector): ocultar o deshabilitar
+   - `total_amount`: Input con `disabled`
+3. **Mantener editables**: fechas de inicio/fin, tipo de contrato, y subida de PDF
 
 ### Detalle tecnico
 
-1. En **Dashboard.tsx**: obtener el `userRole` (ya deberia estar disponible en el componente) y condicionar el href:
-   - Employee: `/contracts/${contract.id}/edit`
-   - Otros roles: `/contracts/${contract.id}` (sin cambio)
+Agregar al inicio del componente la logica para obtener el `userRole`:
 
-2. En **ContractDetails.tsx**: agregar un `useEffect` que detecte si el usuario es employee y haga `navigate(`/contracts/${id}/edit`, { replace: true })` automaticamente.
+```tsx
+const [userRole, setUserRole] = useState<string | null>(null);
+
+useEffect(() => {
+  const fetchRole = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role_id, roles:role_id(name)')
+        .eq('user_id', user.id)
+        .single();
+      if (profile) setUserRole((profile as any).roles?.name);
+    }
+  };
+  fetchRole();
+}, []);
+```
+
+Luego condicionar los campos:
+- `contract_number` Input: `disabled={userRole === 'employee'}`
+- `description` Textarea: `disabled={userRole === 'employee'}`
+- `total_amount` Input: `disabled={userRole === 'employee'}`
+- Card de "Informacion del Cliente": `{userRole !== 'employee' && (...)}` o deshabilitar el selector
+
+## Archivo afectado
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/EditContract.tsx` | Agregar deteccion de rol + deshabilitar campos de origen externo para employee |
 
 ## Resultado
 
-El empleado va directo a editar su contrato sin pasar por una vista de solo lectura redundante. Admin y supervisor siguen viendo la vista de detalle con boton "Editar".
+- Employee solo puede editar fechas y subir PDF en la vista de edicion
+- Admin/supervisor siguen con acceso completo a todos los campos
+- Los datos de origen externo quedan protegidos
 
