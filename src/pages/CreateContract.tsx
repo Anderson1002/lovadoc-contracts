@@ -707,7 +707,7 @@ export default function CreateContract() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {selectedContractType === "variable_amount" && (
+              {userRole !== "employee" && selectedContractType === "variable_amount" && (
                 <div className="space-y-2">
                   <Label htmlFor="hourlyRate">Tarifa por Hora</Label>
                   <Input
