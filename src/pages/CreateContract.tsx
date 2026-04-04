@@ -131,12 +131,16 @@ export default function CreateContract() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('document_number, roles!profiles_role_id_fkey(name)')
+        .select('id, document_number, roles!profiles_role_id_fkey(name)')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (profile?.roles) {
         setUserRole((profile.roles as any).name);
+      }
+
+      if (profile) {
+        setUserProfile(profile);
       }
 
       if (!profile?.document_number) {
@@ -227,6 +231,12 @@ export default function CreateContract() {
     }
     
     setSelectedActiveContract(contract);
+
+    // Auto-asignar campos ocultos para empleados
+    if (userRole === "employee" && userProfile?.id) {
+      setValue("clientProfileId", userProfile.id);
+      setValue("contractType", "contractor");
+    }
 
     toast({
       title: "Contrato seleccionado",
@@ -376,7 +386,15 @@ export default function CreateContract() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={handleSubmit(onSubmit, (validationErrors) => {
+          console.log("Errores de validación:", validationErrors);
+          const fieldNames = Object.keys(validationErrors).join(", ");
+          toast({
+            title: "Campos faltantes",
+            description: `Revise los siguientes campos: ${fieldNames}`,
+            variant: "destructive",
+          });
+        })} className="space-y-8">
           {/* Validación de Perfil Incompleto */}
           {!profileLoading && !isProfileComplete && (
             <Alert variant="destructive">
