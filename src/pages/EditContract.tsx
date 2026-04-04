@@ -467,14 +467,6 @@ export default function EditContract() {
               <p className="text-muted-foreground">{formData.contract_number}</p>
             </div>
           </div>
-          {/* State actions for supervisor/admin */}
-          {userRole && ['supervisor', 'admin', 'super_admin'].includes(userRole) && originalContractData && (
-            <ContractStateActions 
-              contract={originalContractData} 
-              userRole={userRole} 
-              onStateChange={() => id && loadContract(id)} 
-            />
-          )}
         </div>
 
         {/* Alerta para contratos devueltos */}
