@@ -37,6 +37,24 @@ export default function EditContract() {
   const [currentPdfUrl, setCurrentPdfUrl] = useState<string | null>(null);
   const [newPdfFile, setNewPdfFile] = useState<File | null>(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role_id, roles:role_id(name)')
+          .eq('user_id', user.id)
+          .single();
+        if (profile) setUserRole((profile as any).roles?.name);
+      }
+    };
+    fetchRole();
+  }, []);
+
+  const isEmployee = userRole === 'employee';
 
   useEffect(() => {
     if (id) {
@@ -431,6 +449,7 @@ export default function EditContract() {
                     value={formData.contract_number}
                     onChange={(e) => handleChange('contract_number', e.target.value)}
                     required
+                    disabled={isEmployee}
                   />
                 </div>
                 <div>
@@ -453,23 +472,26 @@ export default function EditContract() {
                     value={formData.description}
                     onChange={(e) => handleChange('description', e.target.value)}
                     rows={3}
+                    disabled={isEmployee}
                   />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Client Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Información del Cliente</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ClientSelector
-                  value={formData.client_profile_id}
-                  onChange={(value) => handleChange('client_profile_id', value)}
-                />
-              </CardContent>
-            </Card>
+            {/* Client Information - hidden for employees */}
+            {!isEmployee && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Información del Cliente</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ClientSelector
+                    value={formData.client_profile_id}
+                    onChange={(value) => handleChange('client_profile_id', value)}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             {/* Financial and Dates */}
             <Card className="md:col-span-2">
@@ -487,6 +509,7 @@ export default function EditContract() {
                       value={formData.total_amount}
                       onChange={(e) => handleChange('total_amount', e.target.value)}
                       required
+                      disabled={isEmployee}
                     />
                   </div>
                   <div>
