@@ -131,7 +131,13 @@ export default function Contracts() {
   };
 
   const handleView = (contract: any) => {
-    navigate(`/contracts/${contract.id}`);
+    if (userRole === 'employee') {
+      navigate(`/contracts/${contract.id}/edit`);
+    } else if (userRole === 'supervisor') {
+      navigate(`/contracts/${contract.id}/review`);
+    } else {
+      navigate(`/contracts/${contract.id}`);
+    }
   };
 
   const handleEdit = (contract: any) => {
