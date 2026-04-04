@@ -27,8 +27,11 @@ import {
   Camera,
   PenTool,
   Eye,
+  EyeOff,
   Trash2,
-  Loader2
+  Loader2,
+  Lock,
+  KeyRound
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -69,6 +72,17 @@ export default function Profile() {
   const [existingSignatureUrl, setExistingSignatureUrl] = useState<string | null>(null);
   const [isEditingSignature, setIsEditingSignature] = useState(false);
   const [isSavingSignature, setIsSavingSignature] = useState(false);
+
+  // Password change states
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    newPassword: "",
+    confirmNewPassword: ""
+  });
 
   const {
     register,
@@ -321,6 +335,51 @@ export default function Profile() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "La nueva contraseña debe tener al menos 6 caracteres",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmNewPassword) {
+      toast({
+        title: "Error",
+        description: "Las contraseñas no coinciden",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "¡Contraseña actualizada!",
+        description: "Tu contraseña ha sido cambiada exitosamente",
+      });
+
+      setIsChangingPassword(false);
+      setPasswordData({ newPassword: "", confirmNewPassword: "" });
+    } catch (error: any) {
+      toast({
+        title: "Error al cambiar contraseña",
+        description: error.message || "No se pudo actualizar la contraseña",
+        variant: "destructive"
+      });
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -657,7 +716,109 @@ export default function Profile() {
                     </CardContent>
                   </Card>
 
-                  {/* Signature Section */}
+                  {/* Password Change Section */}
+                  <Card className="border-2 shadow-lg">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <KeyRound className="w-5 h-5" />
+                            Seguridad
+                          </CardTitle>
+                          <CardDescription>
+                            Cambia tu contraseña de acceso al sistema
+                          </CardDescription>
+                        </div>
+                        {!isChangingPassword && (
+                          <Button
+                            variant="outline"
+                            onClick={() => setIsChangingPassword(true)}
+                            className="flex items-center gap-2"
+                          >
+                            <Lock className="w-4 h-4" />
+                            Cambiar Contraseña
+                          </Button>
+                        )}
+                      </div>
+                    </CardHeader>
+                    {isChangingPassword && (
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="newPassword" className="text-base font-semibold">Nueva Contraseña</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="newPassword"
+                              type={showNewPassword ? "text" : "password"}
+                              placeholder="Mínimo 6 caracteres"
+                              value={passwordData.newPassword}
+                              onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                              className="pl-10 pr-10"
+                              minLength={6}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                            >
+                              {showNewPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="confirmNewPassword" className="text-base font-semibold">Confirmar Nueva Contraseña</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="confirmNewPassword"
+                              type={showConfirmNewPassword ? "text" : "password"}
+                              placeholder="Repite la nueva contraseña"
+                              value={passwordData.confirmNewPassword}
+                              onChange={(e) => setPasswordData(prev => ({ ...prev, confirmNewPassword: e.target.value }))}
+                              className="pl-10 pr-10"
+                              minLength={6}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                              onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                            >
+                              {showConfirmNewPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                            </Button>
+                          </div>
+                        </div>
+
+                        <Separator />
+                        <div className="flex justify-end gap-4">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setIsChangingPassword(false);
+                              setPasswordData({ newPassword: "", confirmNewPassword: "" });
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            onClick={handleChangePassword}
+                            disabled={passwordLoading || !passwordData.newPassword || !passwordData.confirmNewPassword}
+                            className="flex items-center gap-2"
+                          >
+                            <Save className="w-4 h-4" />
+                            {passwordLoading ? "Guardando..." : "Actualizar Contraseña"}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+
+
                   <Card className="border-2 shadow-lg">
                     <CardHeader>
                       <div className="flex items-center justify-between">
