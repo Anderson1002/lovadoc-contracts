@@ -386,7 +386,15 @@ export default function CreateContract() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={handleSubmit(onSubmit, (validationErrors) => {
+          console.log("Errores de validación:", validationErrors);
+          const fieldNames = Object.keys(validationErrors).join(", ");
+          toast({
+            title: "Campos faltantes",
+            description: `Revise los siguientes campos: ${fieldNames}`,
+            variant: "destructive",
+          });
+        })} className="space-y-8">
           {/* Validación de Perfil Incompleto */}
           {!profileLoading && !isProfileComplete && (
             <Alert variant="destructive">
