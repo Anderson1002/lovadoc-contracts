@@ -105,7 +105,9 @@ export default function EditContract() {
         end_date: data.end_date || '',
         description: data.description || '',
         area_responsable: (data as any).area_responsable || '',
-        supervisor_asignado: (data as any).supervisor_asignado || ''
+        supervisor_asignado: (data as any).supervisor_asignado || '',
+        cdp: (data as any).cdp || '',
+        rp: (data as any).rp || ''
       });
       
       // Store original data for change detection
