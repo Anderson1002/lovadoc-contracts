@@ -80,7 +80,7 @@ export function AppSidebar({ userRole, pendingApprovals = 0 }: AppSidebarProps) 
           title: "Consulta Avanzada",
           url: "/contracts/query",
           icon: FileCheck,
-          roles: ["super_admin", "admin", "employee"]
+          roles: ["super_admin", "admin", "employee", "supervisor"]
         },
         {
           title: "Pendientes Aprobación",
