@@ -444,20 +444,32 @@ export default function EditContract() {
     <Layout>
       <div className="container mx-auto px-4 py-8 space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate('/contracts')}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Volver
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Editar Contrato</h1>
-            <p className="text-muted-foreground">{formData.contract_number}</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate('/contracts')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Volver
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">
+                {canEdit ? 'Editar Contrato' : 'Detalle del Contrato'}
+              </h1>
+              <p className="text-muted-foreground">{formData.contract_number}</p>
+            </div>
           </div>
+          {/* State actions for supervisor/admin */}
+          {userRole && ['supervisor', 'admin', 'super_admin'].includes(userRole) && originalContractData && (
+            <ContractStateActions 
+              contract={originalContractData} 
+              userRole={userRole} 
+              onStateChange={() => id && loadContract(id)} 
+            />
+          )}
         </div>
 
         {/* Alerta para contratos devueltos */}
