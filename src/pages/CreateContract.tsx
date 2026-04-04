@@ -131,12 +131,16 @@ export default function CreateContract() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('document_number, roles!profiles_role_id_fkey(name)')
+        .select('id, document_number, roles!profiles_role_id_fkey(name)')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (profile?.roles) {
         setUserRole((profile.roles as any).name);
+      }
+
+      if (profile) {
+        setUserProfile(profile);
       }
 
       if (!profile?.document_number) {
