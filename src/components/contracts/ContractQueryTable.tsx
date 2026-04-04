@@ -72,6 +72,7 @@ interface ContractQueryTableProps {
   onSort: (column: string, direction: 'asc' | 'desc') => void;
   sortColumn?: string;
   sortDirection?: 'asc' | 'desc';
+  userRole?: string;
 }
 
 type SortableColumn = 'contract_number' | 'creator_name' | 'total_amount' | 'start_date' | 'end_date' | 'estado' | 'contract_type';
