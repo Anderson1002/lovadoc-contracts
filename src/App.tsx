@@ -12,6 +12,7 @@ import Contracts from "./pages/Contracts";
 import CreateContract from "./pages/CreateContract";
 import ContractDetails from "./pages/ContractDetails";
 import EditContract from "./pages/EditContract";
+import SupervisorContractReview from "./pages/SupervisorContractReview";
 import ContractQuery from "./pages/ContractQuery";
 import BillingAccounts from "./pages/BillingAccounts";
 import Users from "./pages/Users";
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/contracts/new" element={<CreateContract />} />
           <Route path="/contracts/:id" element={<ContractDetails />} />
           <Route path="/contracts/:id/edit" element={<EditContract />} />
+          <Route path="/contracts/:id/review" element={<SupervisorContractReview />} />
           <Route path="/contracts/query" element={<ContractQuery />} />
           <Route path="/billing" element={<BillingAccounts />} />
           <Route path="/users" element={<Users />} />

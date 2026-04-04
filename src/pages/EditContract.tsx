@@ -12,8 +12,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ArrowLeft, Save, FileText, Upload, X, AlertTriangle, User } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ClientSelector } from "@/components/contracts/ClientSelector";
-import { ContractStateActions } from "@/components/contracts/ContractStateActions";
-import { ContractStateHistory } from "@/components/contracts/ContractStateHistory";
 
 export default function EditContract() {
   const { id } = useParams();
@@ -89,8 +87,15 @@ export default function EditContract() {
   }, []);
 
   const isEmployee = userRole === 'employee';
-  const isSupervisor = userRole === 'supervisor';
-  const canEdit = !isEmployee && !isSupervisor || (isEmployee && formData.status === 'devuelto');
+
+  // Redirect supervisor to review page
+  useEffect(() => {
+    if (userRole === 'supervisor' && id) {
+      navigate(`/contracts/${id}/review`, { replace: true });
+    }
+  }, [userRole, id, navigate]);
+
+  const canEdit = !isEmployee || (isEmployee && formData.status === 'devuelto');
 
   useEffect(() => {
     if (id) {
@@ -462,14 +467,6 @@ export default function EditContract() {
               <p className="text-muted-foreground">{formData.contract_number}</p>
             </div>
           </div>
-          {/* State actions for supervisor/admin */}
-          {userRole && ['supervisor', 'admin', 'super_admin'].includes(userRole) && originalContractData && (
-            <ContractStateActions 
-              contract={originalContractData} 
-              userRole={userRole} 
-              onStateChange={() => id && loadContract(id)} 
-            />
-          )}
         </div>
 
         {/* Alerta para contratos devueltos */}
@@ -568,7 +565,7 @@ export default function EditContract() {
                 <CardTitle>Información del Cliente</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {(isEmployee || isSupervisor) ? (
+                {isEmployee ? (
                   <div className="space-y-3">
                     <Label className="flex items-center gap-2">
                       <User className="h-4 w-4" />
@@ -756,10 +753,7 @@ export default function EditContract() {
           </div>
         </form>
 
-        {/* Historial de Estados - fuera del form, visible para supervisor y admin */}
-        {userRole && ['supervisor', 'admin', 'super_admin'].includes(userRole) && id && (
-          <ContractStateHistory contractId={id} />
-        )}
+
       </div>
     </Layout>
   );

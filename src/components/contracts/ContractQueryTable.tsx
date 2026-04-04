@@ -569,6 +569,8 @@ export function ContractQueryTable({
                             onClick={() => {
                               if (userRole === 'employee') {
                                 navigate(`/contracts/${contract.id}/edit`);
+                              } else if (userRole === 'supervisor') {
+                                navigate(`/contracts/${contract.id}/review`);
                               } else {
                                 setSelectedContract(contract);
                               }
