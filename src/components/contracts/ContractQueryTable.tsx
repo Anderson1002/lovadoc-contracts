@@ -456,7 +456,13 @@ export function ContractQueryTable({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setSelectedContract(contract)}
+                            onClick={() => {
+                              if (userRole === 'employee') {
+                                navigate(`/contracts/${contract.id}/edit`);
+                              } else {
+                                setSelectedContract(contract);
+                              }
+                            }}
                           >
                             <FileText className="w-4 h-4" />
                           </Button>
