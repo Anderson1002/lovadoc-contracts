@@ -97,14 +97,11 @@ export default function ContractQuery() {
     }
   };
 
-  const loadContracts = async () => {
+  const loadContracts = async (role?: string, profileId?: string | null) => {
     try {
       setIsLoadingContracts(true);
       
-      // Actualizar estados de contratos basándose en fechas antes de cargarlos
-      // Estados se actualizan automáticamente por triggers
-      
-      const { data: contracts, error } = await supabase
+      let query = supabase
         .from('contracts')
         .select(`
           *,
@@ -115,6 +112,13 @@ export default function ContractQuery() {
           )
         `)
         .order('created_at', { ascending: false });
+
+      // Employee only sees their own contracts
+      if (role === 'employee' && profileId) {
+        query = query.eq('created_by', profileId);
+      }
+
+      const { data: contracts, error } = await query;
 
       if (error) throw error;
 
