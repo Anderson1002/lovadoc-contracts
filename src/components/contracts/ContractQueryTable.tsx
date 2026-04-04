@@ -72,6 +72,7 @@ interface ContractQueryTableProps {
   onSort: (column: string, direction: 'asc' | 'desc') => void;
   sortColumn?: string;
   sortDirection?: 'asc' | 'desc';
+  userRole?: string;
 }
 
 type SortableColumn = 'contract_number' | 'creator_name' | 'total_amount' | 'start_date' | 'end_date' | 'estado' | 'contract_type';
@@ -84,7 +85,8 @@ export function ContractQueryTable({
   onPageChange,
   onSort,
   sortColumn,
-  sortDirection
+  sortDirection,
+  userRole
 }: ContractQueryTableProps) {
   const navigate = useNavigate();
   const [selectedContract, setSelectedContract] = useState<any>(null);
@@ -454,7 +456,13 @@ export function ContractQueryTable({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setSelectedContract(contract)}
+                            onClick={() => {
+                              if (userRole === 'employee') {
+                                navigate(`/contracts/${contract.id}/edit`);
+                              } else {
+                                setSelectedContract(contract);
+                              }
+                            }}
                           >
                             <FileText className="w-4 h-4" />
                           </Button>
@@ -558,7 +566,13 @@ export function ContractQueryTable({
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             className="cursor-pointer hover:bg-muted"
-                            onClick={() => setSelectedContract(contract)}
+                            onClick={() => {
+                              if (userRole === 'employee') {
+                                navigate(`/contracts/${contract.id}/edit`);
+                              } else {
+                                setSelectedContract(contract);
+                              }
+                            }}
                           >
                             <FileText className="w-4 h-4 mr-2" />
                             Ver detalles
