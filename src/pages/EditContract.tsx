@@ -541,22 +541,25 @@ export default function EditContract() {
               <CardContent className="space-y-4">
                 {isEmployee ? (
                   <div className="space-y-3">
-                    <div>
-                      <Label className="text-muted-foreground text-xs">Nombre</Label>
-                      <p className="font-medium">{clientData?.name || 'No asignado'}</p>
+                    <Label className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Cliente / Contratista
+                    </Label>
+                    <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-muted px-3 py-2 text-sm opacity-70 cursor-not-allowed">
+                      <span className="line-clamp-1">{clientData?.name || 'No asignado'}</span>
                     </div>
-                    <div>
-                      <Label className="text-muted-foreground text-xs">Documento</Label>
-                      <p className="font-medium">{clientData?.document_number || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <Label className="text-muted-foreground text-xs">Email</Label>
-                      <p className="font-medium">{clientData?.email || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <Label className="text-muted-foreground text-xs">Teléfono</Label>
-                      <p className="font-medium">{clientData?.phone || 'N/A'}</p>
-                    </div>
+                    <Alert>
+                      <AlertDescription className="text-sm">
+                        <div className="space-y-1">
+                          <p><strong>Nombre:</strong> {clientData?.name || 'No asignado'}</p>
+                          <p><strong>Documento:</strong> {clientData?.document_number || 'N/A'}</p>
+                          <p><strong>Email:</strong> {clientData?.email || 'N/A'}</p>
+                          {clientData?.phone && (
+                            <p><strong>Teléfono:</strong> {clientData.phone}</p>
+                          )}
+                        </div>
+                      </AlertDescription>
+                    </Alert>
                   </div>
                 ) : (
                   <ClientSelector
