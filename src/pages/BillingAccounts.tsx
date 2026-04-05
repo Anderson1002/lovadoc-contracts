@@ -198,7 +198,7 @@ export default function BillingAccounts() {
 
         {/* Content */}
         <Tabs defaultValue={defaultTab} className="space-y-6">
-          <TabsList className={`grid w-full grid-cols-${tabCount}`}>
+          <TabsList className={`grid w-full ${tabCount === 2 ? 'grid-cols-2' : tabCount === 3 ? 'grid-cols-3' : tabCount === 4 ? 'grid-cols-4' : 'grid-cols-5'}`}>
             {/* Supervisor: solo 2 pestañas */}
             {isSupervisor ? (
               <>
