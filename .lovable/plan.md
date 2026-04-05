@@ -1,42 +1,48 @@
 
 
-# Plan: Campos protegidos siempre deshabilitados para empleados
+# Plan: Reorganizar pestanas y header de /billing para el supervisor
 
-## Problema
+## Situacion actual
 
-Cuando el supervisor devuelve un contrato, `canEdit` se vuelve `true` para el empleado y TODOS los campos se habilitan. Pero los campos CDP, RP, Numero de Contrato, Descripcion y Valor Total deben ser **siempre de solo lectura** para empleados, incluso cuando el contrato esta devuelto. Estos datos vienen de fuentes externas y el empleado no debe modificarlos.
+El supervisor ve en `/billing`:
+- Header: "Registro Cuenta de Cobro" + texto del empleado (incorrecto)
+- 5 pestanas: Mis Cuentas, Pendientes Revision, Cuentas por Pagar, Todas las Cuentas, Comentarios
+- El supervisor NO ve "Mis Cuentas" ni "Cuentas por Pagar" (correcto), pero las pestanas visibles no estan bien organizadas
 
-## Que puede editar el empleado cuando el contrato esta devuelto
+## Cambios propuestos
 
-- Fecha de Inicio
-- Fecha de Fin
-- Tipo de Contrato
-- Subir contrato firmado (PDF)
+### 1. Header dinamico segun rol
 
-## Que debe permanecer siempre bloqueado para empleados
+| Rol | Titulo | Descripcion |
+|-----|--------|-------------|
+| Employee | Registro Cuenta de Cobro | Para radicar exitosamente se requieren 3 documentos... |
+| Supervisor | Revision de Cuentas de Cobro | Revisa, aprueba o devuelve las cuentas de cobro de los contratistas |
+| Treasury | Gestion de Pagos | Gestiona los pagos de las cuentas aprobadas |
+| Admin/Super Admin | Gestion de Cuentas de Cobro | Administracion completa de cuentas de cobro |
 
-- Numero de Contrato
-- CDP
-- RP
-- Descripcion / Objeto del Contrato
-- Valor Total
-- Cliente (ya esta bloqueado correctamente)
+### 2. Pestanas del supervisor (solo 2)
 
-## Cambio
+Actualmente el supervisor ve: "Pendientes Revision", "Todas las Cuentas", "Comentarios". La propuesta:
 
-En `src/pages/EditContract.tsx`, cambiar el `disabled` de los 5 campos protegidos de `disabled={!canEdit}` a `disabled={isEmployee || !canEdit}`:
+- **Pendientes de Revision** — Cuentas en estado `pendiente_revision` (las que necesitan accion: aprobar o devolver). Usa el componente `BillingReviewList` que ya existe y funciona
+- **Historial de Cuentas** — Todas las demas cuentas que ya fueron procesadas (aprobadas, rechazadas, causadas). Usa `BillingAccountsList` con `filterType="all"` que ya excluye borradores para supervisor
 
-- `contract_number`: siempre disabled si es employee
-- `cdp`: siempre disabled si es employee
-- `rp`: siempre disabled si es employee
-- `description`: siempre disabled si es employee
-- `total_amount`: siempre disabled si es employee
+Se elimina la pestana "Comentarios" para supervisor (los comentarios ya se ven dentro de cada cuenta en el historial y en el flujo de revision).
 
-Los campos de fechas, tipo de contrato y subida de PDF mantienen `disabled={!canEdit}` para que se habiliten cuando el contrato esta devuelto.
+### 3. Observaciones adicionales de mejora
+
+- El `TabsList` usa `grid-cols-5` fijo aunque no todos los roles ven 5 pestanas — cambiar a `grid-cols` dinamico segun la cantidad real de tabs visibles
+- El badge de conteo pendiente ya funciona correctamente
 
 ## Archivo afectado
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/pages/EditContract.tsx` | Cambiar disabled en 5 campos para que sean siempre readonly para employee |
+| `src/pages/BillingAccounts.tsx` | Header condicional por rol, reorganizar tabs del supervisor a solo 2, grid-cols dinamico |
+
+## Resultado
+
+- Supervisor ve "Revision de Cuentas de Cobro" con descripcion adecuada
+- Solo 2 pestanas claras: lo que necesita accion vs lo ya procesado
+- No se rompe la logica existente de los componentes internos
 
