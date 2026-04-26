@@ -14,7 +14,8 @@ import {
   Building2,
   Settings,
   ChevronDown,
-  Receipt
+  Receipt,
+  Database
 } from "lucide-react";
 import {
   NavigationMenu,
@@ -89,6 +90,12 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
           icon: Search,
           url: "/contracts/query",
           description: "Búsqueda avanzada de contratos"
+        },
+        {
+          label: "Datos Importados",
+          icon: Database,
+          url: "/contract-imports",
+          description: "Registros importados de la fuente externa"
         }
       ]
     },
@@ -149,13 +156,16 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
         if (item.url === "/users" && !["super_admin", "admin"].includes(userRole)) {
           return false;
         }
-        if (item.url === "/contracts" && !["super_admin", "admin", "supervisor"].includes(userRole)) {
+        if (item.url === "/contracts" && !["super_admin", "admin", "supervisor", "juridica"].includes(userRole)) {
           return false;
         }
-        if (item.url === "/contracts/new" && !["super_admin", "admin", "employee"].includes(userRole)) {
+        if (item.url === "/contracts/new" && !["super_admin", "admin", "employee", "juridica"].includes(userRole)) {
           return false;
         }
-        if (item.url === "/contracts/query" && !["super_admin", "admin", "employee"].includes(userRole)) {
+        if (item.url === "/contracts/query" && !["super_admin", "admin", "employee", "juridica"].includes(userRole)) {
+          return false;
+        }
+        if (item.url === "/contract-imports" && !["super_admin", "admin", "juridica"].includes(userRole)) {
           return false;
         }
         return true;
