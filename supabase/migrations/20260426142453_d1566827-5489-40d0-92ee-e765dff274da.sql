@@ -1,0 +1,1 @@
+ALTER TYPE user_role_type ADD VALUE IF NOT EXISTS 'juridica';
