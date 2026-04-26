@@ -54,6 +54,13 @@ const getDashboardConfig = (role: string) => {
         recentActivityTitle: 'Actividad Reciente - Mi Equipo',
         recentActivityDescription: 'Últimos contratos del proceso'
       };
+    case 'juridica':
+      return {
+        title: 'Dashboard Jurídica',
+        description: 'Gestión integral de contratos del sistema',
+        recentActivityTitle: 'Actividad Reciente',
+        recentActivityDescription: 'Últimos contratos registrados en el sistema'
+      };
     default: // admin, super_admin
       return {
         title: 'Dashboard ContratosMédicos Pro',
@@ -233,7 +240,7 @@ export default function Dashboard() {
             {dashboardConfig.description}
           </p>
         </div>
-        {["super_admin", "admin", "employee"].includes(userRole) && (
+        {["super_admin", "admin", "employee", "juridica"].includes(userRole) && (
           <Button asChild className="flex items-center gap-2">
             <Link to="/contracts/new">
               <FileText className="h-4 w-4" />
