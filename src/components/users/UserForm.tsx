@@ -190,7 +190,7 @@ export function UserForm({ user, onSuccess }: UserFormProps) {
     } else if (currentUserRole === 'admin') {
       return roles.filter(role => role.name !== 'super_admin');
     } else if (currentUserRole === 'supervisor') {
-      return roles.filter(role => !['super_admin', 'admin'].includes(role.name));
+      return roles.filter(role => !['super_admin', 'admin', 'juridica'].includes(role.name));
     }
     return [];
   };
