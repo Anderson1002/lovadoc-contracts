@@ -34,6 +34,10 @@ const HEADER_CONFIG: Record<string, { title: string; description: string }> = {
     title: "Gestión de Cuentas de Cobro",
     description: "Administración completa de cuentas de cobro",
   },
+  juridica: {
+    title: "Consulta de Cuentas de Cobro",
+    description: "Visualización de cuentas de cobro para soporte legal",
+  },
 };
 
 export default function BillingAccounts() {

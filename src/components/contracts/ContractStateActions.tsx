@@ -44,7 +44,7 @@ export function ContractStateActions({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const canChangeState = ["super_admin", "admin", "supervisor"].includes(userRole);
+  const canChangeState = ["super_admin", "admin", "supervisor", "juridica"].includes(userRole);
   const currentState = contract.estado || contract.status;
 
   const getStateCode = (estado: string): string => {

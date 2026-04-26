@@ -162,7 +162,7 @@ export default function ContractDetails() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {userRole && ['super_admin', 'admin'].includes(userRole) && (
+            {userRole && ['super_admin', 'admin', 'juridica'].includes(userRole) && (
               <Button 
                 onClick={() => navigate(`/contracts/${contract.id}/edit`)}
                 className="flex items-center gap-2"
