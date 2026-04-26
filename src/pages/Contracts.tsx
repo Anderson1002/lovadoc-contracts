@@ -168,7 +168,7 @@ export default function Contracts() {
               Gestiona todos los contratos del hospital
             </p>
           </div>
-          {userRole && ["super_admin", "admin", "employee"].includes(userRole) && (
+          {userRole && ["super_admin", "admin", "employee", "juridica"].includes(userRole) && (
             <Button 
               onClick={() => navigate("/contracts/new")}
               className="flex items-center gap-2"
