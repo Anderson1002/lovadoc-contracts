@@ -1,132 +1,122 @@
 
-# Plan: Crear nuevo rol "Jurídica" con CRUD de contratos
+# Plan: Rol Jurídica — CRUD sobre tabla `contract`
 
-## Análisis de la situación actual
+## Contexto
 
-**Roles existentes en BD** (`user_role_type`): `super_admin`, `admin`, `supervisor`, `employee`, `treasury`.
+El rol **Jurídica** es quien **digita y mantiene** los registros maestros de contratos en la tabla externa `contract` (no radica cuentas de cobro ni gestiona el flujo interno de `contracts`). Por tanto, el menú actual con 4 opciones está sobredimensionado y debe simplificarse, y la página `/contract-imports` debe convertirse en el verdadero centro de operación con CRUD completo.
 
-**Tabla `contract`** (datos importados externos, 14 columnas):
-- `OID`, `CONTRATO`, `CDP`, `FECHA CDP`, `RP`, `FECHA RP`, `TERCERO`, `DESCRIP_TERCERO`, `VALOR_INICIAL`, `MODIFIC_DEBITO`, `MODIFIC_CREDITO`, `VALOR EJECUTADO`, `SALDO RP`, `OBSERVACION RP`.
-- Hoy es solo lectura y se filtra por `TERCERO = profiles.document_number` (employee solo ve los suyos).
+## Cambios
 
-**Tabla `contracts`** (registros internos del sistema): es la principal del CRUD ya implementado en `/contracts`, `/contracts/new`, `/contracts/:id/edit`, etc.
+### 1. Menú de navegación (Jurídica)
 
-## Decisiones de alcance (defaults razonables)
+Filtrar `professional-nav.tsx` para que Jurídica solo vea bajo "Control de Contratos":
 
-Como no se respondieron las preguntas, asumo lo siguiente — perfil de "abogada corporativa" típico:
-
-1. **Acceso transversal** a todos los contratos del sistema (sin restricción por proceso, como admin pero sin tocar usuarios).
-2. **CRUD completo sobre `contracts`**: crear, editar, ver, sin las restricciones de campos del employee.
-3. **Gestión de estados**: puede aprobar, devolver y cancelar contratos (igual que un supervisor pero sin filtro de proceso).
-4. **Tabla `contract` (importada)**: lectura completa (sin filtro por TERCERO) para soporte legal.
-5. **Cuentas de cobro**: solo lectura (no aprueba, eso queda para supervisor/tesorería).
-6. **Usuarios y Procesos**: NO accede.
-7. **Dashboard**: ve stats globales de contratos (no de cobros).
-8. **No requiere `proceso_id`** asignado.
-
-## Cambios en base de datos
-
-### 1. Agregar valor al enum `user_role_type`
-```sql
-ALTER TYPE user_role_type ADD VALUE 'juridica';
+```text
+Control de Contratos
+├── Contratos          → /contract-imports        (listar/buscar/editar)
+└── Nuevo Contrato     → /contract-imports/new    (formulario de alta)
 ```
 
-### 2. Insertar el rol en `roles`
+Se ocultan para Jurídica: `/contracts`, `/contracts/new`, `/contracts/query`.
+
+### 2. Base de datos — Permisos RLS sobre tabla `contract`
+
+Actualmente Jurídica solo tiene `SELECT`. Hay que agregar:
+
 ```sql
-INSERT INTO roles (name, display_name) VALUES ('juridica', 'Jurídica');
+-- INSERT
+CREATE POLICY contract_insert_juridica ON public.contract
+FOR INSERT WITH CHECK (
+  get_user_role(auth.uid()) = ANY (ARRAY['super_admin','admin','juridica']::user_role_type[])
+);
+
+-- UPDATE
+CREATE POLICY contract_update_juridica ON public.contract
+FOR UPDATE USING (
+  get_user_role(auth.uid()) = ANY (ARRAY['super_admin','admin','juridica']::user_role_type[])
+);
 ```
 
-### 3. Actualizar políticas RLS
+(Sin DELETE, para preservar trazabilidad.)
 
-**`contracts`** — agregar `juridica` a SELECT/INSERT/UPDATE como admin (acceso global):
-- `contracts_select_policy`: añadir `'juridica'` al ARRAY de roles con acceso total.
-- `contracts_insert_policy`: añadir `'juridica'`.
-- `contracts_update_policy`: añadir `'juridica'`.
+El campo `OID` queda autoincremental (ya lo es vía `nextval('contract_oid_seq')`), no se envía desde el cliente.
 
-**`contract`** (importada) — nueva política para que jurídica vea todo:
-```sql
-CREATE POLICY contract_select_juridica ON contract
-FOR SELECT USING (get_user_role(auth.uid()) IN ('super_admin','admin','juridica'));
+### 3. Página `/contract-imports` (renombrada en UI a "Contratos")
+
+Mejoras a `src/pages/ContractImports.tsx`:
+
+- Renombrar título visible: "Contratos" / "Gestión de Contratos" (URL se mantiene).
+- Botón **"+ Nuevo Contrato"** en el header → navega a `/contract-imports/new`.
+- En cada fila de la tabla agregar acción **Editar** (ícono lápiz) → `/contract-imports/:oid/edit`.
+- Mantener búsqueda, KPIs y exportación CSV existentes.
+- Mejorar columnas mostradas para reflejar todos los campos relevantes (CONTRATO, CDP, RP, FECHA RP, FECHA CDP, TERCERO, DESCRIP_TERCERO, VALOR_INICIAL, SALDO RP, OBSERVACION RP).
+
+### 4. Nueva página `/contract-imports/new` — Crear
+
+Componente `src/pages/ContractImportCreate.tsx` con formulario que inserta en `contract`:
+
+| Campo formulario | Columna DB | Tipo |
+|---|---|---|
+| Número de Contrato | `CONTRATO` | text |
+| CDP | `CDP` | text |
+| Fecha CDP | `FECHA CDP` | date → text |
+| RP | `RP` | bigint |
+| Fecha RP | `FECHA RP` | date → text |
+| Tercero (documento) | `TERCERO` | text |
+| Descripción Tercero | `DESCRIP_TERCERO` | text |
+| Valor Inicial | `VALOR_INICIAL` | text (numérico) |
+| Modificación Crédito | `MODIFIC_CREDITO` | text |
+| Modificación Débito | `MODIFIC_DEBITO` | text |
+| Valor Ejecutado | `VALOR EJECUTADO` | text |
+| Saldo RP | `SALDO RP` | text |
+| Observación RP | `OBSERVACION RP` | textarea |
+
+`OID` no se envía (autoincremental). Validación con `zod` + `react-hook-form`.
+
+### 5. Nueva página `/contract-imports/:oid/edit` — Editar
+
+Componente `src/pages/ContractImportEdit.tsx`:
+- Carga el registro por `OID`.
+- Reutiliza el mismo formulario de creación (componente compartido `ContractImportForm.tsx`).
+- Submit ejecuta `UPDATE` filtrando por `OID`.
+- `OID` y campo `CONTRATO` se muestran de solo lectura para preservar la identidad del registro.
+
+### 6. Rutas en `src/App.tsx`
+
+Agregar:
+```tsx
+<Route path="/contract-imports/new" element={<ContractImportCreate />} />
+<Route path="/contract-imports/:oid/edit" element={<ContractImportEdit />} />
 ```
 
-**`contract_state_history`**: añadir `juridica` a SELECT e INSERT para que pueda registrar cambios de estado.
+### 7. Dashboard Jurídica (`src/pages/Dashboard.tsx`)
 
-**`billing_accounts`**: añadir `juridica` solo en SELECT (lectura).
+Reemplazar la vista actual del rol Jurídica con métricas calculadas sobre `contract`:
 
-**`documents`**: añadir `juridica` para ver documentos contractuales.
+- **KPIs**: Total registros, Valor inicial acumulado, Saldo RP acumulado, Terceros únicos.
+- **Tabla de últimos 5 contratos creados** (orden `OID DESC`).
+- **Acceso rápido**: botones a "Nuevo Contrato" y "Ver todos".
 
-**`profiles`**: ajustar `profiles_select_policy` para que jurídica pueda ver perfiles de clientes (necesario al ver detalles de contrato).
+Se elimina del dashboard de Jurídica cualquier referencia a `contracts`, `billing_accounts` o flujos internos.
 
-### 4. Triggers existentes
+### 8. Limpieza UI
 
-Los triggers `enforce_cuenta_update_columns`, `validate_cuenta_transition`, `validate_billing_account_ownership` validan por rol — no requieren cambio porque jurídica NO escribe en billing.
+- Quitar de `BillingAccounts.tsx` el header de "consulta legal" para Jurídica (ya no aplica acceso por menú).
+- Quitar `ContractImports` del menú "Datos Importados" para super_admin/admin (queda solo para Jurídica) **O** mantenerlo accesible — confirmar más adelante si surge la duda; por ahora se mantiene para admins también.
 
-## Cambios de frontend
+## Detalles técnicos
 
-### A. Navegación (`src/components/ui/professional-nav.tsx`)
-`getFilteredMenuItems()` — agregar reglas para `juridica`:
-- Ve: Dashboard, Control de Contratos (todas las opciones), Cuentas de Cobro (solo lectura), Notificaciones, Mi Perfil.
-- NO ve: Usuarios, Procesos.
-- Ítem nuevo opcional: "Datos Importados" → `/contract-imports` (vista de la tabla `contract`).
-
-### B. Routing (`src/App.tsx`)
-Nueva ruta `/contract-imports` → nueva página `ContractImports.tsx` (tabla con búsqueda y export CSV de la tabla `contract`).
-
-### C. Dashboard (`src/pages/Dashboard.tsx`)
-Para `juridica` mostrar las mismas tarjetas que ve un admin: stats globales de contratos por estado, contratos por vencer, gráficas. Ocultar widgets de cuentas de cobro o dejarlos como info de contexto.
-
-### D. Lista de contratos (`src/pages/Contracts.tsx` y `ContractTable.tsx`)
-- `canEdit` actual = `["super_admin","admin"]`. Agregar `"juridica"` para habilitar el botón Editar.
-- En el filtro de fetch: jurídica debe consultar sin filtro `created_by` ni filtro de proceso (como admin).
-
-### E. Crear/Editar contrato (`CreateContract.tsx`, `EditContract.tsx`)
-- Quitar las restricciones de "interfaz simplificada" del employee (cliente, descripción, financiero).
-- Quitar el bloqueo de campos read-only (Contract Number, CDP, RP, Description, Total Amount).
-- Permitir editar en cualquier estado (no solo `devuelto`).
-- En el guard de carga de rol, `juridica` se trata como admin.
-
-### F. Routing por rol (`navigation/role-specific-contract-routing`)
-Añadir `juridica` al grupo que va al details view (`/contracts/:id`) con botón a editar — igual que admin.
-
-### G. Acciones de estado (`ContractStateActions.tsx`)
-Habilitar botones de aprobar/devolver/cancelar para `juridica` (mismas acciones que supervisor, sin filtro de proceso).
-
-### H. Formulario de usuarios (`UserForm.tsx`)
-Agregar `juridica` a `getAvailableRoles()` para super_admin y admin (no para supervisor). El rol `juridica` NO requiere `proceso_id` (se añade al `if (!['supervisor','employee'].includes(formData.role))`).
-
-### I. Página Cuentas de Cobro (`BillingAccounts.tsx`)
-Para `juridica`: mostrar solo la pestaña "Todas las Cuentas" en modo lectura (sin acciones de aprobar/devolver/pagar). Reutilizar el componente listado.
-
-### J. Nueva página `ContractImports.tsx`
-Tabla con todos los registros de `contract` (importados): búsqueda por TERCERO/CDP/RP/CONTRATO, paginación, export a CSV. Solo visible para `juridica`, `admin`, `super_admin`.
-
-## Identidad de marca
-
-Se mantiene 100%: mismos componentes UI (`Card`, `Table`, `Tabs`, `Badge`), mismo header "Maktub Pro", paleta y tipografía actuales. Solo se agregan ítems al menú existente sin cambiar layout ni colores. El nuevo rol usa los mismos `Badge` de estado y los mismos iconos de lucide ya en uso.
-
-## Archivos afectados
-
-| Archivo | Cambio |
-|---|---|
-| Migración SQL nueva | Enum + rol + RLS policies |
-| `src/components/ui/professional-nav.tsx` | Reglas de visibilidad para juridica |
-| `src/App.tsx` | Ruta `/contract-imports` |
-| `src/pages/ContractImports.tsx` | **NUEVO** — listado tabla `contract` |
-| `src/pages/Dashboard.tsx` | Tratar juridica como admin |
-| `src/pages/Contracts.tsx` | Fetch sin filtros para juridica |
-| `src/components/contracts/ContractTable.tsx` | `canEdit` incluye juridica |
-| `src/components/contracts/ContractStateActions.tsx` | Acciones de estado para juridica |
-| `src/pages/CreateContract.tsx` | Sin restricciones de UI para juridica |
-| `src/pages/EditContract.tsx` | Sin lock de campos / estados para juridica |
-| `src/pages/ContractDetails.tsx` | Routing y permisos juridica |
-| `src/pages/SupervisorContractReview.tsx` | (revisar) acceso opcional juridica |
-| `src/components/users/UserForm.tsx` | Rol juridica disponible, sin proceso |
-| `src/pages/BillingAccounts.tsx` | Vista lectura para juridica |
+- Identificador de fila: `OID` (numérico, autoincremental).
+- Tipos `text` en DB para campos numéricos como `VALOR_INICIAL` se conservan (formato heredado del sistema externo); el formulario hace `String(number)` antes de insertar.
+- `RP` es `bigint`: el formulario lo enviará como número.
+- Campos de fecha `FECHA CDP` / `FECHA RP` son `text` con formato `YYYY-MM-DD HH:mm:ss.SSS`; el formulario los enviará en ese formato.
+- Guardia de rol con `ALLOWED_ROLES = ['super_admin','admin','juridica']` en las 3 páginas nuevas/modificadas.
+- Sin `DELETE` para mantener auditabilidad histórica.
 
 ## Resultado esperado
 
-- Nuevo rol "Jurídica" disponible al crear usuarios (visible solo para admin / super_admin).
-- Usuario con rol jurídica entra y ve: Dashboard global, Control de Contratos completo (crear, editar, aprobar, devolver), Cuentas de Cobro en solo lectura, Datos Importados (tabla contract), Notificaciones y Perfil.
-- No puede acceder a Usuarios ni a Procesos.
-- Toda la estética (header, navegación, colores, badges, tipografía) se conserva.
-- Las RLS garantizan que jurídica solo ejecuta lo permitido aunque alguien manipule el cliente.
+Jurídica entra al sistema y ve:
+- Dashboard con métricas reales de `contract`.
+- Menú con solo "Contratos" y "Nuevo Contrato".
+- En `/contract-imports` puede listar, buscar, exportar y editar.
+- En `/contract-imports/new` digita un contrato nuevo que se guarda en la tabla externa con OID autogenerado.
