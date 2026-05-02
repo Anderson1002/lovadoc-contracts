@@ -143,7 +143,7 @@ export default function Dashboard() {
         paymentsQuery = paymentsQuery.in('contract_id', contractIds);
       } else if (roleName === 'employee') {
         // No contracts = no payments
-        setStats({ totalContracts: 0, activeContracts: 0, pendingReview: 0, cancelledContracts: 0, totalAmount: 0, completedPayments: 0, returnedContracts: 0 });
+        setStats({ totalContracts: 0, activeContracts: 0, pendingReview: 0, cancelledContracts: 0, totalAmount: 0, completedPayments: 0, returnedContracts: 0, pendingBillingReview: 0 });
         setContracts([]);
         setRecentContracts([]);
         setChartData([]);
@@ -164,6 +164,15 @@ export default function Dashboard() {
       const totalAmount = contracts?.reduce((sum, c) => sum + Number(c.total_amount), 0) || 0;
       const completedPayments = payments?.length || 0;
 
+      let pendingBillingReview = 0;
+      if (roleName === 'supervisor') {
+        const { count } = await supabase
+          .from('billing_accounts')
+          .select('id', { count: 'exact', head: true })
+          .in('status', ['enviada', 're-enviada']);
+        pendingBillingReview = count || 0;
+      }
+
       setStats({
         totalContracts,
         activeContracts,
@@ -171,7 +180,8 @@ export default function Dashboard() {
         cancelledContracts,
         totalAmount,
         completedPayments,
-        returnedContracts
+        returnedContracts,
+        pendingBillingReview
       });
 
       setContracts(contracts || []);
