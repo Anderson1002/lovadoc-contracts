@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +43,7 @@ const HEADER_CONFIG: Record<string, { title: string; description: string }> = {
 
 export default function BillingAccounts() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [userRole, setUserRole] = useState<string>("employee");
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -71,7 +73,12 @@ export default function BillingAccounts() {
         .maybeSingle();
 
       if (profile && profile.roles) {
-        setUserRole((profile.roles as any).name);
+        const roleName = (profile.roles as any).name;
+        if (roleName === 'super_admin') {
+          navigate('/billing/all', { replace: true });
+          return;
+        }
+        setUserRole(roleName);
         setUserProfile(profile);
       }
     } catch (error: any) {
