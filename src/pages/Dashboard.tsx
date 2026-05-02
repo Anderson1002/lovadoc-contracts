@@ -161,7 +161,7 @@ export default function Dashboard() {
         paymentsQuery = paymentsQuery.in('contract_id', contractIds);
       } else if (roleName === 'employee') {
         // No contracts = no payments
-        setStats({ totalContracts: 0, activeContracts: 0, pendingReview: 0, cancelledContracts: 0, totalAmount: 0, completedPayments: 0, returnedContracts: 0, pendingBillingReview: 0 });
+        setStats({ totalContracts: 0, activeContracts: 0, pendingReview: 0, cancelledContracts: 0, totalAmount: 0, completedPayments: 0, returnedContracts: 0, pendingBillingReview: 0, totalBillingAccounts: 0, totalUsers: 0, usersWithoutProcess: 0, stuckBillingAccounts: 0, orphanContracts: 0 });
         setContracts([]);
         setRecentContracts([]);
         setChartData([]);
