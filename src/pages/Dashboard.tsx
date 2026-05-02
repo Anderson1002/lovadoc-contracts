@@ -474,7 +474,7 @@ export default function Dashboard() {
                 </Link>
               </Button>
               <Button variant="outline" asChild className="justify-start h-auto p-4">
-                <Link to="/billing-accounts" className="flex flex-col items-start gap-2">
+                <Link to="/billing" className="flex flex-col items-start gap-2">
                   <DollarSign className="h-5 w-5" />
                   <div className="text-left">
                     <div className="font-medium">Mis Cuentas de Cobro</div>
