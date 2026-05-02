@@ -136,7 +136,17 @@ export default function CreateContract() {
         .maybeSingle();
 
       if (profile?.roles) {
-        setUserRole((profile.roles as any).name);
+        const roleName = (profile.roles as any).name;
+        if (roleName === 'super_admin') {
+          toast({
+            title: 'Acceso restringido',
+            description: 'El Super Administrador no crea contratos. Solo audita y gestiona usuarios.',
+            variant: 'destructive'
+          });
+          navigate('/contracts/query', { replace: true });
+          return;
+        }
+        setUserRole(roleName);
       }
 
       if (profile) {
