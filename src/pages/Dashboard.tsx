@@ -252,7 +252,7 @@ export default function Dashboard() {
             {dashboardConfig.description}
           </p>
         </div>
-        {["super_admin", "admin", "employee", "juridica"].includes(userRole) && (
+        {["super_admin", "admin", "employee"].includes(userRole) && (
           <Button asChild className="flex items-center gap-2">
             <Link to="/contracts/new">
               <FileText className="h-4 w-4" />
