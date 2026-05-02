@@ -28,6 +28,7 @@ import { Link } from "react-router-dom";
 import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { JuridicaDashboard } from "@/components/dashboard/JuridicaDashboard";
+import { Search, Settings, Shield, Upload, Building2, Eye } from "lucide-react";
 
 interface DashboardStats {
   totalContracts: number;
@@ -38,6 +39,11 @@ interface DashboardStats {
   completedPayments: number;
   returnedContracts: number;
   pendingBillingReview: number;
+  totalBillingAccounts: number;
+  totalUsers: number;
+  usersWithoutProcess: number;
+  stuckBillingAccounts: number;
+  orphanContracts: number;
 }
 
 // Helper function to get dashboard configuration based on role
@@ -74,6 +80,13 @@ const getDashboardConfig = (role: string) => {
   }
 };
 
+const getSuperAdminConfig = () => ({
+  title: 'Panel Super Administrador — Auditoría y Soporte',
+  description: 'Visualización global del sistema, gestión de usuarios y soporte',
+  recentActivityTitle: 'Actividad Reciente',
+  recentActivityDescription: 'Últimos contratos registrados en el sistema'
+});
+
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     totalContracts: 0,
@@ -83,7 +96,12 @@ export default function Dashboard() {
     totalAmount: 0,
     completedPayments: 0,
     returnedContracts: 0,
-    pendingBillingReview: 0
+    pendingBillingReview: 0,
+    totalBillingAccounts: 0,
+    totalUsers: 0,
+    usersWithoutProcess: 0,
+    stuckBillingAccounts: 0,
+    orphanContracts: 0
   });
   const [contracts, setContracts] = useState<any[]>([]);
   const [recentContracts, setRecentContracts] = useState([]);
@@ -173,6 +191,28 @@ export default function Dashboard() {
         pendingBillingReview = count || 0;
       }
 
+      let totalBillingAccounts = 0;
+      let totalUsers = 0;
+      let usersWithoutProcess = 0;
+      let stuckBillingAccounts = 0;
+      let orphanContracts = 0;
+      if (roleName === 'super_admin') {
+        const fifteenDaysAgo = new Date();
+        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+        const [billingTotal, usersTotal, noProc, stuck, orphans] = await Promise.all([
+          supabase.from('billing_accounts').select('id', { count: 'exact', head: true }),
+          supabase.from('profiles').select('id', { count: 'exact', head: true }),
+          supabase.from('profiles').select('id, roles!profiles_role_id_fkey(name)', { count: 'exact', head: false }).is('proceso_id', null),
+          supabase.from('billing_accounts').select('id', { count: 'exact', head: true }).eq('status', 'pendiente_revision').lt('enviado_el', fifteenDaysAgo.toISOString()),
+          supabase.from('contracts').select('id', { count: 'exact', head: true }).is('client_profile_id', null),
+        ]);
+        totalBillingAccounts = billingTotal.count || 0;
+        totalUsers = usersTotal.count || 0;
+        usersWithoutProcess = (noProc.data || []).filter((p: any) => ['employee', 'supervisor'].includes(p?.roles?.name)).length;
+        stuckBillingAccounts = stuck.count || 0;
+        orphanContracts = orphans.count || 0;
+      }
+
       setStats({
         totalContracts,
         activeContracts,
@@ -181,7 +221,12 @@ export default function Dashboard() {
         totalAmount,
         completedPayments,
         returnedContracts,
-        pendingBillingReview
+        pendingBillingReview,
+        totalBillingAccounts,
+        totalUsers,
+        usersWithoutProcess,
+        stuckBillingAccounts,
+        orphanContracts
       });
 
       setContracts(contracts || []);
@@ -249,7 +294,7 @@ export default function Dashboard() {
     );
   }
 
-  const dashboardConfig = getDashboardConfig(userRole);
+  const dashboardConfig = userRole === 'super_admin' ? getSuperAdminConfig() : getDashboardConfig(userRole);
 
   if (userRole === 'juridica') {
     return <JuridicaDashboard />;
@@ -265,7 +310,7 @@ export default function Dashboard() {
             {dashboardConfig.description}
           </p>
         </div>
-        {["super_admin", "admin", "employee"].includes(userRole) && (
+        {["admin", "employee"].includes(userRole) && (
           <Button asChild className="flex items-center gap-2">
             <Link to="/contracts/new">
               <FileText className="h-4 w-4" />
