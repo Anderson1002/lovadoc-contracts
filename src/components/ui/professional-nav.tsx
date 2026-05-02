@@ -155,6 +155,10 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
       if (menu.label === "Usuarios" && !["super_admin", "admin"].includes(userRole)) {
         return false;
       }
+      // Jurídica no participa en el flujo de cuentas de cobro
+      if (menu.label === "Cuentas de Cobro" && userRole === "juridica") {
+        return false;
+      }
       return true;
     }).map(menu => ({
       ...menu,
