@@ -17,7 +17,8 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  AlertTriangle
+  AlertTriangle,
+  Bell
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,7 @@ interface DashboardStats {
   totalAmount: number;
   completedPayments: number;
   returnedContracts: number;
+  pendingBillingReview: number;
 }
 
 // Helper function to get dashboard configuration based on role
@@ -80,7 +82,8 @@ export default function Dashboard() {
     cancelledContracts: 0,
     totalAmount: 0,
     completedPayments: 0,
-    returnedContracts: 0
+    returnedContracts: 0,
+    pendingBillingReview: 0
   });
   const [contracts, setContracts] = useState<any[]>([]);
   const [recentContracts, setRecentContracts] = useState([]);
