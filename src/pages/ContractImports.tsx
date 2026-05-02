@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Database, Search, Download, FileSpreadsheet } from "lucide-react";
+import { Database, Search, Download, FileSpreadsheet, Plus, Pencil } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 const ALLOWED_ROLES = ["super_admin", "admin", "juridica"];
@@ -161,21 +161,31 @@ export default function ContractImports() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground">
-                Datos Importados
+                Contratos
               </h1>
               <p className="text-muted-foreground">
-                Registros contractuales sincronizados desde el sistema externo
+                Listado maestro de contratos. Crea, consulta y edita los registros.
               </p>
             </div>
           </div>
-          <Button
-            onClick={exportCsv}
-            disabled={filtered.length === 0}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Exportar CSV
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={exportCsv}
+              disabled={filtered.length === 0}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Exportar CSV
+            </Button>
+            <Button
+              onClick={() => navigate("/contract-imports/new")}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Nuevo Contrato
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -234,13 +244,14 @@ export default function ContractImports() {
                     <TableHead>Nombre</TableHead>
                     <TableHead className="text-right">Valor Inicial</TableHead>
                     <TableHead className="text-right">Saldo RP</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={8}
+                        colSpan={9}
                         className="text-center py-8 text-muted-foreground"
                       >
                         No se encontraron registros
@@ -272,6 +283,18 @@ export default function ContractImports() {
                           {r["SALDO RP"]
                             ? formatCurrency(parseFloat(r["SALDO RP"]))
                             : "-"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              navigate(`/contract-imports/${r.OID}/edit`)
+                            }
+                          >
+                            <Pencil className="h-4 w-4 mr-1" />
+                            Editar
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
