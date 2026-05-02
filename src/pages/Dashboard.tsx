@@ -17,7 +17,8 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  AlertTriangle
+  AlertTriangle,
+  Bell
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,7 @@ interface DashboardStats {
   totalAmount: number;
   completedPayments: number;
   returnedContracts: number;
+  pendingBillingReview: number;
 }
 
 // Helper function to get dashboard configuration based on role
@@ -80,7 +82,8 @@ export default function Dashboard() {
     cancelledContracts: 0,
     totalAmount: 0,
     completedPayments: 0,
-    returnedContracts: 0
+    returnedContracts: 0,
+    pendingBillingReview: 0
   });
   const [contracts, setContracts] = useState<any[]>([]);
   const [recentContracts, setRecentContracts] = useState([]);
@@ -140,7 +143,7 @@ export default function Dashboard() {
         paymentsQuery = paymentsQuery.in('contract_id', contractIds);
       } else if (roleName === 'employee') {
         // No contracts = no payments
-        setStats({ totalContracts: 0, activeContracts: 0, pendingReview: 0, cancelledContracts: 0, totalAmount: 0, completedPayments: 0, returnedContracts: 0 });
+        setStats({ totalContracts: 0, activeContracts: 0, pendingReview: 0, cancelledContracts: 0, totalAmount: 0, completedPayments: 0, returnedContracts: 0, pendingBillingReview: 0 });
         setContracts([]);
         setRecentContracts([]);
         setChartData([]);
@@ -161,6 +164,15 @@ export default function Dashboard() {
       const totalAmount = contracts?.reduce((sum, c) => sum + Number(c.total_amount), 0) || 0;
       const completedPayments = payments?.length || 0;
 
+      let pendingBillingReview = 0;
+      if (roleName === 'supervisor') {
+        const { count } = await supabase
+          .from('billing_accounts')
+          .select('id', { count: 'exact', head: true })
+          .in('status', ['enviada', 're-enviada']);
+        pendingBillingReview = count || 0;
+      }
+
       setStats({
         totalContracts,
         activeContracts,
@@ -168,7 +180,8 @@ export default function Dashboard() {
         cancelledContracts,
         totalAmount,
         completedPayments,
-        returnedContracts
+        returnedContracts,
+        pendingBillingReview
       });
 
       setContracts(contracts || []);
@@ -461,7 +474,7 @@ export default function Dashboard() {
                 </Link>
               </Button>
               <Button variant="outline" asChild className="justify-start h-auto p-4">
-                <Link to="/billing-accounts" className="flex flex-col items-start gap-2">
+                <Link to="/billing" className="flex flex-col items-start gap-2">
                   <DollarSign className="h-5 w-5" />
                   <div className="text-left">
                     <div className="font-medium">Mis Cuentas de Cobro</div>
@@ -492,7 +505,59 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-      ) : ["super_admin", "admin", "supervisor", "treasury"].includes(userRole) && (
+      ) : userRole === "supervisor" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Acciones de Supervisión
+            </CardTitle>
+            <CardDescription>
+              Tareas de auditoría asignadas a tu rol
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/contracts?estado=registrado" className="flex flex-col items-start gap-2">
+                  <Clock className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Revisar Contratos</div>
+                    <div className="text-sm text-muted-foreground">{stats.pendingReview} pendientes</div>
+                  </div>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/billing?estado=enviada" className="flex flex-col items-start gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Revisar Cuentas de Cobro</div>
+                    <div className="text-sm text-muted-foreground">{stats.pendingBillingReview} pendientes</div>
+                  </div>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/contracts/query" className="flex flex-col items-start gap-2">
+                  <FileText className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Consultar Contratos</div>
+                    <div className="text-sm text-muted-foreground">Auditoría histórica</div>
+                  </div>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/notifications" className="flex flex-col items-start gap-2">
+                  <Bell className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Notificaciones</div>
+                    <div className="text-sm text-muted-foreground">Alertas del proceso</div>
+                  </div>
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : ["super_admin", "admin", "treasury"].includes(userRole) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -524,7 +589,7 @@ export default function Dashboard() {
                 </Link>
               </Button>
               <Button variant="outline" asChild className="justify-start h-auto p-4">
-                <Link to="/billing-accounts" className="flex flex-col items-start gap-2">
+                <Link to="/billing" className="flex flex-col items-start gap-2">
                   <DollarSign className="h-5 w-5" />
                   <div className="text-left">
                     <div className="font-medium">Cuentas de Cobro</div>

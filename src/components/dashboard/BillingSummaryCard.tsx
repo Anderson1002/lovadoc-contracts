@@ -31,7 +31,7 @@ export function BillingSummaryCard({ drafts, pending, approved, rejected }: Bill
           <CardDescription>Resumen de tus cuentas de cobro</CardDescription>
         </div>
         <Button variant="outline" size="sm" asChild>
-          <Link to="/billing-accounts">Ver todas</Link>
+          <Link to="/billing">Ver todas</Link>
         </Button>
       </CardHeader>
       <CardContent>

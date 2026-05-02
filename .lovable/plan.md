@@ -1,42 +1,42 @@
-## Mejora UX en /contract-imports — Paginación
+# Plan: Dashboard dedicado para rol Supervisor
 
-### Problema
-La tabla muestra hasta 1000 filas en una sola lista, generando scroll infinito y mala experiencia al revisar/editar contratos.
+## Problema
+El supervisor actualmente comparte el bloque de "Acciones Rápidas" con admin/treasury en `src/pages/Dashboard.tsx`, lo que produce inconsistencias con su rol de auditor:
 
-### Solución propuesta
-Mantener la carga actual (hasta 1000 registros del lado servidor) y agregar **paginación del lado cliente** con:
+- Ve "Crear Contrato" (`/contracts/new`) — no tiene permiso.
+- Ve "Administrar Usuarios" (`/users`) — no tiene permiso.
+- "Cuentas de Cobro" apunta a `/billing-accounts` — ruta inexistente (404). La correcta es `/billing`.
+- No tiene acceso directo a las tareas centrales: revisar contratos en estado `registrado` y cuentas en estado `enviada` / `re-enviada`.
 
-1. **Selector de filas por página**: 10, 25, 50, 100 (default: 25).
-2. **Controles de navegación**: Primera, Anterior, números de página (con elipsis), Siguiente, Última.
-3. **Indicador de rango**: "Mostrando 1–25 de 487 registros".
-4. **Reset automático a página 1** cuando:
-   - El usuario cambia el término de búsqueda.
-   - El usuario cambia el tamaño de página.
-5. **Scroll suave al tope de la tabla** al cambiar de página.
-6. **Exportar CSV** seguirá exportando todos los registros filtrados (no solo la página visible) — más útil para el rol Jurídica.
+## Cambios a implementar
 
-### Cambios técnicos
+### 1. Separar el bloque del Supervisor en `src/pages/Dashboard.tsx`
+Añadir una rama dedicada `userRole === "supervisor"` (antes del bloque actual de admin/treasury) con tarjeta "Acciones de Supervisión":
 
-**Archivo único**: `src/pages/ContractImports.tsx`
+- **Revisar Contratos Pendientes** → `/contracts?estado=registrado` (badge con `stats.pendingReview`).
+- **Revisar Cuentas de Cobro** → `/billing?estado=enviada` (mostrar contador de cuentas enviadas/re-enviadas).
+- **Consultar Contratos** → `/contracts/query` (auditoría histórica).
+- **Notificaciones** → `/notifications` (alertas del proceso).
 
-- Nuevos estados: `pageSize` (default 25), `currentPage` (default 1).
-- `useMemo` adicional `paginated` que rebana `filtered` con `slice((page-1)*size, page*size)`.
-- `useEffect` para resetear `currentPage = 1` cuando cambien `search` o `pageSize`.
-- Reemplazar el render directo de `filtered.map(...)` por `paginated.map(...)`.
-- Bajo la tabla, agregar bloque con:
-  - `Select` (componente `@/components/ui/select` ya disponible) para `pageSize`.
-  - Componente `Pagination` ya existente en `src/components/ui/pagination.tsx` para los controles, con generación dinámica de páginas (mostrar máx 5 números + elipsis).
-  - Texto de rango a la izquierda.
-- Quitar el aviso "Mostrando los primeros 1000 registros" o conservarlo solo cuando `rows.length === 1000`.
+### 2. Corregir ruta `/billing-accounts` → `/billing`
+Reemplazar todas las ocurrencias de `/billing-accounts` por `/billing` en:
+- `src/pages/Dashboard.tsx` (bloques employee y admin/treasury).
+- `src/components/dashboard/BillingSummaryCard.tsx` (botón "Ver todas").
 
-### Layout del footer de la tabla
+### 3. Cargar contador de cuentas pendientes para Supervisor
+En `loadDashboardData()` agregar consulta cuando `userRole === 'supervisor'`:
+- Contar `billing_accounts` con estado `enviada` o `re-enviada` filtradas por proceso del supervisor.
+- Guardar en un nuevo campo `pendingBillingReview` del estado.
 
-```text
-[Mostrando 1–25 de 487]   [Filas: 25 ▼]   [« ‹ 1 2 3 … 20 › »]
-```
+### 4. Excluir al Supervisor del bloque admin/treasury
+Cambiar la condición actual `["super_admin", "admin", "supervisor", "treasury"].includes(userRole)` para que NO incluya `supervisor`.
 
-Responsive: en móvil se apila en columna.
+## Detalles técnicos
+- Mantener el patrón visual de tarjetas existente (Card + grid 4 columnas).
+- Reusar `ContractStatusBadge` / iconos `Clock`, `FileText`, `DollarSign`, `Bell`.
+- No modificar lógica de carga de stats existentes — solo extender.
+- Sin cambios de DB ni edge functions.
 
-### Fuera de alcance
-- No se modifica la consulta a Supabase (sigue trayendo 1000 máx). Si en el futuro hay >1000 registros se puede migrar a paginación server-side con `range()` y `count: 'exact'`, pero hoy no es necesario.
-- No se tocan otras tablas del proyecto.
+## Archivos a editar
+- `src/pages/Dashboard.tsx`
+- `src/components/dashboard/BillingSummaryCard.tsx`
