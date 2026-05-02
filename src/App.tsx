@@ -15,6 +15,7 @@ import EditContract from "./pages/EditContract";
 import SupervisorContractReview from "./pages/SupervisorContractReview";
 import ContractQuery from "./pages/ContractQuery";
 import BillingAccounts from "./pages/BillingAccounts";
+import AllBillingAccounts from "./pages/AllBillingAccounts";
 import ContractImports from "./pages/ContractImports";
 import ContractImportCreate from "./pages/ContractImportCreate";
 import ContractImportEdit from "./pages/ContractImportEdit";
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="/contracts/:id/review" element={<SupervisorContractReview />} />
           <Route path="/contracts/query" element={<ContractQuery />} />
           <Route path="/billing" element={<BillingAccounts />} />
+          <Route path="/billing/all" element={<AllBillingAccounts />} />
           <Route path="/contract-imports" element={<ContractImports />} />
           <Route path="/contract-imports/new" element={<ContractImportCreate />} />
           <Route path="/contract-imports/:oid/edit" element={<ContractImportEdit />} />
