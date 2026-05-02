@@ -602,7 +602,183 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-      ) : ["super_admin", "admin", "treasury"].includes(userRole) && (
+      ) : userRole === "super_admin" ? (
+        <div className="space-y-6">
+          {/* Stats globales */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatsCard title="Cuentas de Cobro" value={stats.totalBillingAccounts} icon={DollarSign} description="Total en el sistema" />
+            <StatsCard title="Usuarios" value={stats.totalUsers} icon={Users} description="Registrados" />
+            <StatsCard title="Cuentas atascadas" value={stats.stuckBillingAccounts} icon={Clock} description=">15 días en revisión" />
+            <StatsCard title="Contratos huérfanos" value={stats.orphanContracts} icon={AlertCircle} description="Sin contratista" />
+          </div>
+
+          {/* Bloque A: Consulta y Soporte */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5" />
+                Consulta y Soporte
+              </CardTitle>
+              <CardDescription>
+                Visualiza datos del sistema para diagnosticar y atender soporte
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Button variant="outline" asChild className="justify-start h-auto p-4">
+                  <Link to="/contracts/query" className="flex flex-col items-start gap-2">
+                    <FileText className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-medium">Consultar Contratos</div>
+                      <div className="text-sm text-muted-foreground">Vista global solo lectura</div>
+                    </div>
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="justify-start h-auto p-4">
+                  <Link to="/billing/all" className="flex flex-col items-start gap-2">
+                    <Eye className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-medium">Cuentas de Cobro</div>
+                      <div className="text-sm text-muted-foreground">Consulta global y PDFs</div>
+                    </div>
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="justify-start h-auto p-4">
+                  <Link to="/contract-imports" className="flex flex-col items-start gap-2">
+                    <Upload className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-medium">Importaciones</div>
+                      <div className="text-sm text-muted-foreground">Datos externos</div>
+                    </div>
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="justify-start h-auto p-4">
+                  <Link to="/notifications" className="flex flex-col items-start gap-2">
+                    <Bell className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-medium">Notificaciones</div>
+                      <div className="text-sm text-muted-foreground">Alertas del sistema</div>
+                    </div>
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Bloque B: Administración */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Administración del Sistema
+              </CardTitle>
+              <CardDescription>
+                Gestión exclusiva del Super Administrador
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Button variant="outline" asChild className="justify-start h-auto p-4">
+                  <Link to="/users" className="flex flex-col items-start gap-2">
+                    <Users className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-medium">Usuarios</div>
+                      <div className="text-sm text-muted-foreground">Crear y gestionar</div>
+                    </div>
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="justify-start h-auto p-4">
+                  <Link to="/users" className="flex flex-col items-start gap-2">
+                    <Shield className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-medium">Roles y Permisos</div>
+                      <div className="text-sm text-muted-foreground">Asignaciones</div>
+                    </div>
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="justify-start h-auto p-4">
+                  <Link to="/procesos" className="flex flex-col items-start gap-2">
+                    <Building2 className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-medium">Procesos</div>
+                      <div className="text-sm text-muted-foreground">Áreas institucionales</div>
+                    </div>
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="justify-start h-auto p-4">
+                  <Link to="/profile" className="flex flex-col items-start gap-2">
+                    <Settings className="h-5 w-5" />
+                    <div className="text-left">
+                      <div className="font-medium">Configuración</div>
+                      <div className="text-sm text-muted-foreground">Perfil y sistema</div>
+                    </div>
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Bloque C: Diagnóstico */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Diagnóstico del Sistema
+              </CardTitle>
+              <CardDescription>
+                Indicadores que requieren atención
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {stats.usersWithoutProcess === 0 && stats.stuckBillingAccounts === 0 && stats.orphanContracts === 0 ? (
+                <div className="flex items-center gap-2 text-muted-foreground p-3 border rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>Todo en orden — sin alertas activas</span>
+                </div>
+              ) : (
+                <>
+                  {stats.usersWithoutProcess > 0 && (
+                    <Link to="/users" className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Users className="h-5 w-5 text-destructive" />
+                        <div>
+                          <div className="font-medium">Usuarios sin proceso asignado</div>
+                          <div className="text-sm text-muted-foreground">Empleados/supervisores sin proceso</div>
+                        </div>
+                      </div>
+                      <Badge variant="destructive">{stats.usersWithoutProcess}</Badge>
+                    </Link>
+                  )}
+                  {stats.stuckBillingAccounts > 0 && (
+                    <Link to="/billing/all?filter=stuck" className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Clock className="h-5 w-5 text-destructive" />
+                        <div>
+                          <div className="font-medium">Cuentas atascadas en revisión</div>
+                          <div className="text-sm text-muted-foreground">Más de 15 días sin decisión</div>
+                        </div>
+                      </div>
+                      <Badge variant="destructive">{stats.stuckBillingAccounts}</Badge>
+                    </Link>
+                  )}
+                  {stats.orphanContracts > 0 && (
+                    <Link to="/contracts/query" className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors">
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-5 w-5 text-destructive" />
+                        <div>
+                          <div className="font-medium">Contratos sin contratista</div>
+                          <div className="text-sm text-muted-foreground">Falta vincular cliente</div>
+                        </div>
+                      </div>
+                      <Badge variant="destructive">{stats.orphanContracts}</Badge>
+                    </Link>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      ) : ["admin", "treasury"].includes(userRole) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
