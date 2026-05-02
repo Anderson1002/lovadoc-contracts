@@ -73,6 +73,10 @@ export default function EditContract() {
             navigate('/auth');
             return;
           }
+          if (roleName === 'super_admin') {
+            navigate(`/contracts/${id}`, { replace: true });
+            return;
+          }
           setUserRole(roleName);
         }
       } catch (error) {
