@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { JuridicaDashboard } from "@/components/dashboard/JuridicaDashboard";
 
 interface DashboardStats {
   totalContracts: number;
@@ -109,6 +110,13 @@ export default function Dashboard() {
 
       const roleName = profile?.roles ? (profile.roles as any).name : 'employee';
       setUserRole(roleName);
+
+      // Jurídica usa un dashboard dedicado sobre la tabla 'contract' (externa).
+      // Evitamos cargar datos del flujo interno para este rol.
+      if (roleName === 'juridica') {
+        setLoading(false);
+        return;
+      }
 
       // Load contracts - employees only see their own
       let contractsQuery = supabase
@@ -230,6 +238,10 @@ export default function Dashboard() {
 
   const dashboardConfig = getDashboardConfig(userRole);
 
+  if (userRole === 'juridica') {
+    return <JuridicaDashboard />;
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
       {/* Header */}
@@ -240,7 +252,7 @@ export default function Dashboard() {
             {dashboardConfig.description}
           </p>
         </div>
-        {["super_admin", "admin", "employee", "juridica"].includes(userRole) && (
+        {["super_admin", "admin", "employee"].includes(userRole) && (
           <Button asChild className="flex items-center gap-2">
             <Link to="/contracts/new">
               <FileText className="h-4 w-4" />

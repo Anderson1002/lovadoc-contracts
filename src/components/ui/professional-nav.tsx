@@ -92,10 +92,16 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
           description: "Búsqueda avanzada de contratos"
         },
         {
-          label: "Datos Importados",
+          label: "Contratos",
           icon: Database,
           url: "/contract-imports",
-          description: "Registros importados de la fuente externa"
+          description: "Listado maestro de contratos"
+        },
+        {
+          label: "Nuevo Contrato",
+          icon: Plus,
+          url: "/contract-imports/new",
+          description: "Registrar un contrato en la tabla maestra"
         }
       ]
     },
@@ -149,6 +155,10 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
       if (menu.label === "Usuarios" && !["super_admin", "admin"].includes(userRole)) {
         return false;
       }
+      // Jurídica no participa en el flujo de cuentas de cobro
+      if (menu.label === "Cuentas de Cobro" && userRole === "juridica") {
+        return false;
+      }
       return true;
     }).map(menu => ({
       ...menu,
@@ -156,16 +166,21 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
         if (item.url === "/users" && !["super_admin", "admin"].includes(userRole)) {
           return false;
         }
-        if (item.url === "/contracts" && !["super_admin", "admin", "supervisor", "juridica"].includes(userRole)) {
+        // Rutas del flujo interno de contratos (no aplican a Jurídica)
+        if (item.url === "/contracts" && !["super_admin", "admin", "supervisor"].includes(userRole)) {
           return false;
         }
-        if (item.url === "/contracts/new" && !["super_admin", "admin", "employee", "juridica"].includes(userRole)) {
+        if (item.url === "/contracts/new" && !["super_admin", "admin", "employee"].includes(userRole)) {
           return false;
         }
-        if (item.url === "/contracts/query" && !["super_admin", "admin", "employee", "juridica"].includes(userRole)) {
+        if (item.url === "/contracts/query" && !["super_admin", "admin", "employee"].includes(userRole)) {
           return false;
         }
+        // Rutas del módulo Jurídica (tabla maestra contract)
         if (item.url === "/contract-imports" && !["super_admin", "admin", "juridica"].includes(userRole)) {
+          return false;
+        }
+        if (item.url === "/contract-imports/new" && !["super_admin", "admin", "juridica"].includes(userRole)) {
           return false;
         }
         return true;
