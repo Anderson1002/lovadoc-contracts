@@ -505,7 +505,59 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-      ) : ["super_admin", "admin", "supervisor", "treasury"].includes(userRole) && (
+      ) : userRole === "supervisor" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Acciones de Supervisión
+            </CardTitle>
+            <CardDescription>
+              Tareas de auditoría asignadas a tu rol
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/contracts?estado=registrado" className="flex flex-col items-start gap-2">
+                  <Clock className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Revisar Contratos</div>
+                    <div className="text-sm text-muted-foreground">{stats.pendingReview} pendientes</div>
+                  </div>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/billing?estado=enviada" className="flex flex-col items-start gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Revisar Cuentas de Cobro</div>
+                    <div className="text-sm text-muted-foreground">{stats.pendingBillingReview} pendientes</div>
+                  </div>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/contracts/query" className="flex flex-col items-start gap-2">
+                  <FileText className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Consultar Contratos</div>
+                    <div className="text-sm text-muted-foreground">Auditoría histórica</div>
+                  </div>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="justify-start h-auto p-4">
+                <Link to="/notifications" className="flex flex-col items-start gap-2">
+                  <Bell className="h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">Notificaciones</div>
+                    <div className="text-sm text-muted-foreground">Alertas del proceso</div>
+                  </div>
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : ["super_admin", "admin", "treasury"].includes(userRole) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -537,7 +589,7 @@ export default function Dashboard() {
                 </Link>
               </Button>
               <Button variant="outline" asChild className="justify-start h-auto p-4">
-                <Link to="/billing-accounts" className="flex flex-col items-start gap-2">
+                <Link to="/billing" className="flex flex-col items-start gap-2">
                   <DollarSign className="h-5 w-5" />
                   <div className="text-left">
                     <div className="font-medium">Cuentas de Cobro</div>
