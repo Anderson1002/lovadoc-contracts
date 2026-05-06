@@ -987,11 +987,11 @@ export function EditBillingAccountDialog({
                     </div>
                     <div>
                       <span className="text-muted-foreground">Inicio:</span>
-                      <span className="ml-2">{new Date(selectedContractData.start_date).toLocaleDateString('es-ES')}</span>
+                      <span className="ml-2">{parseLocalDate(selectedContractData.start_date).toLocaleDateString('es-ES')}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Fin:</span>
-                      <span className="ml-2">{new Date(selectedContractData.end_date).toLocaleDateString('es-ES')}</span>
+                      <span className="ml-2">{parseLocalDate(selectedContractData.end_date).toLocaleDateString('es-ES')}</span>
                     </div>
                   </div>
                 </div>
