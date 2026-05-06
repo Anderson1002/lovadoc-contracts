@@ -17,6 +17,17 @@ interface BillingCompletionProgressProps {
   planillaFile: File | string | null;
   // Firma
   hasSignature: boolean;
+  // Desglose de aportes (opcional para backward compat)
+  saludNumero?: string | null;
+  saludValor?: string | number | null;
+  saludFecha?: string | null;
+  pensionNumero?: string | null;
+  pensionValor?: string | number | null;
+  pensionFecha?: string | null;
+  arlNumero?: string | null;
+  arlValor?: string | number | null;
+  arlFecha?: string | null;
+  requireDesglose?: boolean;
 }
 
 interface SectionStatus {
@@ -35,7 +46,11 @@ export function BillingCompletionProgress({
   planillaValor,
   planillaFecha,
   planillaFile,
-  hasSignature
+  hasSignature,
+  saludNumero, saludValor, saludFecha,
+  pensionNumero, pensionValor, pensionFecha,
+  arlNumero, arlValor, arlFecha,
+  requireDesglose = false,
 }: BillingCompletionProgressProps) {
   
   // Calculate missing fields for each section
@@ -67,6 +82,35 @@ export function BillingCompletionProgress({
     return [];
   };
 
+  const getDesgloseMissing = (): string[] => {
+    const missing: string[] = [];
+    const saludMiss: string[] = [];
+    if (!saludNumero) saludMiss.push("número");
+    if (!saludValor) saludMiss.push("valor");
+    if (!saludFecha) saludMiss.push("fecha");
+    if (saludMiss.length) missing.push(`Salud (${saludMiss.join(", ")})`);
+
+    const pensionMiss: string[] = [];
+    if (!pensionNumero) pensionMiss.push("número");
+    if (!pensionValor) pensionMiss.push("valor");
+    if (!pensionFecha) pensionMiss.push("fecha");
+    if (pensionMiss.length) missing.push(`Pensión (${pensionMiss.join(", ")})`);
+
+    const arlMiss: string[] = [];
+    if (!arlNumero) arlMiss.push("número");
+    if (!arlValor) arlMiss.push("valor");
+    if (!arlFecha) arlMiss.push("fecha");
+    if (arlMiss.length) missing.push(`ARL (${arlMiss.join(", ")})`);
+
+    return missing;
+  };
+
+  const desgloseComplete = !!(
+    saludNumero && saludValor && saludFecha &&
+    pensionNumero && pensionValor && pensionFecha &&
+    arlNumero && arlValor && arlFecha
+  );
+
   const sections: SectionStatus[] = [
     {
       name: "Detalles de Cobro",
@@ -83,6 +127,11 @@ export function BillingCompletionProgress({
       complete: !!(planillaNumero && planillaValor && planillaFecha && planillaFile),
       missing: getPlanillaMissing()
     },
+    ...(requireDesglose ? [{
+      name: "Desglose de Aportes (Salud, Pensión, ARL)",
+      complete: desgloseComplete,
+      missing: getDesgloseMissing(),
+    }] : []),
     {
       name: "Firma del Contratista",
       complete: hasSignature,
