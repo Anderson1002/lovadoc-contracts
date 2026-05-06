@@ -29,7 +29,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, CalendarIcon, RefreshCw, Info } from "lucide-react";
-import { format } from "date-fns";
+import { format, differenceInMonths, differenceInDays, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,16 +74,13 @@ const contractFormSchema = z.object({
 
 type ContractFormData = z.infer<typeof contractFormSchema>;
 
-// Función para calcular plazo de ejecución
+// Calcula plazo de ejecución usando calendario real e incluyendo el día final.
 const calculateExecutionPeriod = (startDate: Date, endDate: Date) => {
-  const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  const diffMonths = Math.floor(diffDays / 30); // Aproximación de meses
-  
-  return {
-    months: diffMonths,
-    days: diffDays
-  };
+  const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  const endInclusive = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate() + 1);
+  const months = differenceInMonths(endInclusive, start);
+  const days = differenceInDays(endInclusive, addMonths(start, months));
+  return { months, days };
 };
 
 const bankOptions = [
