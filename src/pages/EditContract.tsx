@@ -12,6 +12,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ArrowLeft, Save, FileText, Upload, X, AlertTriangle, User } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ClientSelector } from "@/components/contracts/ClientSelector";
+import { differenceInMonths, differenceInDays, addMonths } from "date-fns";
+import { parseLocalDate } from "@/lib/utils";
 
 export default function EditContract() {
   const { id } = useParams();
@@ -219,19 +221,13 @@ export default function EditContract() {
   // Función para calcular plazo de ejecución
   const calculateExecutionPeriod = (startDate: string, endDate: string) => {
     if (!startDate || !endDate) return { months: 0, days: 0 };
-    
-    // Crear fechas evitando problemas de zona horaria
-    const start = new Date(startDate + 'T00:00:00');
-    const end = new Date(endDate + 'T00:00:00');
-    
-    const diffTime = end.getTime() - start.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const diffMonths = Math.floor(diffDays / 30);
-    
-    return {
-      months: diffMonths,
-      days: diffDays
-    };
+    const start = parseLocalDate(startDate);
+    const end = parseLocalDate(endDate);
+    // Día final inclusivo
+    const endInclusive = new Date(end.getFullYear(), end.getMonth(), end.getDate() + 1);
+    const months = differenceInMonths(endInclusive, start);
+    const days = differenceInDays(endInclusive, addMonths(start, months));
+    return { months, days };
   };
 
   // Recalcular plazo en tiempo real cuando cambien las fechas
