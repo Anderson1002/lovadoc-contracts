@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileText, X, CheckCircle, CalendarIcon, Plus, Save, Send, Download, Check, ChevronsUpDown, Pencil, Trash2, Eye, RefreshCw, ClipboardList, ClipboardCheck, Receipt } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { formatCurrency, formatCurrencyInput } from "@/lib/utils";
+import { formatCurrency, formatCurrencyInput, parseLocalDate } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -1151,11 +1151,11 @@ export function CreateBillingAccountDialog({
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
                           <span className="text-muted-foreground">Fecha Inicio:</span>
-                          <p className="font-medium">{format(new Date(contractDetails.start_date), 'dd/MM/yyyy')}</p>
+                          <p className="font-medium">{format(parseLocalDate(contractDetails.start_date), 'dd/MM/yyyy')}</p>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Fecha Fin:</span>
-                          <p className="font-medium">{format(new Date(contractDetails.end_date), 'dd/MM/yyyy')}</p>
+                          <p className="font-medium">{format(parseLocalDate(contractDetails.end_date), 'dd/MM/yyyy')}</p>
                         </div>
                       </div>
 

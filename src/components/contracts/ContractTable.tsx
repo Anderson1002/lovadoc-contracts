@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/dialog";
 import { ContractStatusBadge } from "./ContractStatusBadge";
 import { ContractStateActions } from "./ContractStateActions";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -97,7 +97,7 @@ export function ContractTable({
   const canEdit = ["super_admin", "admin", "juridica"].includes(userRole);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    return parseLocalDate(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar, DollarSign, FileText } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { EditBillingAccountDialog } from "../../pages/EditBillingAccount";
 import { BillingAccountActions } from "./BillingAccountActions";
 import { BillingAccountStatusBadge } from "./BillingAccountStatusBadge";
@@ -141,7 +141,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    return parseLocalDate(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -149,7 +149,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
   };
 
   const formatMonth = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    return parseLocalDate(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long'
     });

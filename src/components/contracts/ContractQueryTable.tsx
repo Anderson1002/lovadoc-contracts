@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { parseLocalDate } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -415,7 +416,7 @@ export function ContractQueryTable({
                     {contract.start_date && (
                       <div className="flex items-center gap-1 text-sm">
                         <Calendar className="w-3 h-3" />
-                        {format(new Date(contract.start_date), "dd/MM/yyyy", { locale: es })}
+                        {format(parseLocalDate(contract.start_date), "dd/MM/yyyy", { locale: es })}
                       </div>
                     )}
                   </TableCell>
@@ -423,7 +424,7 @@ export function ContractQueryTable({
                     {contract.end_date ? (
                       <div className="flex items-center gap-1 text-sm">
                         <Calendar className="w-3 h-3" />
-                        {format(new Date(contract.end_date), "dd/MM/yyyy", { locale: es })}
+                        {format(parseLocalDate(contract.end_date), "dd/MM/yyyy", { locale: es })}
                       </div>
                     ) : (
                       <span className="text-xs text-muted-foreground">Sin definir</span>
@@ -524,7 +525,7 @@ export function ContractQueryTable({
                                   <Label className="text-sm font-semibold">Fecha de Inicio</Label>
                                   <p className="text-sm">
                                     {selectedContract.start_date && 
-                                      format(new Date(selectedContract.start_date), "PPP", { locale: es })
+                                      format(parseLocalDate(selectedContract.start_date), "PPP", { locale: es })
                                     }
                                   </p>
                                 </div>
@@ -532,7 +533,7 @@ export function ContractQueryTable({
                                   <Label className="text-sm font-semibold">Fecha de Fin</Label>
                                   <p className="text-sm">
                                     {selectedContract.end_date ? 
-                                      format(new Date(selectedContract.end_date), "PPP", { locale: es }) :
+                                      format(parseLocalDate(selectedContract.end_date), "PPP", { locale: es }) :
                                       "No definida"
                                     }
                                   </p>

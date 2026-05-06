@@ -103,7 +103,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    return parseLocalDate(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -111,7 +111,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
   };
 
   const formatMonth = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    return parseLocalDate(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long'
     });
@@ -289,7 +289,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
       if (reviewAction === 'reject' && selectedBilling.created_by_profile?.email) {
         const validObs = observations.filter(o => o.documentType && o.comment.trim());
         const billingMonthFormatted = selectedBilling.billing_month
-          ? new Date(selectedBilling.billing_month).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })
+          ? parseLocalDate(selectedBilling.billing_month).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })
           : 'N/A';
 
         try {
@@ -313,7 +313,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
       // Send email notification on approval
       if (reviewAction === 'approve' && selectedBilling.created_by_profile?.email) {
         const billingMonthFormatted = selectedBilling.billing_month
-          ? new Date(selectedBilling.billing_month).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })
+          ? parseLocalDate(selectedBilling.billing_month).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })
           : 'N/A';
 
         try {

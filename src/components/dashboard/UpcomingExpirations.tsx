@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { CalendarClock, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { parseLocalDate } from "@/lib/utils";
 
 interface Contract {
   id: string;
@@ -24,12 +25,12 @@ export function UpcomingExpirations({ contracts }: UpcomingExpirationsProps) {
   const upcoming = contracts
     .filter(c => {
       if (c.estado === 'completado' || c.estado === 'cancelado') return false;
-      const endDate = new Date(c.end_date);
+      const endDate = parseLocalDate(c.end_date);
       const diffDays = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       return diffDays >= 0 && diffDays <= 30;
     })
     .map(c => {
-      const endDate = new Date(c.end_date);
+      const endDate = parseLocalDate(c.end_date);
       const diffDays = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       return { ...c, daysLeft: diffDays };
     })

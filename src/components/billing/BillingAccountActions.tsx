@@ -6,6 +6,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Eye, Edit, Send, Trash2, Loader2, DollarSign, ArrowLeft, History } from "lucide-react";
 import { BillingReviewHistory } from "./BillingReviewHistory";
+import { parseLocalDate } from "@/lib/utils";
 
 interface BillingAccountActionsProps {
   billingAccount: any;
@@ -87,7 +88,7 @@ export function BillingAccountActions({
             accountNumber: billingAccount.account_number,
             contractNumber: billingAccount.contracts?.contract_number_original || billingAccount.contracts?.contract_number || 'N/A',
             billingMonth: billingAccount.billing_month
-              ? new Date(billingAccount.billing_month).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })
+              ? parseLocalDate(billingAccount.billing_month).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })
               : 'N/A',
             employeeName: userProfile?.name || 'Contratista',
             employeeEmail: userProfile?.email || '',
