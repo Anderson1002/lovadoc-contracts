@@ -772,7 +772,17 @@ export function CreateBillingAccountDialog({
           planilla_numero: planillaNumero,
           planilla_valor: parseFloat(planillaValor),
           planilla_fecha: planillaFecha,
-          planilla_file_url: planillaFileUrl,
+          planilla_file_url: planillaFileUrl || existingPlanillaPath,
+          // Desglose de aportes
+          salud_planilla_numero: saludNumero || null,
+          salud_planilla_valor: saludValor ? parseFloat(saludValor) : null,
+          salud_planilla_fecha: saludFecha || null,
+          pension_planilla_numero: pensionNumero || null,
+          pension_planilla_valor: pensionValor ? parseFloat(pensionValor) : null,
+          pension_planilla_fecha: pensionFecha || null,
+          arl_planilla_numero: arlNumero || null,
+          arl_planilla_valor: arlValor ? parseFloat(arlValor) : null,
+          arl_planilla_fecha: arlFecha || null,
           enviado_el: new Date().toISOString()
         })
         .eq('id', billingAccountId);
