@@ -1,73 +1,45 @@
-## Problema confirmado
+## Confirmado
+La cuenta #1 (COB-202605-001) ya está en estado **Rechazada** con la observación del supervisor. El OPS podrá editarla.
 
-Contrato OID #1: **01/01/2026 → 28/02/2026**.
-La UI muestra **"1 meses"** pero deberían ser **2 meses** (enero + febrero completos).
+## Ajuste pendiente: hacer obligatorio el Desglose de Aportes
 
-### Causa
+Actualmente los 9 campos de Salud / Pensión / ARL (número, valor, fecha) son opcionales. Hay que volverlos obligatorios para poder enviar a revisión.
 
-En `src/pages/CreateContract.tsx` (líneas 78-86) y `src/pages/EditContract.tsx` (líneas 220-235), la fórmula es:
+### 1. `src/components/billing/BillingCompletionProgress.tsx`
+Extender props con los 9 campos del desglose y reemplazar la sección **"Planilla de Seguridad Social"** por:
+- **Planilla (archivo + datos generales)** — sigue requiriendo `planillaNumero`, `planillaValor`, `planillaFecha`, `planillaFile`.
+- **Desglose de Aportes (Salud, Pensión, ARL)** — nueva sección que requiere los 9 campos. Lista de faltantes por bloque (ej. "Salud: número, fecha", "ARL: valor").
 
-```ts
-const diffDays = Math.ceil((end - start) / 86400000); // = 58 días
-const diffMonths = Math.floor(diffDays / 30);          // = floor(58/30) = 1
-```
+### 2. `src/pages/EditBillingAccount.tsx`
+- Añadir `desgloseComplete` y sumarlo a `informeComplete` (línea 143–149):
+  ```ts
+  const desgloseComplete = !!(
+    saludNumero && saludValor && saludFecha &&
+    pensionNumero && pensionValor && pensionFecha &&
+    arlNumero && arlValor && arlFecha
+  );
+  const informeComplete = ... && desgloseComplete;
+  ```
+- Cambiar `CardDescription` (línea 1453): `"... (opcional)"` → `"... (obligatorio)"`.
+- Marcar los 9 labels con asterisco `*`.
+- Pasar las 9 props nuevas al `<BillingCompletionProgress />`.
 
-Esto:
-1. Ignora el calendario real (meses no tienen 30 días).
-2. Usa `floor`, descartando el último mes incompleto aunque casi llegue.
-3. No cuenta el día final como inclusivo (1 ene → 28 feb son 59 días inclusivos = 2 meses).
+### 3. `src/components/billing/CreateBillingAccountDialog.tsx`
+- Misma validación: bloquear creación/envío si falta cualquier campo del desglose.
+- Labels con `*` y quitar "(opcional)".
+- Pasar 9 props nuevas al `<BillingCompletionProgress />`.
 
-El valor `execution_period_months = 1` quedó **persistido en BD** para el contrato #1 con ese cálculo erróneo.
+### 4. `src/components/billing/EditBillingAccountDialog.tsx`
+Este diálogo legacy no maneja desglose. Dos opciones:
+- **(a)** Dejarlo como está (solo edita campos básicos en `borrador` antes del flujo principal). 
+- **(b)** Añadir los 9 campos para consistencia.
 
-## Solución propuesta
+Recomiendo **(a)** porque el flujo real de edición/envío vive en `EditBillingAccount.tsx` (página completa). Confirmo si prefieres (b).
 
-### 1. Reemplazar la función de cálculo (en ambos archivos)
+### 5. Memoria
+Actualizar `mem://billing/social-security-contributions-breakdown` para reflejar que el desglose es **obligatorio** antes de enviar a revisión.
 
-Usar `date-fns` (`differenceInMonths` + `differenceInDays`) que maneja calendario real:
-
-```ts
-import { differenceInMonths, differenceInDays, addMonths } from "date-fns";
-
-const calculateExecutionPeriod = (startStr: string, endStr: string) => {
-  const start = parseLocalDate(startStr);
-  // Sumar 1 día para que el rango sea inclusivo (estándar en contratos)
-  const endInclusive = new Date(parseLocalDate(endStr));
-  endInclusive.setDate(endInclusive.getDate() + 1);
-
-  const months = differenceInMonths(endInclusive, start);
-  const remainderDays = differenceInDays(endInclusive, addMonths(start, months));
-  return { months, days: remainderDays };
-};
-```
-
-Resultado para 01/01/2026 → 28/02/2026:
-- endInclusive = 01/03/2026
-- months = 2, days = 0 ✅
-
-### 2. Recalcular el contrato existente
-
-Ejecutar UPDATE puntual en migración para el contrato #1 (y futuros si los hay) para que `execution_period_months` refleje el valor correcto:
-
-```sql
-UPDATE contracts
-SET execution_period_months = 2, execution_period_days = 0
-WHERE oid = 1;
-```
-
-(Opcional: recalcular masivamente todos los contratos con la misma fórmula vía función SQL — confirmar antes de ejecutar.)
-
-### 3. Verificación
-
-- Recargar `/billing` → "Crear cuenta de cobro" → seleccionar contrato 001-2026.
-- "Período de Ejecución" debe mostrar **2 meses**.
-- Validar también en la pantalla de detalles del contrato y en la Certificación.
-
-## Archivos a editar
-
-- `src/pages/CreateContract.tsx` (función `calculateExecutionPeriod`, importar `parseLocalDate` + utilidades de `date-fns`).
-- `src/pages/EditContract.tsx` (idem).
-- Nueva migración SQL para corregir el contrato #1.
-
-## Pregunta
-
-¿Recalculamos solo el contrato #1 o aplicamos un UPDATE masivo a todos los contratos existentes con la fórmula corregida?
+## Resultado
+- Botón **"Enviar a Revisión"** queda deshabilitado hasta completar los 9 campos del desglose.
+- El indicador de progreso muestra exactamente cuáles faltan, agrupados por Salud/Pensión/ARL.
+- El OPS, al editar la cuenta #1 rechazada, no podrá reenviarla sin completar el desglose.

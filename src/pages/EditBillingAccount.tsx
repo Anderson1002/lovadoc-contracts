@@ -140,9 +140,15 @@ export function EditBillingAccountDialog({
   const canEdit = billingAccount?.status === 'borrador' || billingAccount?.status === 'rechazada';
   
   // Calcular completitud de cada sección
+  const desgloseComplete = !!(
+    saludNumero && saludValor && saludFecha &&
+    pensionNumero && pensionValor && pensionFecha &&
+    arlNumero && arlValor && arlFecha
+  );
   const informeComplete = !!(selectedContract && amount && startDate && endDate && 
                             activities.filter(a => a.status === 'saved').length > 0 && 
-                            (uploads.social_security.uploaded || existingPlanillaPath || pendingPlanillaFile));
+                            (uploads.social_security.uploaded || existingPlanillaPath || pendingPlanillaFile) &&
+                            desgloseComplete);
   const certificacionComplete = !!(certificationMonth && reportDeliveryDate);
   const cuentaCobroComplete = !!(invoiceDate && invoiceNumber && amountInWords);
   const hasProfileSignature = !!profileSignatureUrl;
@@ -888,6 +894,16 @@ export function EditBillingAccountDialog({
             planillaFecha={planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : null}
             planillaFile={pendingPlanillaFile || existingPlanillaPath}
             hasSignature={!!profileSignatureUrl}
+            requireDesglose
+            saludNumero={saludNumero || null}
+            saludValor={saludValor || null}
+            saludFecha={saludFecha || null}
+            pensionNumero={pensionNumero || null}
+            pensionValor={pensionValor || null}
+            pensionFecha={pensionFecha || null}
+            arlNumero={arlNumero || null}
+            arlValor={arlValor || null}
+            arlFecha={arlFecha || null}
           />
 
           {/* Contract Selection */}
@@ -1450,7 +1466,7 @@ export function EditBillingAccountDialog({
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Desglose de Aportes</CardTitle>
-              <CardDescription>Detalle de los aportes a Salud, Pensión y ARL (opcional)</CardDescription>
+              <CardDescription>Detalle de los aportes a Salud, Pensión y ARL (obligatorio)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* PAGO APORTES SALUD */}
@@ -1458,7 +1474,7 @@ export function EditBillingAccountDialog({
                 <h4 className="font-medium text-sm text-primary">PAGO APORTES SALUD</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Número de Planilla</Label>
+                    <Label className="text-xs">Número de Planilla *</Label>
                     <Input
                       value={saludNumero}
                       onChange={(e) => setSaludNumero(e.target.value)}
@@ -1467,7 +1483,7 @@ export function EditBillingAccountDialog({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Valor</Label>
+                    <Label className="text-xs">Valor *</Label>
                     <Input
                       type="text"
                       value={saludValor ? formatCurrency(parseFloat(saludValor)) : ''}
@@ -1480,7 +1496,7 @@ export function EditBillingAccountDialog({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Fecha de Pago</Label>
+                    <Label className="text-xs">Fecha de Pago *</Label>
                     <Input
                       type="date"
                       value={saludFecha}
@@ -1496,7 +1512,7 @@ export function EditBillingAccountDialog({
                 <h4 className="font-medium text-sm text-primary">PAGO APORTES PENSIÓN</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Número de Planilla</Label>
+                    <Label className="text-xs">Número de Planilla *</Label>
                     <Input
                       value={pensionNumero}
                       onChange={(e) => setPensionNumero(e.target.value)}
@@ -1505,7 +1521,7 @@ export function EditBillingAccountDialog({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Valor</Label>
+                    <Label className="text-xs">Valor *</Label>
                     <Input
                       type="text"
                       value={pensionValor ? formatCurrency(parseFloat(pensionValor)) : ''}
@@ -1518,7 +1534,7 @@ export function EditBillingAccountDialog({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Fecha de Pago</Label>
+                    <Label className="text-xs">Fecha de Pago *</Label>
                     <Input
                       type="date"
                       value={pensionFecha}
@@ -1534,7 +1550,7 @@ export function EditBillingAccountDialog({
                 <h4 className="font-medium text-sm text-primary">PAGO APORTES ARL</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Número de Planilla</Label>
+                    <Label className="text-xs">Número de Planilla *</Label>
                     <Input
                       value={arlNumero}
                       onChange={(e) => setArlNumero(e.target.value)}
@@ -1543,7 +1559,7 @@ export function EditBillingAccountDialog({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Valor</Label>
+                    <Label className="text-xs">Valor *</Label>
                     <Input
                       type="text"
                       value={arlValor ? formatCurrency(parseFloat(arlValor)) : ''}
@@ -1556,7 +1572,7 @@ export function EditBillingAccountDialog({
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Fecha de Pago</Label>
+                    <Label className="text-xs">Fecha de Pago *</Label>
                     <Input
                       type="date"
                       value={arlFecha}
