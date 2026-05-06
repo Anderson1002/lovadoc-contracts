@@ -1757,7 +1757,7 @@ export function EditBillingAccountDialog({
                 variant="outline"
               >
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                Guardar Borrador
+                {billingAccount?.status === 'rechazada' ? 'Guardar Cambios' : 'Guardar Borrador'}
               </Button>
               
               <Button 
