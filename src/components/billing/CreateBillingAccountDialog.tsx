@@ -139,9 +139,15 @@ export function CreateBillingAccountDialog({
   const canSaveActivity = currentDraftId && currentActivity.activityName.trim() && currentActivity.actions.trim();
   const hasPlanillaFile = planillaFile || existingPlanillaPath;
   const canSavePlanilla = currentDraftId && planillaNumero && planillaValor && planillaFecha && (planillaFile || existingPlanillaPath);
+  const desgloseComplete = !!(
+    saludNumero && saludValor && saludFecha &&
+    pensionNumero && pensionValor && pensionFecha &&
+    arlNumero && arlValor && arlFecha
+  );
   const canSubmitForReview = currentDraftId && selectedContract && amount && startDate && endDate && 
                             activities.filter(a => a.status === 'saved').length > 0 && 
-                            planillaNumero && planillaValor && planillaFecha && hasPlanillaFile;
+                            planillaNumero && planillaValor && planillaFecha && hasPlanillaFile &&
+                            desgloseComplete;
 
   useEffect(() => {
     if (open) {
