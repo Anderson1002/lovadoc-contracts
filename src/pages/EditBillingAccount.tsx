@@ -894,6 +894,16 @@ export function EditBillingAccountDialog({
             planillaFecha={planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : null}
             planillaFile={pendingPlanillaFile || existingPlanillaPath}
             hasSignature={!!profileSignatureUrl}
+            requireDesglose
+            saludNumero={saludNumero || null}
+            saludValor={saludValor || null}
+            saludFecha={saludFecha || null}
+            pensionNumero={pensionNumero || null}
+            pensionValor={pensionValor || null}
+            pensionFecha={pensionFecha || null}
+            arlNumero={arlNumero || null}
+            arlValor={arlValor || null}
+            arlFecha={arlFecha || null}
           />
 
           {/* Contract Selection */}
