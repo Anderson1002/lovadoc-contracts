@@ -956,12 +956,17 @@ export function CreateBillingAccountDialog({
   useEffect(() => {
     const hasActivities = activities.filter(a => a.status === 'saved').length > 0;
     const hasPlanilla = planillaNumero && planillaValor && planillaFecha && (planillaFile || existingPlanillaPath);
-    setInformeComplete(!!currentDraftId && hasActivities && !!hasPlanilla);
+    const hasDesglose = !!(
+      saludNumero && saludValor && saludFecha &&
+      pensionNumero && pensionValor && pensionFecha &&
+      arlNumero && arlValor && arlFecha
+    );
+    setInformeComplete(!!currentDraftId && hasActivities && !!hasPlanilla && hasDesglose);
     
     setCertificacionComplete(!!certificationMonth && !!reportDeliveryDate);
     
     setCuentaCobroComplete(!!invoiceDate && !!amountInWords);
-  }, [currentDraftId, activities, planillaNumero, planillaValor, planillaFecha, planillaFile, existingPlanillaPath, novedades, certificationMonth, reportDeliveryDate, invoiceDate, amountInWords]);
+  }, [currentDraftId, activities, planillaNumero, planillaValor, planillaFecha, planillaFile, existingPlanillaPath, novedades, certificationMonth, reportDeliveryDate, invoiceDate, amountInWords, saludNumero, saludValor, saludFecha, pensionNumero, pensionValor, pensionFecha, arlNumero, arlValor, arlFecha]);
 
   // Calculate if can submit (all 3 formats complete)
   const canSubmitAllFormats = informeComplete && certificacionComplete && cuentaCobroComplete;
