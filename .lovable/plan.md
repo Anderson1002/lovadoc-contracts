@@ -1,45 +1,37 @@
-## Confirmado
-La cuenta #1 (COB-202605-001) ya está en estado **Rechazada** con la observación del supervisor. El OPS podrá editarla.
+## Diagnóstico
 
-## Ajuste pendiente: hacer obligatorio el Desglose de Aportes
+En la imagen, el botón correcto para guardar avances sin enviar es **Guardar Borrador**. El error que ves (*"El empleado solo puede enviar a pendiente_revision"*) ocurre porque la cuenta está en estado `rechazada` y el código intenta forzarla a `borrador`. Un trigger en la base de datos no permite ese cambio: el empleado solo puede dejarla como está o enviarla a `pendiente_revision`.
 
-Actualmente los 9 campos de Salud / Pensión / ARL (número, valor, fecha) son opcionales. Hay que volverlos obligatorios para poder enviar a revisión.
+Por eso después del clic la pantalla se ve "vacía" / no responde: la actualización fue rechazada por la base de datos y nada quedó guardado.
 
-### 1. `src/components/billing/BillingCompletionProgress.tsx`
-Extender props con los 9 campos del desglose y reemplazar la sección **"Planilla de Seguridad Social"** por:
-- **Planilla (archivo + datos generales)** — sigue requiriendo `planillaNumero`, `planillaValor`, `planillaFecha`, `planillaFile`.
-- **Desglose de Aportes (Salud, Pensión, ARL)** — nueva sección que requiere los 9 campos. Lista de faltantes por bloque (ej. "Salud: número, fecha", "ARL: valor").
+## Ajustes
 
-### 2. `src/pages/EditBillingAccount.tsx`
-- Añadir `desgloseComplete` y sumarlo a `informeComplete` (línea 143–149):
-  ```ts
-  const desgloseComplete = !!(
-    saludNumero && saludValor && saludFecha &&
-    pensionNumero && pensionValor && pensionFecha &&
-    arlNumero && arlValor && arlFecha
-  );
-  const informeComplete = ... && desgloseComplete;
-  ```
-- Cambiar `CardDescription` (línea 1453): `"... (opcional)"` → `"... (obligatorio)"`.
-- Marcar los 9 labels con asterisco `*`.
-- Pasar las 9 props nuevas al `<BillingCompletionProgress />`.
+1. **Guardar Borrador en cuentas devueltas (`EditBillingAccount.tsx`)**
+   - Quitar `status: 'borrador'` del `update` de `saveAsDraft`.
+   - Conservar el estado actual (`rechazada` o `borrador`) y solo persistir los datos del formulario y el desglose.
+   - Cambiar el texto del botón cuando la cuenta esté `rechazada` a **Guardar Cambios** para que no parezca que la regresa a borrador.
 
-### 3. `src/components/billing/CreateBillingAccountDialog.tsx`
-- Misma validación: bloquear creación/envío si falta cualquier campo del desglose.
-- Labels con `*` y quitar "(opcional)".
-- Pasar 9 props nuevas al `<BillingCompletionProgress />`.
+2. **Guardado por secciones (como antes)** dentro de la pantalla de edición:
+   - Botón **Guardar Detalles** (contrato, valor, fechas).
+   - Botón **Guardar Planilla** (número, valor, fecha, archivo).
+   - Botón **Guardar Desglose de Aportes** (Salud, Pensión, ARL — los 9 campos obligatorios).
+   - Cada uno guarda solo su sección, sin tocar el `status` ni los demás bloques. Esto evita perder datos y permite avanzar por partes.
 
-### 4. `src/components/billing/EditBillingAccountDialog.tsx`
-Este diálogo legacy no maneja desglose. Dos opciones:
-- **(a)** Dejarlo como está (solo edita campos básicos en `borrador` antes del flujo principal). 
-- **(b)** Añadir los 9 campos para consistencia.
+3. **Validación de envío más clara**
+   - Mantener **Enviar a Revisión** deshabilitado mientras falten campos.
+   - Si falta el desglose (fechas de pago en tu captura) mostrar un aviso específico debajo del botón indicando qué falta.
 
-Recomiendo **(a)** porque el flujo real de edición/envío vive en `EditBillingAccount.tsx` (página completa). Confirmo si prefieres (b).
+4. **Mensajes de error más útiles**
+   - Capturar el error del trigger y mostrar: *"No se puede cambiar el estado. Use Enviar a Revisión cuando termine."* en lugar del mensaje técnico actual.
 
-### 5. Memoria
-Actualizar `mem://billing/social-security-contributions-breakdown` para reflejar que el desglose es **obligatorio** antes de enviar a revisión.
+## Resultado esperado
 
-## Resultado
-- Botón **"Enviar a Revisión"** queda deshabilitado hasta completar los 9 campos del desglose.
-- El indicador de progreso muestra exactamente cuáles faltan, agrupados por Salud/Pensión/ARL.
-- El OPS, al editar la cuenta #1 rechazada, no podrá reenviarla sin completar el desglose.
+```text
+Cuenta rechazada → editar:
+  - Llenas/corriges una sección
+  - Clic en Guardar Detalles / Guardar Planilla / Guardar Desglose
+  - Los datos quedan guardados, la cuenta sigue en "rechazada"
+  - Cuando todo esté completo → Enviar a Revisión (pasa a pendiente_revision)
+```
+
+En tu pantalla actual basta con completar las **fechas de pago** de Salud, Pensión y ARL (están vacías) y luego usar **Guardar Borrador** (que tras este ajuste sí guardará) o **Enviar a Revisión** si ya está todo.

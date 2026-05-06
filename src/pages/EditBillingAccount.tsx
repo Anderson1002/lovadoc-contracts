@@ -590,7 +590,6 @@ export function EditBillingAccountDialog({
           benefit_economic_dependents: benefitEconomicDependents,
           cuenta_cobro_complete: cuentaCobroComplete,
           informe_complete: informeComplete,
-          status: 'borrador'
         })
         .eq('id', billingAccount.id);
 
