@@ -170,8 +170,8 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
   const calculateDuration = () => {
     if (!contract?.start_date || !contract?.end_date) return 'Sin definir';
     
-    const start = new Date(contract.start_date);
-    const end = new Date(contract.end_date);
+    const start = parseLocalDate(contract.start_date);
+    const end = parseLocalDate(contract.end_date);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     const diffMonths = Math.round(diffDays / 30);
@@ -440,7 +440,7 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                           <div>
-                            Período: {new Date(billing.billing_month).toLocaleDateString('es-ES', { 
+                            Período: {parseLocalDate(billing.billing_month).toLocaleDateString('es-ES', { 
                               year: 'numeric', 
                               month: 'long' 
                             })}
