@@ -140,9 +140,15 @@ export function EditBillingAccountDialog({
   const canEdit = billingAccount?.status === 'borrador' || billingAccount?.status === 'rechazada';
   
   // Calcular completitud de cada sección
+  const desgloseComplete = !!(
+    saludNumero && saludValor && saludFecha &&
+    pensionNumero && pensionValor && pensionFecha &&
+    arlNumero && arlValor && arlFecha
+  );
   const informeComplete = !!(selectedContract && amount && startDate && endDate && 
                             activities.filter(a => a.status === 'saved').length > 0 && 
-                            (uploads.social_security.uploaded || existingPlanillaPath || pendingPlanillaFile));
+                            (uploads.social_security.uploaded || existingPlanillaPath || pendingPlanillaFile) &&
+                            desgloseComplete);
   const certificacionComplete = !!(certificationMonth && reportDeliveryDate);
   const cuentaCobroComplete = !!(invoiceDate && invoiceNumber && amountInWords);
   const hasProfileSignature = !!profileSignatureUrl;
