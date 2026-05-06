@@ -1,0 +1,1 @@
+UPDATE public.contracts SET execution_period_months = 2, execution_period_days = 0 WHERE oid = 1 AND start_date = '2026-01-01' AND end_date = '2026-02-28';
