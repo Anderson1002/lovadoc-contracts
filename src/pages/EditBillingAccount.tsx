@@ -1466,7 +1466,7 @@ export function EditBillingAccountDialog({
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Desglose de Aportes</CardTitle>
-              <CardDescription>Detalle de los aportes a Salud, Pensión y ARL (opcional)</CardDescription>
+              <CardDescription>Detalle de los aportes a Salud, Pensión y ARL (obligatorio)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* PAGO APORTES SALUD */}
