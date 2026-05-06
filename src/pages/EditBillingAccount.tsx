@@ -652,15 +652,19 @@ export function EditBillingAccountDialog({
 
       toast({
         title: "Borrador Actualizado",
-        description: "Los cambios han sido guardados como borrador",
+        description: "Los cambios han sido guardados",
       });
 
       onSuccess();
     } catch (error: any) {
       console.error('Error updating draft:', error);
+      const msg = error?.message || 'Error desconocido';
+      const friendly = msg.includes('solo puede enviar a pendiente_revision')
+        ? 'No se puede cambiar el estado al guardar. Use "Enviar a Revisión" cuando termine.'
+        : `No se pudo guardar: ${msg}`;
       toast({
         title: "Error",
-        description: `No se pudo actualizar el borrador: ${error.message || 'Error desconocido'}`,
+        description: friendly,
         variant: "destructive"
       });
     } finally {
