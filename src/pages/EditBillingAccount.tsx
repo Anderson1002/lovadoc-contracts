@@ -692,6 +692,16 @@ export function EditBillingAccountDialog({
           planilla_numero: planillaNumero || null,
           planilla_valor: planillaValor ? parseFloat(planillaValor) : null,
           planilla_fecha: planillaFecha ? format(planillaFecha, 'yyyy-MM-dd') : null,
+          // Desglose de aportes
+          salud_planilla_numero: saludNumero || null,
+          salud_planilla_valor: saludValor ? parseFloat(saludValor) : null,
+          salud_planilla_fecha: saludFecha || null,
+          pension_planilla_numero: pensionNumero || null,
+          pension_planilla_valor: pensionValor ? parseFloat(pensionValor) : null,
+          pension_planilla_fecha: pensionFecha || null,
+          arl_planilla_numero: arlNumero || null,
+          arl_planilla_valor: arlValor ? parseFloat(arlValor) : null,
+          arl_planilla_fecha: arlFecha || null,
           // Certificación fields
           novedades: novedades || null,
           certification_date: new Date().toISOString().split('T')[0],
