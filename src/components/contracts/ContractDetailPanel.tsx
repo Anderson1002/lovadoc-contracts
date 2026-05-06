@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { ContractStatusBadge } from "./ContractStatusBadge";
 import { ContractStateHistory } from "./ContractStateHistory";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, parseLocalDate } from "@/lib/utils";
 
 interface ContractDetailPanelProps {
   contractId: string | null;
@@ -131,7 +131,7 @@ export function ContractDetailPanel({ contractId, isOpen, onClose }: ContractDet
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    return parseLocalDate(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
