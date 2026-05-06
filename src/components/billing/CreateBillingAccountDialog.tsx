@@ -1719,7 +1719,7 @@ export function CreateBillingAccountDialog({
                       Desglose de Aportes
                     </CardTitle>
                     <CardDescription>
-                      Detalle de los aportes a Salud, Pensión y ARL (opcional)
+                      Detalle de los aportes a Salud, Pensión y ARL (obligatorio)
                     </CardDescription>
                   </div>
                 </div>
@@ -1730,7 +1730,7 @@ export function CreateBillingAccountDialog({
                   <h4 className="font-medium text-sm text-primary">PAGO APORTES SALUD</h4>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs">Número de Planilla</Label>
+                      <Label className="text-xs">Número de Planilla *</Label>
                       <Input
                         value={saludNumero}
                         onChange={(e) => setSaludNumero(e.target.value)}
@@ -1739,7 +1739,7 @@ export function CreateBillingAccountDialog({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Valor</Label>
+                      <Label className="text-xs">Valor *</Label>
                       <Input
                         type="text"
                         value={saludValor ? formatCurrencyInput(saludValor) : ''}
@@ -1752,7 +1752,7 @@ export function CreateBillingAccountDialog({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Fecha de Pago</Label>
+                      <Label className="text-xs">Fecha de Pago *</Label>
                       <Input
                         type="date"
                         value={saludFecha}
@@ -1768,7 +1768,7 @@ export function CreateBillingAccountDialog({
                   <h4 className="font-medium text-sm text-primary">PAGO APORTES PENSIÓN</h4>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs">Número de Planilla</Label>
+                      <Label className="text-xs">Número de Planilla *</Label>
                       <Input
                         value={pensionNumero}
                         onChange={(e) => setPensionNumero(e.target.value)}
@@ -1777,7 +1777,7 @@ export function CreateBillingAccountDialog({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Valor</Label>
+                      <Label className="text-xs">Valor *</Label>
                       <Input
                         type="text"
                         value={pensionValor ? formatCurrencyInput(pensionValor) : ''}
@@ -1790,7 +1790,7 @@ export function CreateBillingAccountDialog({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Fecha de Pago</Label>
+                      <Label className="text-xs">Fecha de Pago *</Label>
                       <Input
                         type="date"
                         value={pensionFecha}
@@ -1806,7 +1806,7 @@ export function CreateBillingAccountDialog({
                   <h4 className="font-medium text-sm text-primary">PAGO APORTES ARL</h4>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs">Número de Planilla</Label>
+                      <Label className="text-xs">Número de Planilla *</Label>
                       <Input
                         value={arlNumero}
                         onChange={(e) => setArlNumero(e.target.value)}
@@ -1815,7 +1815,7 @@ export function CreateBillingAccountDialog({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Valor</Label>
+                      <Label className="text-xs">Valor *</Label>
                       <Input
                         type="text"
                         value={arlValor ? formatCurrencyInput(arlValor) : ''}
@@ -1828,7 +1828,7 @@ export function CreateBillingAccountDialog({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Fecha de Pago</Label>
+                      <Label className="text-xs">Fecha de Pago *</Label>
                       <Input
                         type="date"
                         value={arlFecha}
