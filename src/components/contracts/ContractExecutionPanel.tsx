@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Activity, TrendingUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   AreaChart,
   Area,
@@ -29,6 +30,7 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
   const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [chartMode, setChartMode] = useState<"money" | "percent">("money");
 
   const valorTotal = Number(totalAmount || 0) + Number(additionAmount || 0);
 
@@ -175,11 +177,23 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
 
             {chartData.length > 0 && (
               <div className="border-t pt-3">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
                   <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
                     <TrendingUp className="h-3 w-3" /> Ejecución acumulada por mes
                   </p>
-                  <span className="text-[10px] text-muted-foreground italic">Haz clic en un mes para ver detalle</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground italic hidden sm:inline">Haz clic en un mes para ver detalle</span>
+                    <ToggleGroup
+                      type="single"
+                      size="sm"
+                      value={chartMode}
+                      onValueChange={(v) => v && setChartMode(v as "money" | "percent")}
+                      className="h-7"
+                    >
+                      <ToggleGroupItem value="money" className="h-7 px-2 text-[11px]">$ Monto</ToggleGroupItem>
+                      <ToggleGroupItem value="percent" className="h-7 px-2 text-[11px]">% Ejecución</ToggleGroupItem>
+                    </ToggleGroup>
+                  </div>
                 </div>
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -204,24 +218,40 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-                      <YAxis
-                        tick={{ fontSize: 11 }}
-                        tickFormatter={(v) =>
-                          v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`
-                        }
-                      />
+                      {chartMode === "money" ? (
+                        <YAxis
+                          tick={{ fontSize: 11 }}
+                          tickFormatter={(v) =>
+                            v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`
+                          }
+                        />
+                      ) : (
+                        <YAxis
+                          tick={{ fontSize: 11 }}
+                          domain={[0, 100]}
+                          tickFormatter={(v) => `${v}%`}
+                        />
+                      )}
                       <RTooltip
                         formatter={(value: any, name: string) =>
-                          name === "Porcentaje" ? `${Number(value).toFixed(1)}%` : formatCurrency(Number(value))
+                          chartMode === "percent" ? `${Number(value).toFixed(1)}%` : formatCurrency(Number(value))
                         }
                         contentStyle={{ fontSize: 12, borderRadius: 8 }}
                       />
-                      {valorTotal > 0 && (
+                      {chartMode === "money" && valorTotal > 0 && (
                         <ReferenceLine
                           y={valorTotal}
                           stroke="hsl(var(--destructive))"
                           strokeDasharray="4 4"
                           label={{ value: "Valor total", fontSize: 10, fill: "hsl(var(--destructive))", position: "insideTopRight" }}
+                        />
+                      )}
+                      {chartMode === "percent" && (
+                        <ReferenceLine
+                          y={100}
+                          stroke="hsl(var(--destructive))"
+                          strokeDasharray="4 4"
+                          label={{ value: "100%", fontSize: 10, fill: "hsl(var(--destructive))", position: "insideTopRight" }}
                         />
                       )}
                       {selectedPoint && (
@@ -231,22 +261,36 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
                           strokeDasharray="2 2"
                         />
                       )}
-                      <Area
-                        type="monotone"
-                        dataKey="Acumulado"
-                        stroke="hsl(var(--primary))"
-                        fill="url(#execAcum)"
-                        strokeWidth={2}
-                        activeDot={{ r: 6, style: { cursor: "pointer" } }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="Mensual"
-                        stroke="hsl(142 76% 36%)"
-                        fill="url(#execMes)"
-                        strokeWidth={2}
-                        activeDot={{ r: 6, style: { cursor: "pointer" } }}
-                      />
+                      {chartMode === "money" ? (
+                        <>
+                          <Area
+                            type="monotone"
+                            dataKey="Acumulado"
+                            stroke="hsl(var(--primary))"
+                            fill="url(#execAcum)"
+                            strokeWidth={2}
+                            activeDot={{ r: 6, style: { cursor: "pointer" } }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="Mensual"
+                            stroke="hsl(142 76% 36%)"
+                            fill="url(#execMes)"
+                            strokeWidth={2}
+                            activeDot={{ r: 6, style: { cursor: "pointer" } }}
+                          />
+                        </>
+                      ) : (
+                        <Area
+                          type="monotone"
+                          dataKey="Porcentaje"
+                          name="% Acumulado"
+                          stroke="hsl(var(--primary))"
+                          fill="url(#execAcum)"
+                          strokeWidth={2}
+                          activeDot={{ r: 6, style: { cursor: "pointer" } }}
+                        />
+                      )}
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
