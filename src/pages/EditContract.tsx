@@ -759,6 +759,13 @@ export default function EditContract() {
         </form>
 
 
+        {id && originalContractData && (
+          <ContractExecutionPanel
+            contractId={id}
+            totalAmount={Number(originalContractData.total_amount || 0)}
+            additionAmount={Number(originalContractData.addition_amount || 0)}
+          />
+        )}
       </div>
     </Layout>
   );
