@@ -29,6 +29,7 @@ import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { JuridicaDashboard } from "@/components/dashboard/JuridicaDashboard";
 import { ContractExecutionSummary } from "@/components/dashboard/ContractExecutionSummary";
+import { ContractExecutionComparison } from "@/components/dashboard/ContractExecutionComparison";
 import { Search, Settings, Shield, Upload, Building2, Eye } from "lucide-react";
 
 interface DashboardStats {
@@ -455,6 +456,11 @@ export default function Dashboard() {
       {/* Ejecución de contratos (todos los roles excepto jurídica) */}
       {userRole && userRole !== 'juridica' && (
         <ContractExecutionSummary userRole={userRole} userProfileId={userProfileId} />
+      )}
+
+      {/* Comparación de ejecución por tipo / contrato específico */}
+      {userRole && userRole !== 'juridica' && (
+        <ContractExecutionComparison userRole={userRole} userProfileId={userProfileId} />
       )}
 
       {/* Recent Contracts for Employee */}
