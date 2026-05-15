@@ -391,6 +391,7 @@ export function ContractQueryTable({
                     {getSortIcon('estado')}
                   </div>
                 </TableHead>
+                <TableHead>Ejecución</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
