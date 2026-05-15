@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Eye, Edit, Send, Trash2, Loader2, DollarSign, ArrowLeft, History } from "lucide-react";
 import { BillingReviewHistory } from "./BillingReviewHistory";
 import { parseLocalDate } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface BillingAccountActionsProps {
   billingAccount: any;
@@ -63,7 +64,27 @@ export function BillingAccountActions({
     return isOwner && submittableStates.includes(billingAccount.status);
   };
 
+  const getMissingDocuments = (): string[] => {
+    const missing: string[] = [];
+    if (!billingAccount.informe_complete) missing.push('Informe');
+    if (!billingAccount.certificacion_complete) missing.push('Certificación');
+    if (!billingAccount.cuenta_cobro_complete) missing.push('Cuenta de Cobro');
+    return missing;
+  };
+
+  const missingDocs = getMissingDocuments();
+  const allDocsComplete = missingDocs.length === 0;
+
   const handleSubmitForReview = async () => {
+    if (!allDocsComplete) {
+      toast({
+        title: 'Documentos incompletos',
+        description: `Falta completar: ${missingDocs.join(', ')}.`,
+        variant: 'destructive',
+      });
+      setShowSubmitDialog(false);
+      return;
+    }
     try {
       setLoading(true);
 
@@ -272,16 +293,28 @@ export function BillingAccountActions({
         )}
 
         {canSubmitForReview() && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            title="Enviar a revisión"
-            onClick={() => setShowSubmitDialog(true)}
-            disabled={loading}
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setShowSubmitDialog(true)}
+                    disabled={loading || !allDocsComplete}
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {allDocsComplete
+                  ? 'Enviar a revisión'
+                  : `Falta completar: ${missingDocs.join(', ')}`}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
 
         {canDelete() && (
