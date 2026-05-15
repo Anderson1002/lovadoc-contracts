@@ -1,0 +1,12 @@
+# Maktub
+
+> Plataforma de gestión digital de contratos hospitalarios: registro de contratos, radicación de cuentas de cobro (informe, certificación, cuenta de cobro) y supervisión de contratistas.
+
+## Pages
+
+- [Inicio](/): Resumen ejecutivo y acceso a los módulos.
+- [Acceso al sistema](/auth): Inicio de sesión para personal autorizado.
+
+## Optional
+
+- [Establecer contraseña](/set-password): Flujo de creación o restablecimiento de contraseña.

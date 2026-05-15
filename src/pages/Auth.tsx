@@ -108,7 +108,7 @@ export default function Auth() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-soft to-background flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gradient-to-br from-primary-soft to-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -242,6 +242,6 @@ export default function Auth() {
           Sistema de gestión hospitalaria v1.0
         </div>
       </div>
-    </div>
+    </main>
   );
 }
