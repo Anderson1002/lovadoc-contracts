@@ -459,7 +459,8 @@ export default function Dashboard() {
       )}
 
       {/* Comparación de ejecución por tipo / contrato específico */}
-      {userRole && userRole !== 'juridica' && (
+      {/* Solo para roles con portafolio amplio: admin, super_admin, supervisor, treasury */}
+      {userRole && ['admin', 'super_admin', 'supervisor', 'treasury'].includes(userRole) && (
         <ContractExecutionComparison userRole={userRole} userProfileId={userProfileId} />
       )}
 
