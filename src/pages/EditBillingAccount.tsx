@@ -710,7 +710,7 @@ export function EditBillingAccountDialog({
           certification_date: new Date().toISOString().split('T')[0],
           certification_month: certificationMonth || null,
           report_delivery_date: reportDeliveryDate || null,
-          certificacion_complete: true,
+          certificacion_complete: certificacionComplete,
           valor_ejecutado_antes: valorEjecutadoAntes ? parseFloat(valorEjecutadoAntes) : 0,
           risk_matrix_compliance: riskMatrixCompliance,
           social_security_verified: socialSecurityVerified,
@@ -727,8 +727,8 @@ export function EditBillingAccountDialog({
           benefit_housing_interest: benefitHousingInterest,
           benefit_health_contributions: benefitHealthContributions,
           benefit_economic_dependents: benefitEconomicDependents,
-          cuenta_cobro_complete: true,
-          informe_complete: true,
+          cuenta_cobro_complete: cuentaCobroComplete,
+          informe_complete: informeComplete,
           status: 'pendiente_revision'
         })
         .eq('id', billingAccount.id);
