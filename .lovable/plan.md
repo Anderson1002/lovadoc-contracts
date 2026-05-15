@@ -1,37 +1,47 @@
-## Diagnóstico
+## Objetivo
+Mostrar el avance de ejecución acumulado de cada contrato (con base en cuentas de cobro **aprobadas** o **causadas**) en 4 puntos del sistema, visible para todos los roles involucrados.
 
-En la imagen, el botón correcto para guardar avances sin enviar es **Guardar Borrador**. El error que ves (*"El empleado solo puede enviar a pendiente_revision"*) ocurre porque la cuenta está en estado `rechazada` y el código intenta forzarla a `borrador`. Un trigger en la base de datos no permite ese cambio: el empleado solo puede dejarla como está o enviarla a `pendiente_revision`.
+## Fuente de datos (sin cambios de schema)
+Se calcula en el cliente sumando `amount` de `billing_accounts` con `status IN ('aprobada','causada')` por `contract_id`, dividido por `contracts.total_amount + COALESCE(addition_amount,0)`.
 
-Por eso después del clic la pantalla se ve "vacía" / no responde: la actualización fue rechazada por la base de datos y nada quedó guardado.
+Helper nuevo: `src/lib/contractExecution.ts`
+- `getContractExecution(contractId)` → `{ totalEjecutado, valorTotal, porcentaje, saldo, cuentasAprobadas }`
+- `getMultipleContractsExecution(contractIds[])` → mapa para listas (1 query batch)
 
-## Ajustes
+## 1. Badge en tabla de contratos (`/contracts/query`)
+- Nueva columna **"Ejecución"** en `ContractQueryTable.tsx`
+- Mini barra de progreso + `XX%` + tooltip con `$ejecutado / $total`
+- Color: verde >80%, ámbar 40-80%, gris <40%
 
-1. **Guardar Borrador en cuentas devueltas (`EditBillingAccount.tsx`)**
-   - Quitar `status: 'borrador'` del `update` de `saveAsDraft`.
-   - Conservar el estado actual (`rechazada` o `borrador`) y solo persistir los datos del formulario y el desglose.
-   - Cambiar el texto del botón cuando la cuenta esté `rechazada` a **Guardar Cambios** para que no parezca que la regresa a borrador.
+## 2. Panel en detalle del contrato
+- Nuevo componente `ContractExecutionPanel.tsx` insertado en:
+  - `ContractDetails.tsx` (admin/super_admin/juridica)
+  - `EditContract.tsx` (empleado, solo lectura)
+  - `SupervisorContractReview.tsx` (supervisor)
+- Muestra: barra grande, total ejecutado, saldo, % y lista de cuentas aprobadas (número, mes, monto)
 
-2. **Guardado por secciones (como antes)** dentro de la pantalla de edición:
-   - Botón **Guardar Detalles** (contrato, valor, fechas).
-   - Botón **Guardar Planilla** (número, valor, fecha, archivo).
-   - Botón **Guardar Desglose de Aportes** (Salud, Pensión, ARL — los 9 campos obligatorios).
-   - Cada uno guarda solo su sección, sin tocar el `status` ni los demás bloques. Esto evita perder datos y permite avanzar por partes.
+## 3. Card en Dashboard
+- Nuevo componente `ContractExecutionSummary.tsx` en `Dashboard.tsx`
+- Top 5 contratos con mayor ejecución + alertas de contratos >90%
+- Filtrado por rol: empleado ve los suyos, supervisor los de su proceso, admin/jurídica todos
 
-3. **Validación de envío más clara**
-   - Mantener **Enviar a Revisión** deshabilitado mientras falten campos.
-   - Si falta el desglose (fechas de pago en tu captura) mostrar un aviso específico debajo del botón indicando qué falta.
+## 4. En lista de cuentas de cobro
+- En `BillingAccountsList.tsx` y `BillingReviewList.tsx`: nueva columna o badge debajo del contrato mostrando **"Contrato al XX%"** (acumulado hasta esa cuenta inclusive)
 
-4. **Mensajes de error más útiles**
-   - Capturar el error del trigger y mostrar: *"No se puede cambiar el estado. Use Enviar a Revisión cuando termine."* en lugar del mensaje técnico actual.
+## Detalles técnicos
+- Sin migraciones. Todo cálculo client-side respetando RLS existente.
+- Performance: una query agregada por vista en lugar de N+1.
+- Memorizar resultados con `useMemo`.
+- Reutilizar utilidad `formatCurrency` y `Progress` de shadcn.
 
-## Resultado esperado
+## Memoria a guardar
+Nueva memoria `contracts/execution-visualization` con la fórmula y los 4 puntos de visualización.
 
-```text
-Cuenta rechazada → editar:
-  - Llenas/corriges una sección
-  - Clic en Guardar Detalles / Guardar Planilla / Guardar Desglose
-  - Los datos quedan guardados, la cuenta sigue en "rechazada"
-  - Cuando todo esté completo → Enviar a Revisión (pasa a pendiente_revision)
-```
-
-En tu pantalla actual basta con completar las **fechas de pago** de Salud, Pensión y ARL (están vacías) y luego usar **Guardar Borrador** (que tras este ajuste sí guardará) o **Enviar a Revisión** si ya está todo.
+## Archivos a crear/editar
+- `src/lib/contractExecution.ts` (nuevo)
+- `src/components/contracts/ContractExecutionPanel.tsx` (nuevo)
+- `src/components/dashboard/ContractExecutionSummary.tsx` (nuevo)
+- `src/components/contracts/ContractQueryTable.tsx` (editar)
+- `src/pages/ContractDetails.tsx`, `EditContract.tsx`, `SupervisorContractReview.tsx` (editar)
+- `src/pages/Dashboard.tsx` (editar)
+- `src/components/billing/BillingAccountsList.tsx`, `BillingReviewList.tsx` (editar)
