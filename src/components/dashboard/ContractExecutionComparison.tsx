@@ -62,6 +62,25 @@ export function ContractExecutionComparison({ userRole, userProfileId }: Props) 
       if (userRole === "employee" && userProfileId) {
         q = q.eq("created_by", userProfileId);
       }
+      // Supervisor: limitar a contratos de su mismo proceso
+      if (userRole === "supervisor") {
+        const { data: procRes } = await supabase.rpc("get_current_user_proceso_id");
+        const procesoId = procRes as number | null;
+        if (procesoId != null) {
+          const { data: peers } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("proceso_id", procesoId);
+          const ids = (peers || []).map((p: any) => p.id);
+          if (ids.length === 0) {
+            setContracts([]);
+            setAccounts([]);
+            setLoading(false);
+            return;
+          }
+          q = q.in("created_by", ids);
+        }
+      }
       const { data: cData } = await q;
       const list = cData || [];
       setContracts(list);
