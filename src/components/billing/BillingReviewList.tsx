@@ -103,7 +103,10 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
   };
 
   const formatDate = (dateString: string) => {
-    return parseLocalDate(dateString).toLocaleDateString('es-ES', {
+    if (!dateString) return '-';
+    const d = dateString.includes('T') ? new Date(dateString) : parseLocalDate(dateString);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
