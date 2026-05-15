@@ -7,7 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { GitCompare, Filter, ChevronDown } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { GitCompare, Filter, ChevronDown, Search } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -50,13 +51,14 @@ export function ContractExecutionComparison({ userRole, userProfileId }: Props) 
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [mode, setMode] = useState<"percent" | "money">("percent");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       let q = supabase
         .from("contracts")
-        .select("id, contract_number, contract_number_original, contract_type, total_amount, addition_amount, estado");
+        .select("id, contract_number, contract_number_original, client_name, contract_type, total_amount, addition_amount, estado");
       if (userRole === "employee" && userProfileId) {
         q = q.eq("created_by", userProfileId);
       }
@@ -99,6 +101,17 @@ export function ContractExecutionComparison({ userRole, userProfileId }: Props) 
       })
       .sort((a, b) => b.exec - a.exec);
   }, [filteredContracts, accounts]);
+
+  // ranked filtered by search query (contract number or razón social)
+  const visibleRanked = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return ranked;
+    return ranked.filter((c) => {
+      const num = `${c.contract_number_original || ""} ${c.contract_number || ""}`.toLowerCase();
+      const name = (c.client_name || "").toLowerCase();
+      return num.includes(q) || name.includes(q);
+    });
+  }, [ranked, search]);
 
   // Auto-pick top 3 when filter changes & no manual selection
   useEffect(() => {
@@ -209,12 +222,23 @@ export function ContractExecutionComparison({ userRole, userProfileId }: Props) 
                     </Button>
                   </div>
                 </div>
+                <div className="p-2 border-b">
+                  <div className="relative">
+                    <Search className="h-3 w-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Buscar por número o razón social..."
+                      className="h-7 pl-7 text-xs"
+                    />
+                  </div>
+                </div>
                 <ScrollArea className="h-72">
                   <div className="p-2 space-y-1">
-                    {ranked.length === 0 && (
+                    {visibleRanked.length === 0 && (
                       <p className="text-xs text-muted-foreground p-2">No hay contratos disponibles.</p>
                     )}
-                    {ranked.map((c) => {
+                    {visibleRanked.map((c) => {
                       const checked = selectedIds.includes(c.id);
                       return (
                         <label
@@ -226,6 +250,9 @@ export function ContractExecutionComparison({ userRole, userProfileId }: Props) 
                             <div className="font-medium truncate">
                               {c.contract_number_original || c.contract_number}
                             </div>
+                            {c.client_name && (
+                              <div className="text-muted-foreground text-[10px] truncate">{c.client_name}</div>
+                            )}
                             <div className="text-muted-foreground text-[10px]">
                               {TYPE_LABELS[c.contract_type] || c.contract_type} · {c.pct.toFixed(1)}% ejecutado
                             </div>
