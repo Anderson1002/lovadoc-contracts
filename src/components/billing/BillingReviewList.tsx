@@ -442,6 +442,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                   <TableHead className="w-16">#</TableHead>
                   <TableHead>Número</TableHead>
                   <TableHead>Contrato</TableHead>
+                  <TableHead>Ejecución</TableHead>
                   <TableHead>Contratista</TableHead>
                   <TableHead>Período</TableHead>
                   <TableHead>Valor</TableHead>
@@ -470,6 +471,29 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                         <p className="font-medium">{billing.contracts?.contract_number_original || billing.contracts?.contract_number}</p>
                         <p className="text-sm text-muted-foreground">{billing.contracts?.profiles?.name || billing.created_by_profile?.name}</p>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const e = executionMap[billing.contract_id];
+                        if (!e) return <span className="text-xs text-muted-foreground">—</span>;
+                        return (
+                          <div className="w-24">
+                            <div className="text-xs mb-1">
+                              <span className={cn("font-semibold", executionTextClass(e.porcentaje))}>
+                                {e.porcentaje.toFixed(0)}%
+                              </span>
+                            </div>
+                            <Progress
+                              value={e.porcentaje}
+                              className={cn(
+                                "h-1.5",
+                                e.porcentaje >= 80 && "[&>div]:bg-green-500",
+                                e.porcentaje >= 40 && e.porcentaje < 80 && "[&>div]:bg-amber-500"
+                              )}
+                            />
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       <div>
