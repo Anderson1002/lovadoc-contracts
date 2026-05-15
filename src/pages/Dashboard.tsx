@@ -452,6 +452,11 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Ejecución de contratos (todos los roles excepto jurídica) */}
+      {userRole && userRole !== 'juridica' && (
+        <ContractExecutionSummary userRole={userRole} userProfileId={userProfileId} />
+      )}
+
       {/* Recent Contracts for Employee */}
       {userRole === 'employee' && (
         <Card>
