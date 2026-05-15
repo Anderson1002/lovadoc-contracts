@@ -187,7 +187,7 @@ export default function Dashboard() {
         const { count } = await supabase
           .from('billing_accounts')
           .select('id', { count: 'exact', head: true })
-          .in('status', ['enviada', 're-enviada']);
+          .eq('status', 'pendiente_revision');
         pendingBillingReview = count || 0;
       }
 
