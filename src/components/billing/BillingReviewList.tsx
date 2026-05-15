@@ -688,7 +688,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                   amount={previewBilling.amount.toString()}
                   novedades={previewBilling.novedades || ''}
                   certificationDate={previewBilling.certification_date || ''}
-                  supervisorName={previewBilling.created_by_profile?.name}
+                  supervisorName={previewBilling.contracts?.supervisor_asignado || userProfile?.name}
                   valorEjecutadoAntes={previewBilling.valor_ejecutado_antes?.toString() || '0'}
                   riskMatrixCompliance={previewBilling.risk_matrix_compliance || false}
                   socialSecurityVerified={previewBilling.social_security_verified || true}
