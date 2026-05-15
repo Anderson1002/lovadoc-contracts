@@ -3,6 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Activity, TrendingUp } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RTooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { executionTextClass } from "@/lib/contractExecution";
@@ -41,6 +51,33 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
   const totalEjecutado = accounts.reduce((s, a) => s + Number(a.amount || 0), 0);
   const porcentaje = valorTotal > 0 ? Math.min((totalEjecutado / valorTotal) * 100, 100) : 0;
   const saldo = Math.max(valorTotal - totalEjecutado, 0);
+
+  // Build monthly cumulative chart data
+  const chartData = (() => {
+    const byMonth = new Map<string, { label: string; date: Date; mensual: number }>();
+    for (const a of accounts) {
+      const d = parseLocalDate(a.billing_month);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = d.toLocaleDateString("es-ES", { month: "short", year: "2-digit" });
+      const prev = byMonth.get(key);
+      byMonth.set(key, {
+        label,
+        date: new Date(d.getFullYear(), d.getMonth(), 1),
+        mensual: (prev?.mensual || 0) + Number(a.amount || 0),
+      });
+    }
+    const sorted = Array.from(byMonth.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
+    let acc = 0;
+    return sorted.map((r) => {
+      acc += r.mensual;
+      return {
+        mes: r.label,
+        Mensual: r.mensual,
+        Acumulado: acc,
+        Porcentaje: valorTotal > 0 ? Math.min((acc / valorTotal) * 100, 100) : 0,
+      };
+    });
+  })();
 
   return (
     <Card>
@@ -107,6 +144,66 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
                       <span className="font-semibold">{formatCurrency(Number(a.amount))}</span>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {chartData.length > 0 && (
+              <div className="border-t pt-3">
+                <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" /> Ejecución acumulada por mes
+                </p>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="execAcum" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="execMes" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(142 76% 36%)" stopOpacity={0.35} />
+                          <stop offset="95%" stopColor="hsl(142 76% 36%)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                      <YAxis
+                        tick={{ fontSize: 11 }}
+                        tickFormatter={(v) =>
+                          v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1000 ? `${(v / 1000).toFixed(0)}K` : `${v}`
+                        }
+                      />
+                      <RTooltip
+                        formatter={(value: any, name: string) =>
+                          name === "Porcentaje" ? `${Number(value).toFixed(1)}%` : formatCurrency(Number(value))
+                        }
+                        contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                      />
+                      {valorTotal > 0 && (
+                        <ReferenceLine
+                          y={valorTotal}
+                          stroke="hsl(var(--destructive))"
+                          strokeDasharray="4 4"
+                          label={{ value: "Valor total", fontSize: 10, fill: "hsl(var(--destructive))", position: "insideTopRight" }}
+                        />
+                      )}
+                      <Area
+                        type="monotone"
+                        dataKey="Acumulado"
+                        stroke="hsl(var(--primary))"
+                        fill="url(#execAcum)"
+                        strokeWidth={2}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="Mensual"
+                        stroke="hsl(142 76% 36%)"
+                        fill="url(#execMes)"
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
             )}
