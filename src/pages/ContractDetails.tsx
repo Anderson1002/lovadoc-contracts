@@ -9,6 +9,7 @@ import { ArrowLeft, Calendar, DollarSign, User, FileText, Edit, AlertTriangle } 
 import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
 import { ContractStateHistory } from "@/components/contracts/ContractStateHistory";
 import { ContractStateActions } from "@/components/contracts/ContractStateActions";
+import { ContractExecutionPanel } from "@/components/contracts/ContractExecutionPanel";
 import { formatCurrency } from "@/lib/utils";
 import { Layout } from "@/components/Layout";
 
