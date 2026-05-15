@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { parseLocalDate } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,6 +63,9 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { ContractStateHistory } from "./ContractStateHistory";
+import { Progress } from "@/components/ui/progress";
+import { getMultipleContractsExecution, executionTextClass, type ContractExecution } from "@/lib/contractExecution";
+import { cn } from "@/lib/utils";
 
 interface ContractQueryTableProps {
   contracts: any[];
@@ -94,6 +97,7 @@ export function ContractQueryTable({
   const [documentsDialog, setDocumentsDialog] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState<string>("");
   const [documents, setDocuments] = useState<any[]>([]);
+  const [executionMap, setExecutionMap] = useState<Record<string, ContractExecution>>({});
   const { toast } = useToast();
 
   const formatCurrency = (amount: number) => {
@@ -104,6 +108,19 @@ export function ContractQueryTable({
       maximumFractionDigits: 0
     }).format(amount);
   };
+
+  useEffect(() => {
+    const ids = (contracts || []).map((c: any) => c.id).filter(Boolean);
+    if (ids.length === 0) { setExecutionMap({}); return; }
+    const totals = Object.fromEntries(
+      contracts.map((c: any) => [c.id, Number(c.total_amount || 0) + Number(c.addition_amount || 0)])
+    );
+    let cancel = false;
+    getMultipleContractsExecution(ids, totals).then((m) => {
+      if (!cancel) setExecutionMap(m);
+    });
+    return () => { cancel = true; };
+  }, [contracts]);
 
 
   const getTypeBadge = (type: string) => {
