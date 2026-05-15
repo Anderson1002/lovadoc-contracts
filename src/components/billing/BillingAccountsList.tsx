@@ -141,7 +141,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
   };
 
   const formatDate = (dateString: string) => {
-    return parseLocalDate(dateString).toLocaleDateString('es-ES', {
+    return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
