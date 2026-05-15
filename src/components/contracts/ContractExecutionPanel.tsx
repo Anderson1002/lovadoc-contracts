@@ -382,6 +382,41 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
                   </ResponsiveContainer>
                 </div>
 
+                {chartData.length > 1 && highlights.maxIdx >= 0 && (
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div className="flex items-center gap-2 p-2 rounded border bg-green-50 dark:bg-green-950/20">
+                      <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <div className="flex-1">
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Mayor aporte</p>
+                        <p className="font-semibold capitalize">
+                          {chartData[highlights.maxIdx].mes}
+                          <span className="ml-2 text-green-700 dark:text-green-400">
+                            {chartMode === "percent"
+                              ? `+${chartData[highlights.maxIdx].deltaPct.toFixed(1)}pp`
+                              : formatCurrency(chartData[highlights.maxIdx].Mensual)}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                    {highlights.minIdx >= 0 && highlights.minIdx !== highlights.maxIdx && (
+                      <div className="flex items-center gap-2 p-2 rounded border bg-red-50 dark:bg-red-950/20">
+                        <TrendingDown className="h-4 w-4 text-destructive" />
+                        <div className="flex-1">
+                          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Menor aporte</p>
+                          <p className="font-semibold capitalize">
+                            {chartData[highlights.minIdx].mes}
+                            <span className="ml-2 text-destructive">
+                              {chartMode === "percent"
+                                ? `${chartData[highlights.minIdx].deltaPct >= 0 ? "+" : ""}${chartData[highlights.minIdx].deltaPct.toFixed(1)}pp`
+                                : formatCurrency(chartData[highlights.minIdx].Mensual)}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {selectedPoint && (
                   <div className="mt-3 rounded border bg-muted/30 p-3 space-y-2">
                     <div className="flex items-center justify-between">
