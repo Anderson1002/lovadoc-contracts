@@ -335,6 +335,13 @@ export default function SupervisorContractReview() {
         </div>
 
         {/* Historial de Estados */}
+        {id && contractData && (
+          <ContractExecutionPanel
+            contractId={id}
+            totalAmount={Number(contractData.total_amount || 0)}
+            additionAmount={Number(contractData.addition_amount || 0)}
+          />
+        )}
         {id && <ContractStateHistory contractId={id} />}
       </div>
     </Layout>
