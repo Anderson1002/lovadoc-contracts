@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Activity, TrendingDown, TrendingUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AreaChart,
   Area,
@@ -31,6 +32,7 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [chartMode, setChartMode] = useState<"money" | "percent">("money");
+  const [rangeMonths, setRangeMonths] = useState<string>("all");
 
   const valorTotal = Number(totalAmount || 0) + Number(additionAmount || 0);
 
@@ -72,9 +74,19 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
       });
     }
     const sorted = Array.from(byMonth.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
+    // Filter by range BEFORE computing the running cumulative so we still see
+    // the real cumulative at the start of the visible window.
+    let visible = sorted;
+    if (rangeMonths !== "all" && sorted.length > 0) {
+      const n = parseInt(rangeMonths, 10);
+      if (!Number.isNaN(n) && n > 0 && sorted.length > n) {
+        visible = sorted.slice(-n);
+      }
+    }
+    const firstVisibleKey = visible[0]?.key;
     let acc = 0;
     let prevPct = 0;
-    return sorted.map((r, idx) => {
+    const all = sorted.map((r, idx) => {
       const prevAcc = acc;
       acc += r.mensual;
       const pct = valorTotal > 0 ? Math.min((acc / valorTotal) * 100, 100) : 0;
@@ -92,6 +104,9 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
         prevAcc,
       };
     });
+    if (!firstVisibleKey) return all;
+    const startIdx = all.findIndex((p) => p.key === firstVisibleKey);
+    return startIdx >= 0 ? all.slice(startIdx) : all;
   })();
 
   // Highlights: top contributor (max) and lowest (min) for current mode
@@ -207,6 +222,18 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-muted-foreground italic hidden sm:inline">Haz clic en un mes para ver detalle</span>
+                    <Select value={rangeMonths} onValueChange={setRangeMonths}>
+                      <SelectTrigger className="h-7 w-[140px] text-[11px]">
+                        <SelectValue placeholder="Rango" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="3">Últimos 3 meses</SelectItem>
+                        <SelectItem value="6">Últimos 6 meses</SelectItem>
+                        <SelectItem value="12">Últimos 12 meses</SelectItem>
+                        <SelectItem value="24">Últimos 24 meses</SelectItem>
+                        <SelectItem value="all">Todo el periodo</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <ToggleGroup
                       type="single"
                       size="sm"
