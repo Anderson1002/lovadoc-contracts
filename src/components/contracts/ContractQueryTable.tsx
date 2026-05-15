@@ -468,6 +468,40 @@ export function ContractQueryTable({
                       )}
                     </div>
                   </TableCell>
+                  <TableCell>
+                    {(() => {
+                      const e = executionMap[contract.id];
+                      if (!e) return <span className="text-xs text-muted-foreground">—</span>;
+                      return (
+                        <HoverCard>
+                          <HoverCardTrigger asChild>
+                            <div className="w-28 cursor-help">
+                              <div className="flex items-center justify-between text-xs mb-1">
+                                <span className={cn("font-semibold", executionTextClass(e.porcentaje))}>
+                                  {e.porcentaje.toFixed(0)}%
+                                </span>
+                                <span className="text-muted-foreground">{e.cuentasAprobadas}</span>
+                              </div>
+                              <Progress
+                                value={e.porcentaje}
+                                className={cn(
+                                  "h-1.5",
+                                  e.porcentaje >= 80 && "[&>div]:bg-green-500",
+                                  e.porcentaje >= 40 && e.porcentaje < 80 && "[&>div]:bg-amber-500"
+                                )}
+                              />
+                            </div>
+                          </HoverCardTrigger>
+                          <HoverCardContent className="w-64 text-xs space-y-1">
+                            <p><strong>Ejecutado:</strong> {formatCurrency(e.totalEjecutado)}</p>
+                            <p><strong>Total:</strong> {formatCurrency(e.valorTotal)}</p>
+                            <p><strong>Saldo:</strong> {formatCurrency(e.saldo)}</p>
+                            <p className="text-muted-foreground">{e.cuentasAprobadas} cuenta(s) aprobada(s)/causada(s)</p>
+                          </HoverCardContent>
+                        </HoverCard>
+                      );
+                    })()}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Dialog>
