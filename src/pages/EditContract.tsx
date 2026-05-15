@@ -12,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ArrowLeft, Save, FileText, Upload, X, AlertTriangle, User } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { ClientSelector } from "@/components/contracts/ClientSelector";
+import { ContractExecutionPanel } from "@/components/contracts/ContractExecutionPanel";
 import { differenceInMonths, differenceInDays, addMonths } from "date-fns";
 import { parseLocalDate } from "@/lib/utils";
 
@@ -758,6 +759,13 @@ export default function EditContract() {
         </form>
 
 
+        {id && originalContractData && (
+          <ContractExecutionPanel
+            contractId={id}
+            totalAmount={Number(originalContractData.total_amount || 0)}
+            additionAmount={Number(originalContractData.addition_amount || 0)}
+          />
+        )}
       </div>
     </Layout>
   );

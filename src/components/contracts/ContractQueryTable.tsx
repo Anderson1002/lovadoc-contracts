@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { parseLocalDate } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,6 +63,9 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { ContractStateHistory } from "./ContractStateHistory";
+import { Progress } from "@/components/ui/progress";
+import { getMultipleContractsExecution, executionTextClass, type ContractExecution } from "@/lib/contractExecution";
+import { cn } from "@/lib/utils";
 
 interface ContractQueryTableProps {
   contracts: any[];
@@ -94,6 +97,7 @@ export function ContractQueryTable({
   const [documentsDialog, setDocumentsDialog] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState<string>("");
   const [documents, setDocuments] = useState<any[]>([]);
+  const [executionMap, setExecutionMap] = useState<Record<string, ContractExecution>>({});
   const { toast } = useToast();
 
   const formatCurrency = (amount: number) => {
@@ -104,6 +108,19 @@ export function ContractQueryTable({
       maximumFractionDigits: 0
     }).format(amount);
   };
+
+  useEffect(() => {
+    const ids = (contracts || []).map((c: any) => c.id).filter(Boolean);
+    if (ids.length === 0) { setExecutionMap({}); return; }
+    const totals = Object.fromEntries(
+      contracts.map((c: any) => [c.id, Number(c.total_amount || 0) + Number(c.addition_amount || 0)])
+    );
+    let cancel = false;
+    getMultipleContractsExecution(ids, totals).then((m) => {
+      if (!cancel) setExecutionMap(m);
+    });
+    return () => { cancel = true; };
+  }, [contracts]);
 
 
   const getTypeBadge = (type: string) => {
@@ -374,6 +391,7 @@ export function ContractQueryTable({
                     {getSortIcon('estado')}
                   </div>
                 </TableHead>
+                <TableHead>Ejecución</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -449,6 +467,40 @@ export function ContractQueryTable({
                         </HoverCard>
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {(() => {
+                      const e = executionMap[contract.id];
+                      if (!e) return <span className="text-xs text-muted-foreground">—</span>;
+                      return (
+                        <HoverCard>
+                          <HoverCardTrigger asChild>
+                            <div className="w-28 cursor-help">
+                              <div className="flex items-center justify-between text-xs mb-1">
+                                <span className={cn("font-semibold", executionTextClass(e.porcentaje))}>
+                                  {e.porcentaje.toFixed(0)}%
+                                </span>
+                                <span className="text-muted-foreground">{e.cuentasAprobadas}</span>
+                              </div>
+                              <Progress
+                                value={e.porcentaje}
+                                className={cn(
+                                  "h-1.5",
+                                  e.porcentaje >= 80 && "[&>div]:bg-green-500",
+                                  e.porcentaje >= 40 && e.porcentaje < 80 && "[&>div]:bg-amber-500"
+                                )}
+                              />
+                            </div>
+                          </HoverCardTrigger>
+                          <HoverCardContent className="w-64 text-xs space-y-1">
+                            <p><strong>Ejecutado:</strong> {formatCurrency(e.totalEjecutado)}</p>
+                            <p><strong>Total:</strong> {formatCurrency(e.valorTotal)}</p>
+                            <p><strong>Saldo:</strong> {formatCurrency(e.saldo)}</p>
+                            <p className="text-muted-foreground">{e.cuentasAprobadas} cuenta(s) aprobada(s)/causada(s)</p>
+                          </HoverCardContent>
+                        </HoverCard>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">

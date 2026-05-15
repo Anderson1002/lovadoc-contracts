@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ContractExecutionPanel } from "@/components/contracts/ContractExecutionPanel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, FileText, User } from "lucide-react";
 import { Layout } from "@/components/Layout";
@@ -334,6 +335,13 @@ export default function SupervisorContractReview() {
         </div>
 
         {/* Historial de Estados */}
+        {id && contractData && (
+          <ContractExecutionPanel
+            contractId={id}
+            totalAmount={Number(contractData.total_amount || 0)}
+            additionAmount={Number(contractData.addition_amount || 0)}
+          />
+        )}
         {id && <ContractStateHistory contractId={id} />}
       </div>
     </Layout>

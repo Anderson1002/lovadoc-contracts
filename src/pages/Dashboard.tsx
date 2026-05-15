@@ -28,6 +28,7 @@ import { Link } from "react-router-dom";
 import { ContractStatusBadge } from "@/components/contracts/ContractStatusBadge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { JuridicaDashboard } from "@/components/dashboard/JuridicaDashboard";
+import { ContractExecutionSummary } from "@/components/dashboard/ContractExecutionSummary";
 import { Search, Settings, Shield, Upload, Building2, Eye } from "lucide-react";
 
 interface DashboardStats {
@@ -108,6 +109,7 @@ export default function Dashboard() {
   const [chartData, setChartData] = useState([]);
   const [billingSummary, setBillingSummary] = useState({ drafts: 0, pending: 0, approved: 0, rejected: 0 });
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userProfileId, setUserProfileId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -131,6 +133,7 @@ export default function Dashboard() {
 
       const roleName = profile?.roles ? (profile.roles as any).name : 'employee';
       setUserRole(roleName);
+      setUserProfileId(profile?.id);
 
       // Jurídica usa un dashboard dedicado sobre la tabla 'contract' (externa).
       // Evitamos cargar datos del flujo interno para este rol.
@@ -447,6 +450,11 @@ export default function Dashboard() {
             </Card>
           </div>
         </div>
+      )}
+
+      {/* Ejecución de contratos (todos los roles excepto jurídica) */}
+      {userRole && userRole !== 'juridica' && (
+        <ContractExecutionSummary userRole={userRole} userProfileId={userProfileId} />
       )}
 
       {/* Recent Contracts for Employee */}

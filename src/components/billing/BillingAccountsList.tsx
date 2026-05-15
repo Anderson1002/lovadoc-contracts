@@ -10,6 +10,9 @@ import { EditBillingAccountDialog } from "../../pages/EditBillingAccount";
 import { BillingAccountActions } from "./BillingAccountActions";
 import { BillingAccountStatusBadge } from "./BillingAccountStatusBadge";
 import { SupervisorObservations } from "./SupervisorObservations";
+import { Progress } from "@/components/ui/progress";
+import { getMultipleContractsExecution, executionTextClass, type ContractExecution } from "@/lib/contractExecution";
+import { cn } from "@/lib/utils";
 
 interface BillingAccountsListProps {
   userProfile: any;
@@ -23,6 +26,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
   const [loading, setLoading] = useState(true);
   const [editingAccount, setEditingAccount] = useState<any>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [executionMap, setExecutionMap] = useState<Record<string, ContractExecution>>({});
 
   useEffect(() => {
     loadBillingAccounts();
@@ -97,6 +101,16 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
       }
       
       setBillingAccounts(withProfiles);
+      // Cargar ejecución por contrato
+      const cIds = Array.from(new Set((withProfiles || []).map((b: any) => b.contract_id).filter(Boolean)));
+      if (cIds.length > 0) {
+        const totals = Object.fromEntries(
+          (withProfiles || [])
+            .filter((b: any) => b.contracts?.total_amount)
+            .map((b: any) => [b.contract_id, Number(b.contracts.total_amount || 0)])
+        );
+        getMultipleContractsExecution(cIds, totals).then(setExecutionMap);
+      }
       console.log('Successfully loaded billing accounts:', withProfiles.length || 0);
     } catch (error: any) {
       console.error('=== ERROR LOADING BILLING ACCOUNTS ===');
@@ -215,6 +229,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
                 <TableHead className="w-16">#</TableHead>
                 <TableHead>Número</TableHead>
                 <TableHead>Contrato</TableHead>
+                <TableHead>Ejecución</TableHead>
                 <TableHead>Período</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Estado</TableHead>
@@ -239,6 +254,29 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
                       <p className="font-medium">{billing.contracts?.contract_number_original || billing.contracts?.contract_number}</p>
                       <p className="text-sm text-muted-foreground">{billing.contracts?.client?.name}</p>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {(() => {
+                      const e = executionMap[billing.contract_id];
+                      if (!e) return <span className="text-xs text-muted-foreground">—</span>;
+                      return (
+                        <div className="w-24">
+                          <div className="text-xs mb-1">
+                            <span className={cn("font-semibold", executionTextClass(e.porcentaje))}>
+                              {e.porcentaje.toFixed(0)}%
+                            </span>
+                          </div>
+                          <Progress
+                            value={e.porcentaje}
+                            className={cn(
+                              "h-1.5",
+                              e.porcentaje >= 80 && "[&>div]:bg-green-500",
+                              e.porcentaje >= 40 && e.porcentaje < 80 && "[&>div]:bg-amber-500"
+                            )}
+                          />
+                        </div>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
