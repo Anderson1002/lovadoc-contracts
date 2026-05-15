@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Plus, Receipt, Eye, MessageSquare, AlertCircle } from "lucide-react";
+import { Plus, Receipt, Eye, MessageSquare, AlertCircle, FileClock } from "lucide-react";
 import { CreateBillingAccountDialog } from "@/components/billing/CreateBillingAccountDialog";
 import { BillingAccountsList } from "@/components/billing/BillingAccountsList";
 import { BillingReviewList } from "@/components/billing/BillingReviewList";
@@ -50,6 +50,8 @@ export default function BillingAccounts() {
   const [loading, setLoading] = useState(true);
   const [availableContracts, setAvailableContracts] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
+  const [currentMonthAccount, setCurrentMonthAccount] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<string>("");
 
   useEffect(() => {
     loadUserProfile();
@@ -58,6 +60,7 @@ export default function BillingAccounts() {
   useEffect(() => {
     if (userProfile && canCreateBilling) {
       loadAvailableContracts();
+      loadCurrentMonthAccount();
     }
   }, [userProfile]);
 
@@ -115,6 +118,26 @@ export default function BillingAccounts() {
     }
   };
 
+  const loadCurrentMonthAccount = async () => {
+    try {
+      const now = new Date();
+      const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const { data, error } = await supabase
+        .from('billing_accounts')
+        .select('id, billing_month, status')
+        .eq('created_by', userProfile.id)
+        .like('billing_month', `${monthPrefix}%`)
+        .in('status', ['pendiente_revision', 'aprobada', 'en_revision', 'en_pago', 'pagada'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      setCurrentMonthAccount(data);
+    } catch (error: any) {
+      console.error('Error loading current month account:', error);
+    }
+  };
+
   const canCreateBilling = ['super_admin', 'admin', 'employee'].includes(userRole);
   const canReviewBilling = ['super_admin', 'admin', 'supervisor'].includes(userRole);
   const canManagePayments = ['super_admin', 'admin', 'treasury'].includes(userRole);
@@ -140,6 +163,10 @@ export default function BillingAccounts() {
     : isTreasury
       ? 'pending-payment'
       : 'my-accounts';
+
+  useEffect(() => {
+    if (!activeTab) setActiveTab(defaultTab);
+  }, [defaultTab, activeTab]);
 
   if (loading) {
     return (
@@ -167,48 +194,60 @@ export default function BillingAccounts() {
             <h1 className="text-3xl font-bold text-foreground">{headerConfig.title}</h1>
             <p className="text-muted-foreground">{headerConfig.description}</p>
           </div>
-          {canCreateBilling && (
-            <div className="flex flex-col items-end gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={() => setShowCreateDialog(true)}
-                      disabled={availableContracts === 0}
-                      className="flex items-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Nueva Cuenta de Cobro
-                      {availableContracts > 0 && (
-                        <Badge variant="secondary" className="ml-1">
-                          {availableContracts}
-                        </Badge>
+          {canCreateBilling && (() => {
+            const monthLabel = new Date().toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+            const hasCurrent = !!currentMonthAccount;
+            return (
+              <div className="flex flex-col items-end gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      {hasCurrent ? (
+                        <Button
+                          variant="outline"
+                          onClick={() => setActiveTab('my-accounts')}
+                          className="flex items-center gap-2"
+                        >
+                          <FileClock className="w-4 h-4" />
+                          Ver cuenta del mes
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => setShowCreateDialog(true)}
+                          disabled={availableContracts === 0}
+                          className="flex items-center gap-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Nueva Cuenta de Cobro
+                        </Button>
                       )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {availableContracts > 0 
-                        ? `${availableContracts} contrato${availableContracts > 1 ? 's' : ''} disponible${availableContracts > 1 ? 's' : ''} en ejecución`
-                        : 'No tienes contratos en ejecución'}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              {availableContracts === 0 && (
-                <Alert className="max-w-md">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Las cuentas de cobro solo pueden crearse para contratos aprobados y en ejecución.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          )}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {hasCurrent
+                          ? `Ya radicaste la cuenta de ${monthLabel}`
+                          : availableContracts > 0
+                            ? `Radicar cuenta de ${monthLabel}`
+                            : 'No tienes contratos en ejecución'}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                {!hasCurrent && availableContracts === 0 && (
+                  <Alert className="max-w-md">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Las cuentas de cobro solo pueden crearse para contratos aprobados y en ejecución.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Content */}
-        <Tabs defaultValue={defaultTab} className="space-y-6">
+        <Tabs value={activeTab || defaultTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className={`grid w-full ${tabCount === 2 ? 'grid-cols-2' : tabCount === 3 ? 'grid-cols-3' : tabCount === 4 ? 'grid-cols-4' : 'grid-cols-5'}`}>
             {/* Supervisor: solo 2 pestañas */}
             {isSupervisor ? (
@@ -342,6 +381,7 @@ export default function BillingAccounts() {
           onSuccess={() => {
             setShowCreateDialog(false);
             loadAvailableContracts();
+            loadCurrentMonthAccount();
             window.location.reload();
           }}
         />
