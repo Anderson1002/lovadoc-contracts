@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Activity, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
-import { executionColorClass, executionTextClass } from "@/lib/contractExecution";
+import { executionTextClass } from "@/lib/contractExecution";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -67,7 +67,11 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
               </div>
               <Progress
                 value={porcentaje}
-                className={cn("h-3", `[&>div]:${executionColorClass(porcentaje)}`)}
+                className={cn(
+                  "h-3",
+                  porcentaje >= 80 && "[&>div]:bg-green-500",
+                  porcentaje >= 40 && porcentaje < 80 && "[&>div]:bg-amber-500"
+                )}
               />
             </div>
             <div className="grid grid-cols-3 gap-3 text-sm">
