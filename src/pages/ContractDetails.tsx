@@ -365,6 +365,11 @@ export default function ContractDetails() {
         </div>
 
         {/* Historial de Cambios de Estado */}
+        <ContractExecutionPanel
+          contractId={contract.id}
+          totalAmount={Number(contract.total_amount || 0)}
+          additionAmount={Number(contract.addition_amount || 0)}
+        />
         <ContractStateHistory contractId={contract.id} />
       </div>
     </Layout>
