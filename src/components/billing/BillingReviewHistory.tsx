@@ -32,15 +32,22 @@ export function BillingReviewHistory({ billingAccountId, className = '' }: Billi
       setLoading(true);
       const { data, error } = await supabase
         .from('billing_reviews')
-        .select(`
-          id, action, comments, comentario, decision, created_at,
-          reviewer:profiles!billing_reviews_reviewer_id_fkey(name)
-        `)
+        .select('id, action, comments, comentario, decision, created_at, reviewer_id')
         .eq('billing_account_id', billingAccountId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setReviews((data as any[]) || []);
+      const rows = (data as any[]) || [];
+      const reviewerIds = Array.from(new Set(rows.map(r => r.reviewer_id).filter(Boolean)));
+      let profilesMap: Record<string, { name: string }> = {};
+      if (reviewerIds.length > 0) {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', reviewerIds);
+        (profs || []).forEach((p: any) => { profilesMap[p.id] = { name: p.name }; });
+      }
+      setReviews(rows.map(r => ({ ...r, reviewer: profilesMap[r.reviewer_id] || null })));
     } catch (error) {
       console.error('Error loading review history:', error);
     } finally {
