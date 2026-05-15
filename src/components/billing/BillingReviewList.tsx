@@ -190,16 +190,23 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
         .single();
 
       // Load review comments
-      const { data: reviewComments, error: reviewsError } = await supabase
+      const { data: reviewRows, error: reviewsError } = await supabase
         .from('billing_reviews')
-        .select(`
-          action,
-          comments,
-          created_at,
-          reviewer:profiles!billing_reviews_reviewer_id_fkey(name)
-        `)
+        .select('action, comments, created_at, reviewer_id')
         .eq('billing_account_id', billing.id)
         .order('created_at', { ascending: false });
+
+      let reviewComments: any[] = [];
+      if (reviewRows && reviewRows.length > 0) {
+        const reviewerIds = Array.from(new Set(reviewRows.map((r: any) => r.reviewer_id).filter(Boolean)));
+        const { data: reviewerProfiles } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', reviewerIds);
+        const map: Record<string, { name: string }> = {};
+        (reviewerProfiles || []).forEach((p: any) => { map[p.id] = { name: p.name }; });
+        reviewComments = reviewRows.map((r: any) => ({ ...r, reviewer: map[r.reviewer_id] || null }));
+      }
 
       if (profileError) throw profileError;
       if (reviewsError) {
