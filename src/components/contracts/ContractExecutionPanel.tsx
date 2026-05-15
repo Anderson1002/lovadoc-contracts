@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Activity, TrendingUp, X } from "lucide-react";
+import { Activity, TrendingDown, TrendingUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -73,16 +73,40 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
     }
     const sorted = Array.from(byMonth.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
     let acc = 0;
-    return sorted.map((r) => {
+    let prevPct = 0;
+    return sorted.map((r, idx) => {
+      const prevAcc = acc;
       acc += r.mensual;
+      const pct = valorTotal > 0 ? Math.min((acc / valorTotal) * 100, 100) : 0;
+      const deltaMonto = r.mensual - (idx === 0 ? 0 : sorted[idx - 1].mensual);
+      const deltaPct = pct - prevPct;
+      prevPct = pct;
       return {
         key: r.key,
         mes: r.label,
         Mensual: r.mensual,
         Acumulado: acc,
-        Porcentaje: valorTotal > 0 ? Math.min((acc / valorTotal) * 100, 100) : 0,
+        Porcentaje: pct,
+        deltaMonto,
+        deltaPct,
+        prevAcc,
       };
     });
+  })();
+
+  // Highlights: top contributor (max) and lowest (min) for current mode
+  const highlights = (() => {
+    if (chartData.length === 0) return { maxIdx: -1, minIdx: -1 };
+    const metric = (d: any) => (chartMode === "percent" ? d.deltaPct : d.Mensual);
+    let maxIdx = 0;
+    let minIdx = 0;
+    chartData.forEach((d, i) => {
+      if (metric(d) > metric(chartData[maxIdx])) maxIdx = i;
+      if (metric(d) < metric(chartData[minIdx])) minIdx = i;
+    });
+    // If only one point, no min/max distinction
+    if (chartData.length === 1) return { maxIdx, minIdx: -1 };
+    return { maxIdx, minIdx };
   })();
 
   const accountsByMonth = (() => {
@@ -233,9 +257,23 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
                         />
                       )}
                       <RTooltip
-                        formatter={(value: any, name: string) =>
-                          chartMode === "percent" ? `${Number(value).toFixed(1)}%` : formatCurrency(Number(value))
-                        }
+                        formatter={(value: any, name: string, item: any) => {
+                          if (chartMode === "percent") {
+                            const dpct = item?.payload?.deltaPct ?? 0;
+                            return [
+                              `${Number(value).toFixed(1)}% (Δ ${dpct >= 0 ? "+" : ""}${dpct.toFixed(1)}pp)`,
+                              name,
+                            ];
+                          }
+                          if (name === "Mensual") {
+                            const dm = item?.payload?.deltaMonto ?? 0;
+                            return [
+                              `${formatCurrency(Number(value))} (Δ ${dm >= 0 ? "+" : ""}${formatCurrency(dm)})`,
+                              name,
+                            ];
+                          }
+                          return [formatCurrency(Number(value)), name];
+                        }}
                         contentStyle={{ fontSize: 12, borderRadius: 8 }}
                       />
                       {chartMode === "money" && valorTotal > 0 && (
@@ -277,6 +315,30 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
                             stroke="hsl(142 76% 36%)"
                             fill="url(#execMes)"
                             strokeWidth={2}
+                            dot={(props: any) => {
+                              const i = props.index;
+                              if (i === highlights.maxIdx) {
+                                return (
+                                  <g key={`dot-${i}`}>
+                                    <circle cx={props.cx} cy={props.cy} r={7} fill="hsl(142 76% 36%)" stroke="white" strokeWidth={2} />
+                                    <text x={props.cx} y={props.cy - 12} textAnchor="middle" fontSize={10} fontWeight={700} fill="hsl(142 76% 36%)">
+                                      ▲ {formatCurrency(props.payload.Mensual)}
+                                    </text>
+                                  </g>
+                                );
+                              }
+                              if (i === highlights.minIdx) {
+                                return (
+                                  <g key={`dot-${i}`}>
+                                    <circle cx={props.cx} cy={props.cy} r={7} fill="hsl(var(--destructive))" stroke="white" strokeWidth={2} />
+                                    <text x={props.cx} y={props.cy + 18} textAnchor="middle" fontSize={10} fontWeight={700} fill="hsl(var(--destructive))">
+                                      ▼ {formatCurrency(props.payload.Mensual)}
+                                    </text>
+                                  </g>
+                                );
+                              }
+                              return <circle key={`dot-${i}`} cx={props.cx} cy={props.cy} r={3} fill="hsl(142 76% 36%)" />;
+                            }}
                             activeDot={{ r: 6, style: { cursor: "pointer" } }}
                           />
                         </>
@@ -288,6 +350,31 @@ export function ContractExecutionPanel({ contractId, totalAmount, additionAmount
                           stroke="hsl(var(--primary))"
                           fill="url(#execAcum)"
                           strokeWidth={2}
+                          dot={(props: any) => {
+                            const i = props.index;
+                            const dp = props.payload.deltaPct ?? 0;
+                            if (i === highlights.maxIdx) {
+                              return (
+                                <g key={`dot-${i}`}>
+                                  <circle cx={props.cx} cy={props.cy} r={7} fill="hsl(142 76% 36%)" stroke="white" strokeWidth={2} />
+                                  <text x={props.cx} y={props.cy - 12} textAnchor="middle" fontSize={10} fontWeight={700} fill="hsl(142 76% 36%)">
+                                    ▲ +{dp.toFixed(1)}pp
+                                  </text>
+                                </g>
+                              );
+                            }
+                            if (i === highlights.minIdx) {
+                              return (
+                                <g key={`dot-${i}`}>
+                                  <circle cx={props.cx} cy={props.cy} r={7} fill="hsl(var(--destructive))" stroke="white" strokeWidth={2} />
+                                  <text x={props.cx} y={props.cy + 18} textAnchor="middle" fontSize={10} fontWeight={700} fill="hsl(var(--destructive))">
+                                    ▼ {dp >= 0 ? "+" : ""}{dp.toFixed(1)}pp
+                                  </text>
+                                </g>
+                              );
+                            }
+                            return <circle key={`dot-${i}`} cx={props.cx} cy={props.cy} r={3} fill="hsl(var(--primary))" />;
+                          }}
                           activeDot={{ r: 6, style: { cursor: "pointer" } }}
                         />
                       )}
