@@ -1905,6 +1905,34 @@ export function CreateBillingAccountDialog({
                     </div>
                   </div>
                 </div>
+
+                {/* Save Desglose Button */}
+                <div className="pt-4 border-t">
+                  <Button
+                    type="button"
+                    onClick={saveDesgloseOnly}
+                    disabled={!canSaveDesglose || isSubmitting}
+                    className="w-full"
+                    variant={canSaveDesglose ? "outline" : "secondary"}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Save className="h-4 w-4 mr-2 animate-pulse" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Guardar Desglose
+                      </>
+                    )}
+                  </Button>
+                  {!currentDraftId && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Primero debe guardar los detalles de facturación
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
