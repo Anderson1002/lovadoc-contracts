@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Mail, Lock, Eye, EyeOff, ShieldCheck, FileText, ClipboardCheck, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import khubaLogo from "@/assets/khuba-logo.png";
+import khubaLogoLight from "@/assets/khuba-logo-light.png";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
@@ -107,20 +109,6 @@ export default function Auth() {
   };
 
 
-  const KHUBAMark = ({ size = 44 }: { size?: number }) => (
-    <div
-      className="rounded-xl bg-primary flex items-center justify-center shadow-md ring-1 ring-primary/20"
-      style={{ width: size, height: size }}
-    >
-      <span
-        className="font-bold text-primary-foreground leading-none"
-        style={{ fontFamily: "Georgia, serif", fontSize: size * 0.58 }}
-      >
-        K
-      </span>
-    </div>
-  );
-
   return (
     <main className="min-h-screen grid lg:grid-cols-5 bg-background">
       {/* Panel izquierdo institucional */}
@@ -144,17 +132,14 @@ export default function Auth() {
           aria-hidden
         />
 
-        {/* Logo + nombre */}
-        <div className="relative flex items-center gap-3">
-          <KHUBAMark size={48} />
-          <div>
-            <div className="text-2xl font-bold tracking-tight leading-none">
-              KHUBA
-            </div>
-            <div className="text-xs uppercase tracking-[0.18em] text-primary-foreground/70 mt-1">
-              Servicios Especializados
-            </div>
-          </div>
+        {/* Logo oficial */}
+        <div className="relative">
+          <img
+            src={khubaLogoLight}
+            alt="KHUBA - Servicios Especializados"
+            className="w-[300px] max-w-full h-auto select-none"
+            draggable={false}
+          />
         </div>
 
         {/* Tagline + bullets */}
@@ -209,18 +194,21 @@ export default function Auth() {
       <section className="lg:col-span-2 flex flex-col min-h-screen bg-background">
         {/* Barra superior solo móvil */}
         <div className="lg:hidden bg-primary text-primary-foreground px-6 py-5 flex items-center gap-3">
-          <KHUBAMark size={40} />
-          <div>
-            <div className="text-lg font-bold leading-none">KHUBA</div>
-            <div className="text-[11px] uppercase tracking-widest text-primary-foreground/70 mt-1">
-              Servicios Especializados
-            </div>
-          </div>
+          <img
+            src={khubaLogoLight}
+            alt="KHUBA - Servicios Especializados"
+            className="h-12 w-auto"
+          />
         </div>
 
         <div className="flex-1 flex items-center justify-center px-6 py-10 sm:px-10">
           <div className="w-full max-w-sm">
             <div className="mb-8">
+              <img
+                src={khubaLogo}
+                alt="KHUBA - Servicios Especializados"
+                className="w-[180px] h-auto mb-6 -ml-1"
+              />
               <h1 className="text-2xl font-bold tracking-tight text-foreground">
                 Acceso al sistema
               </h1>
