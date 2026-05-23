@@ -152,7 +152,7 @@ export default function Auth() {
               KHUBA
             </div>
             <div className="text-xs uppercase tracking-[0.18em] text-primary-foreground/70 mt-1">
-              Gestión Hospitalaria
+              Servicios Especializados
             </div>
           </div>
         </div>
@@ -213,7 +213,7 @@ export default function Auth() {
           <div>
             <div className="text-lg font-bold leading-none">KHUBA</div>
             <div className="text-[11px] uppercase tracking-widest text-primary-foreground/70 mt-1">
-              Gestión Hospitalaria
+              Servicios Especializados
             </div>
           </div>
         </div>
