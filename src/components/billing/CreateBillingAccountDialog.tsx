@@ -1040,7 +1040,7 @@ export function CreateBillingAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden">
+      <DialogContent className="max-w-7xl h-[95vh] max-h-[95vh] overflow-hidden flex flex-col p-6">
         <DialogHeader>
           <DialogTitle>Nueva Cuenta de Cobro</DialogTitle>
           <DialogDescription>
@@ -1056,9 +1056,9 @@ export function CreateBillingAccountDialog({
           currentTab={activeTab}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden" style={{ maxHeight: 'calc(95vh - 260px)' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden flex-1 min-h-0">
           {/* Left Column - Tabs with Forms */}
-          <ScrollArea className="h-full pr-4">
+          <ScrollArea className="h-full min-h-0 pr-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="informe" className="flex items-center gap-2">
@@ -1997,12 +1997,12 @@ export function CreateBillingAccountDialog({
                 />
               </TabsContent>
             </Tabs>
-            <div className="pb-4" />
+            <div className="pb-8" />
           </ScrollArea>
 
           {/* Right Column - Preview */}
-          <div className="lg:sticky lg:top-0 lg:self-start h-full">
-            <ScrollArea className="h-[calc(95vh-250px)] pr-4">
+          <div className="h-full min-h-0 overflow-hidden">
+            <ScrollArea className="h-full min-h-0 pr-4">
               <div className="space-y-4">
                 {activeTab === 'informe' && (
                   <BillingDocumentPreview

@@ -1,56 +1,50 @@
-# Mejorar /billing para el rol Empleado
-
 ## Diagnóstico
 
-**1. Pestañas redundantes** — Como `employee`, ves 3 pestañas pero `Mis Cuentas` y `Todas las Cuentas` traen exactamente lo mismo (RLS ya filtra a las tuyas). `Comentarios` mezcla observaciones aunque no tengas devoluciones.
+En la imagen se ve que el formulario de `Desglose de Aportes` queda cortado en la parte inferior y el usuario tiene que hacer foco en un campo, usar Tab y seguir navegando para alcanzar el botón final `Radicar Cuenta de Cobro`.
 
-**2. "Ejecución 50%" en ambas filas** — No es bug. La columna muestra la ejecución acumulada del **contrato** (no de la cuenta). Ambas cuentas pertenecen al contrato `001-2026` (valor 12M), y como solo hay 1 cuenta aprobada de 6M → contrato al 50%. La borrador hereda visualmente el mismo % porque es del mismo contrato.
+La causa más probable está en la estructura actual del diálogo:
 
----
+- `DialogContent` tiene `max-h-[95vh] overflow-hidden`.
+- La grilla interna también tiene `overflow-hidden` y una altura calculada con `calc(95vh - 260px)`.
+- Dentro de esa grilla hay dos `ScrollArea` independientes.
+- El footer con `Guardar y Cerrar` / `Radicar Cuenta de Cobro` está fuera del `ScrollArea`, pero el alto reservado al contenido no está dejando suficiente espacio real para verlo cómodamente.
+
+## Mejor opción
+
+Usar una estructura de diálogo con altura fija controlada y layout vertical:
+
+```text
+DialogContent
+  Header fijo
+  Progress fijo
+  Contenido flexible con scroll interno
+    Columna izquierda: formulario con scroll
+    Columna derecha: preview con scroll
+  Footer fijo siempre visible
+```
 
 ## Cambios propuestos
 
-### A. Reestructurar pestañas para empleado
+1. Cambiar el `DialogContent` a un layout vertical estable, por ejemplo:
+   - `max-h-[95vh]`
+   - `h-[95vh]`
+   - `flex flex-col`
+   - mantener `overflow-hidden` solo en el contenedor general.
 
-Reemplazar las 3 pestañas actuales por una vista mucho más clara, orientada a acciones:
+2. Cambiar la grilla central para que ocupe el espacio restante sin cálculos manuales frágiles:
+   - reemplazar `style={{ maxHeight: 'calc(95vh - 260px)' }}` por clases tipo `flex-1 min-h-0 overflow-hidden`.
 
-```text
-[ Pendientes (2) ]  [ Aprobadas (1) ]  [ Devueltas (0) ]  [ Historial ]
-```
+3. Ajustar los `ScrollArea` internos:
+   - izquierda: `h-full min-h-0 pr-4`
+   - derecha: `h-full min-h-0 pr-4`
+   - agregar padding inferior suficiente al contenido del formulario para que el último bloque no quede pegado ni oculto.
 
-- **Pendientes**: estados `borrador` + `pendiente_revision` + `en_revision` → lo que requiere su acción o está en revisión.
-- **Aprobadas**: `aprobada` + `causada` + `en_pago` + `pagada` → ya están OK.
-- **Devueltas**: `rechazada` → necesitan corrección urgente, con badge rojo y observaciones del supervisor visibles inline.
-- **Historial**: todas, igual a la antigua "Todas las Cuentas" (sirve para buscar por período/contrato).
+4. Mantener el footer fuera del scroll para que `Radicar Cuenta de Cobro` esté siempre visible, sin tener que tabular ni forzar navegación por teclado.
 
-La pestaña `Comentarios` se elimina para empleados (las observaciones ya aparecen inline en las devueltas). Para supervisor/admin/treasury se mantiene la lógica actual sin cambios.
+5. Ajustar responsive móvil/tablet:
+   - en pantallas pequeñas, usar una sola columna y permitir que el formulario conserve scroll claro.
+   - evitar que el preview robe altura al formulario.
 
-### B. Aclarar columna "Ejecución"
+## Resultado esperado
 
-Renombrar la columna `Ejecución` → **`Ejecución contrato`** y añadir un `Tooltip` con texto:
-
-> "Porcentaje acumulado del contrato (suma de cuentas aprobadas y causadas ÷ valor total). No corresponde a esta cuenta individual."
-
-Así se entiende inmediatamente por qué dos filas del mismo contrato comparten el mismo %.
-
-### C. Indicador adicional (opcional, mismo cambio)
-
-Agregar un pequeño badge bajo el % cuando la cuenta está en `borrador` / `pendiente_revision`:
-
-> `+ esta cuenta sumaría al X%` (calculando hipotético total si se aprobara)
-
-Esto da contexto sin confundir.
-
----
-
-## Archivos a modificar
-
-- `src/pages/BillingAccounts.tsx` — nueva estructura de pestañas para `employee`, contadores por estado.
-- `src/components/billing/BillingAccountsList.tsx` — nuevo prop `statusFilter?: string[]`, renombrar columna y agregar tooltip.
-
-## Detalles técnicos
-
-- Contadores: una query agrupada por `status` filtrada por `created_by = userProfile.id` al cargar la página.
-- Tooltip: usar `@/components/ui/tooltip` (ya en uso).
-- No se tocan RLS, edge functions ni la lógica de cálculo de ejecución.
-- Roles supervisor/admin/treasury → comportamiento intacto.
+El usuario podrá bajar normalmente con rueda/trackpad/barra de scroll hasta el final del `Desglose de Aportes`, y el botón `Radicar Cuenta de Cobro` quedará siempre visible en el footer del diálogo.
