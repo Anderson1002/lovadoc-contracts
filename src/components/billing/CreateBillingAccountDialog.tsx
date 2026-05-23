@@ -1056,7 +1056,7 @@ export function CreateBillingAccountDialog({
           currentTab={activeTab}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden" style={{ maxHeight: 'calc(95vh - 200px)' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden" style={{ maxHeight: 'calc(95vh - 260px)' }}>
           {/* Left Column - Tabs with Forms */}
           <ScrollArea className="h-full pr-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
