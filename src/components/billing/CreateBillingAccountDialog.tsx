@@ -603,6 +603,63 @@ export function CreateBillingAccountDialog({
     }
   };
 
+  const canSaveDesglose = !!(
+    currentDraftId &&
+    saludNumero && saludValor && saludFecha &&
+    pensionNumero && pensionValor && pensionFecha &&
+    arlNumero && arlValor && arlFecha
+  );
+
+  const saveDesgloseOnly = async () => {
+    if (!currentDraftId) {
+      toast({
+        title: "Error",
+        description: "Debe guardar primero los detalles de facturación",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (!canSaveDesglose) {
+      toast({
+        title: "Error",
+        description: "Complete todos los campos de Salud, Pensión y ARL",
+        variant: "destructive"
+      });
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      const { error: updateError } = await supabase
+        .from('billing_accounts')
+        .update({
+          salud_planilla_numero: saludNumero,
+          salud_planilla_valor: parseFloat(saludValor),
+          salud_planilla_fecha: saludFecha,
+          pension_planilla_numero: pensionNumero,
+          pension_planilla_valor: parseFloat(pensionValor),
+          pension_planilla_fecha: pensionFecha,
+          arl_planilla_numero: arlNumero,
+          arl_planilla_valor: parseFloat(arlValor),
+          arl_planilla_fecha: arlFecha,
+        })
+        .eq('id', currentDraftId);
+      if (updateError) throw updateError;
+      toast({
+        title: "Desglose Guardado",
+        description: "El desglose de aportes ha sido guardado exitosamente"
+      });
+    } catch (error: any) {
+      console.error('Error saving desglose:', error);
+      toast({
+        title: "Error",
+        description: `Error al guardar desglose: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const saveActivityIndividually = async () => {
     if (!currentActivity.activityName.trim() || !currentActivity.actions.trim()) {
       toast({
