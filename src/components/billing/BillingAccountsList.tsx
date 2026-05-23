@@ -13,14 +13,17 @@ import { SupervisorObservations } from "./SupervisorObservations";
 import { Progress } from "@/components/ui/progress";
 import { getMultipleContractsExecution, executionTextClass, type ContractExecution } from "@/lib/contractExecution";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 interface BillingAccountsListProps {
   userProfile: any;
   userRole: string;
   filterType: 'own' | 'all' | 'approved';
+  statusFilter?: string[];
 }
 
-export function BillingAccountsList({ userProfile, userRole, filterType }: BillingAccountsListProps) {
+export function BillingAccountsList({ userProfile, userRole, filterType, statusFilter }: BillingAccountsListProps) {
   const { toast } = useToast();
   const [billingAccounts, setBillingAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +33,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
 
   useEffect(() => {
     loadBillingAccounts();
-  }, [filterType, userProfile]);
+  }, [filterType, userProfile, JSON.stringify(statusFilter)]);
 
   const loadBillingAccounts = async () => {
     try {
@@ -70,6 +73,10 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
         if (['supervisor', 'treasury'].includes(userRole)) {
           query = query.neq('status', 'borrador');
         }
+      }
+
+      if (statusFilter && statusFilter.length > 0) {
+        query = query.in('status', statusFilter);
       }
 
       console.log('Executing query...');
@@ -229,7 +236,21 @@ export function BillingAccountsList({ userProfile, userRole, filterType }: Billi
                 <TableHead className="w-16">#</TableHead>
                 <TableHead>Número</TableHead>
                 <TableHead>Contrato</TableHead>
-                <TableHead>Ejecución</TableHead>
+                <TableHead>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex items-center gap-1 cursor-help">
+                          Ejecución contrato
+                          <Info className="h-3 w-3 text-muted-foreground" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        Porcentaje acumulado del contrato (suma de cuentas aprobadas y causadas ÷ valor total). No corresponde a esta cuenta individual.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
                 <TableHead>Período</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Estado</TableHead>

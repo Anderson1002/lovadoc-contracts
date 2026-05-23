@@ -1,33 +1,56 @@
-## Análisis del problema
+# Mejorar /billing para el rol Empleado
 
-En `CreateBillingAccountDialog.tsx` (tab "Informe"):
+## Diagnóstico
 
-1. **Scroll incompleto:** el `ScrollArea` izquierdo (línea 1004, `h-full`) vive dentro de un contenedor con `maxHeight: calc(95vh - 200px)` y los botones de acción ("Guardar y Cerrar" / "Radicar Cuenta de Cobro") están **dentro** del mismo ScrollArea. La tarjeta "Desglose de Aportes" es la última antes de esos botones, así que al final del scroll los últimos campos (Fecha de Pago de ARL) quedan visualmente pegados/cortados contra los botones y no se ven cómodamente. Hay que usar TAB para que el navegador haga `scrollIntoView` campo por campo.
+**1. Pestañas redundantes** — Como `employee`, ves 3 pestañas pero `Mis Cuentas` y `Todas las Cuentas` traen exactamente lo mismo (RLS ya filtra a las tuyas). `Comentarios` mezcla observaciones aunque no tengas devoluciones.
 
-2. **Falta botón de guardado propio:** las otras secciones (Detalles, Actividades, Planilla) tienen su botón "Guardar X". El Desglose no — aunque sus valores se persisten dentro de `savePlanillaOnly` (líneas 571-580), no hay feedback visible ni ancla para llegar al final.
+**2. "Ejecución 50%" en ambas filas** — No es bug. La columna muestra la ejecución acumulada del **contrato** (no de la cuenta). Ambas cuentas pertenecen al contrato `001-2026` (valor 12M), y como solo hay 1 cuenta aprobada de 6M → contrato al 50%. La borrador hereda visualmente el mismo % porque es del mismo contrato.
 
-## Solución propuesta (mínima y consistente)
+---
 
-### 1. Añadir botón "Guardar Desglose de Aportes"
-Dentro de la `Card` de Desglose (después del bloque ARL, antes de `</CardContent>`):
+## Cambios propuestos
 
-- Nueva función `saveDesgloseOnly()` que:
-  - Valida `currentDraftId` y que los 9 campos (Salud/Pensión/ARL × Número/Valor/Fecha) estén completos.
-  - Hace `UPDATE billing_accounts` solo con los 9 campos `*_planilla_*` de salud/pensión/arl.
-  - Muestra toast "Desglose guardado".
-- Botón `w-full` con `variant={canSaveDesglose ? "outline" : "secondary"}`, ícono `Save`, deshabilitado si faltan campos o no hay `currentDraftId`.
-- Variable derivada `canSaveDesglose = currentDraftId && saludNumero && saludValor && saludFecha && pensionNumero && pensionValor && pensionFecha && arlNumero && arlValor && arlFecha`.
-- Mantener la persistencia adicional que ya hace `savePlanillaOnly` (no se rompe nada).
+### A. Reestructurar pestañas para empleado
 
-### 2. Arreglar el corte visual al final del scroll
-- Sacar los botones de acción ("Guardar y Cerrar" + "Radicar Cuenta de Cobro") del `ScrollArea` y dejarlos como **footer fijo** debajo del grid, para que el ScrollArea use toda la altura y el contenido nunca quede tapado.
-- Ajustar el `maxHeight` del grid de `calc(95vh - 200px)` a `calc(95vh - 260px)` para reservar espacio del nuevo footer.
-- Añadir `pb-4` al contenido interno del ScrollArea como margen de seguridad.
+Reemplazar las 3 pestañas actuales por una vista mucho más clara, orientada a acciones:
 
-### Resultado para el usuario
-- El Desglose se ve completo al hacer scroll, sin necesidad de TAB.
-- Tiene un botón "Guardar Desglose" igual que Planilla → coherencia visual y feedback inmediato.
-- Los botones de acción quedan siempre visibles abajo (no scrollean).
+```text
+[ Pendientes (2) ]  [ Aprobadas (1) ]  [ Devueltas (0) ]  [ Historial ]
+```
+
+- **Pendientes**: estados `borrador` + `pendiente_revision` + `en_revision` → lo que requiere su acción o está en revisión.
+- **Aprobadas**: `aprobada` + `causada` + `en_pago` + `pagada` → ya están OK.
+- **Devueltas**: `rechazada` → necesitan corrección urgente, con badge rojo y observaciones del supervisor visibles inline.
+- **Historial**: todas, igual a la antigua "Todas las Cuentas" (sirve para buscar por período/contrato).
+
+La pestaña `Comentarios` se elimina para empleados (las observaciones ya aparecen inline en las devueltas). Para supervisor/admin/treasury se mantiene la lógica actual sin cambios.
+
+### B. Aclarar columna "Ejecución"
+
+Renombrar la columna `Ejecución` → **`Ejecución contrato`** y añadir un `Tooltip` con texto:
+
+> "Porcentaje acumulado del contrato (suma de cuentas aprobadas y causadas ÷ valor total). No corresponde a esta cuenta individual."
+
+Así se entiende inmediatamente por qué dos filas del mismo contrato comparten el mismo %.
+
+### C. Indicador adicional (opcional, mismo cambio)
+
+Agregar un pequeño badge bajo el % cuando la cuenta está en `borrador` / `pendiente_revision`:
+
+> `+ esta cuenta sumaría al X%` (calculando hipotético total si se aprobara)
+
+Esto da contexto sin confundir.
+
+---
 
 ## Archivos a modificar
-- `src/components/billing/CreateBillingAccountDialog.tsx` (única edición).
+
+- `src/pages/BillingAccounts.tsx` — nueva estructura de pestañas para `employee`, contadores por estado.
+- `src/components/billing/BillingAccountsList.tsx` — nuevo prop `statusFilter?: string[]`, renombrar columna y agregar tooltip.
+
+## Detalles técnicos
+
+- Contadores: una query agrupada por `status` filtrada por `created_by = userProfile.id` al cargar la página.
+- Tooltip: usar `@/components/ui/tooltip` (ya en uso).
+- No se tocan RLS, edge functions ni la lógica de cálculo de ejecución.
+- Roles supervisor/admin/treasury → comportamiento intacto.
