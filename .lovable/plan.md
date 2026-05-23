@@ -1,30 +1,37 @@
-# Integrar el logo oficial de KHUBA
+# Rediseño visual con paleta Sage & Cream
 
-El logo que subiste combina "KHUBA" en tipografía serif clara con "Servicios especializados" en script verde encima. Lo incorporamos al diseño actual reemplazando el marcador "K" cuadrado que generé como placeholder.
+Aplicar la paleta verde salvia + crema (alineada al logo KHUBA) a todo el sistema reemplazando el azul corporativo actual.
 
-## Pasos
+## Tokens nuevos (HSL en `src/index.css`)
 
-1. **Guardar el logo en el proyecto**
-   - Copiar `user-uploads://image-136.png` a `src/assets/khuba-logo.png` (versión original, fondo transparente/claro — sirve para fondos claros).
-   - Generar una variante en blanco/claro con `imagegen--edit_image` para usar sobre el panel oscuro izquierdo del Auth (donde el verde se pierde). Se guarda como `src/assets/khuba-logo-light.png`.
-   - Copiar también a `public/khuba-logo.png` para usarlo como `og:image` y `apple-touch-icon`.
+- `--background`: `40 33% 96%` (crema claro #f7f3ec)
+- `--foreground`: `90 18% 18%` (verde muy oscuro)
+- `--primary`: `100 14% 35%` (verde salvia profundo, sage oscuro)
+- `--primary-foreground`: `40 33% 96%` (crema)
+- `--secondary`: `95 22% 87%` (verde pálido)
+- `--accent`: `100 18% 53%` (sage medio del logo)
+- `--muted`: `40 20% 92%`
+- `--border`: `90 12% 82%`
+- `--ring`: igual a `--primary`
 
-2. **Reemplazar el componente `KHUBAMark` en `src/pages/Auth.tsx`**
-   - Eliminar el cuadrado con la letra "K".
-   - En el panel izquierdo oscuro: mostrar el logo (variante clara) grande y centrado arriba, sin el texto duplicado "KHUBA / Servicios Especializados" debajo (el logo ya lo contiene). Mantener tagline, bullets y footer.
-   - En la tarjeta derecha (header del formulario de login): mostrar el logo original a tamaño moderado (~140px ancho) centrado, reemplazando el "K" + título.
+Modo oscuro: invertir a base verde-bosque oscuro con acentos sage.
 
-3. **Actualizar favicon y metadatos en `index.html`**
-   - Cambiar el favicon SVG con la "K" por `<link rel="icon" href="/khuba-logo.png">`.
-   - Actualizar `apple-touch-icon` y `og:image` para apuntar al logo real.
+## Cambios
 
-## Detalles técnicos
+1. **`src/index.css`** — Reemplazar variables HSL `:root` y `.dark` con la paleta sage/cream. Mantener nombres de tokens.
+2. **`tailwind.config.ts`** — Verificar que sigan mapeados a las variables (no requiere cambios si ya usa `hsl(var(--...))`).
+3. **Auth (`src/pages/Auth.tsx`)** — Ya usa `bg-primary` y `text-primary-foreground`, así que el panel izquierdo cambia automáticamente al verde salvia, contrastando con el logo cream.
+4. **Revisar 1 colorcito hardcodeado** si aparece (búsqueda rápida de `bg-blue`, `text-blue`, `#2563`, `bg-indigo`).
 
-- Import del asset: `import khubaLogo from "@/assets/khuba-logo.png"` (bundling Vite).
-- Tamaños responsive: `max-w-[280px]` en panel izquierdo, `max-w-[160px]` en tarjeta derecha.
-- `alt="KHUBA - Servicios Especializados"` para accesibilidad y SEO.
-- No tocar lógica de auth, rutas, ni otros componentes que ya usan el texto "KHUBA".
+## Resultado esperado
 
-## Pregunta opcional
+- Panel izquierdo del login: verde salvia profundo con logo cream → look editorial/spa profesional.
+- Botones, badges, links: sage en lugar de azul.
+- Toda la app hereda automáticamente porque usa tokens semánticos.
 
-¿Quieres que también reemplace el `KHUBA` textual del navbar interno (`src/components/ui/navbar.tsx` y `professional-nav.tsx`) por el logo, o lo dejo solo en el Auth por ahora?
+## No tocar
+
+- PDFs (Helvetica negro sobre blanco se mantiene).
+- Lógica de negocio, rutas, auth.
+
+¿Procedo con esta paleta?
