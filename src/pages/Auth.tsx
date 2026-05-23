@@ -160,7 +160,7 @@ export default function Auth() {
         {/* Tagline + bullets */}
         <div className="relative max-w-lg">
           <h2 className="text-4xl xl:text-5xl font-bold tracking-tight leading-[1.1]">
-            Gestión digital de contratos hospitalarios
+            Gestión digital de contratos
           </h2>
           <p className="mt-5 text-base xl:text-lg text-primary-foreground/80 leading-relaxed">
             Centraliza la contratación, la radicación de cuentas de cobro y la
