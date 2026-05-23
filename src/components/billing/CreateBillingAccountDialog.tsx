@@ -1997,42 +1997,7 @@ export function CreateBillingAccountDialog({
                 />
               </TabsContent>
             </Tabs>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Guardar y Cerrar
-              </Button>
-              
-              <Button
-                type="button"
-                onClick={handleSubmit}
-                disabled={!canSubmitAllFormats || isSubmitting}
-                className="flex-1"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Send className="h-4 w-4 mr-2 animate-pulse" />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Radicar Cuenta de Cobro
-                  </>
-                )}
-              </Button>
-            </div>
-            
-            {!canSubmitAllFormats && (
-              <p className="text-sm text-muted-foreground text-center">
-                Complete los 3 formatos para radicar la cuenta de cobro
-              </p>
-            )}
+            <div className="pb-4" />
           </ScrollArea>
 
           {/* Right Column - Preview */}
