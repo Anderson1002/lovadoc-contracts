@@ -1,37 +1,33 @@
-# Rediseño visual con paleta Sage & Cream
+## Análisis del problema
 
-Aplicar la paleta verde salvia + crema (alineada al logo KHUBA) a todo el sistema reemplazando el azul corporativo actual.
+En `CreateBillingAccountDialog.tsx` (tab "Informe"):
 
-## Tokens nuevos (HSL en `src/index.css`)
+1. **Scroll incompleto:** el `ScrollArea` izquierdo (línea 1004, `h-full`) vive dentro de un contenedor con `maxHeight: calc(95vh - 200px)` y los botones de acción ("Guardar y Cerrar" / "Radicar Cuenta de Cobro") están **dentro** del mismo ScrollArea. La tarjeta "Desglose de Aportes" es la última antes de esos botones, así que al final del scroll los últimos campos (Fecha de Pago de ARL) quedan visualmente pegados/cortados contra los botones y no se ven cómodamente. Hay que usar TAB para que el navegador haga `scrollIntoView` campo por campo.
 
-- `--background`: `40 33% 96%` (crema claro #f7f3ec)
-- `--foreground`: `90 18% 18%` (verde muy oscuro)
-- `--primary`: `100 14% 35%` (verde salvia profundo, sage oscuro)
-- `--primary-foreground`: `40 33% 96%` (crema)
-- `--secondary`: `95 22% 87%` (verde pálido)
-- `--accent`: `100 18% 53%` (sage medio del logo)
-- `--muted`: `40 20% 92%`
-- `--border`: `90 12% 82%`
-- `--ring`: igual a `--primary`
+2. **Falta botón de guardado propio:** las otras secciones (Detalles, Actividades, Planilla) tienen su botón "Guardar X". El Desglose no — aunque sus valores se persisten dentro de `savePlanillaOnly` (líneas 571-580), no hay feedback visible ni ancla para llegar al final.
 
-Modo oscuro: invertir a base verde-bosque oscuro con acentos sage.
+## Solución propuesta (mínima y consistente)
 
-## Cambios
+### 1. Añadir botón "Guardar Desglose de Aportes"
+Dentro de la `Card` de Desglose (después del bloque ARL, antes de `</CardContent>`):
 
-1. **`src/index.css`** — Reemplazar variables HSL `:root` y `.dark` con la paleta sage/cream. Mantener nombres de tokens.
-2. **`tailwind.config.ts`** — Verificar que sigan mapeados a las variables (no requiere cambios si ya usa `hsl(var(--...))`).
-3. **Auth (`src/pages/Auth.tsx`)** — Ya usa `bg-primary` y `text-primary-foreground`, así que el panel izquierdo cambia automáticamente al verde salvia, contrastando con el logo cream.
-4. **Revisar 1 colorcito hardcodeado** si aparece (búsqueda rápida de `bg-blue`, `text-blue`, `#2563`, `bg-indigo`).
+- Nueva función `saveDesgloseOnly()` que:
+  - Valida `currentDraftId` y que los 9 campos (Salud/Pensión/ARL × Número/Valor/Fecha) estén completos.
+  - Hace `UPDATE billing_accounts` solo con los 9 campos `*_planilla_*` de salud/pensión/arl.
+  - Muestra toast "Desglose guardado".
+- Botón `w-full` con `variant={canSaveDesglose ? "outline" : "secondary"}`, ícono `Save`, deshabilitado si faltan campos o no hay `currentDraftId`.
+- Variable derivada `canSaveDesglose = currentDraftId && saludNumero && saludValor && saludFecha && pensionNumero && pensionValor && pensionFecha && arlNumero && arlValor && arlFecha`.
+- Mantener la persistencia adicional que ya hace `savePlanillaOnly` (no se rompe nada).
 
-## Resultado esperado
+### 2. Arreglar el corte visual al final del scroll
+- Sacar los botones de acción ("Guardar y Cerrar" + "Radicar Cuenta de Cobro") del `ScrollArea` y dejarlos como **footer fijo** debajo del grid, para que el ScrollArea use toda la altura y el contenido nunca quede tapado.
+- Ajustar el `maxHeight` del grid de `calc(95vh - 200px)` a `calc(95vh - 260px)` para reservar espacio del nuevo footer.
+- Añadir `pb-4` al contenido interno del ScrollArea como margen de seguridad.
 
-- Panel izquierdo del login: verde salvia profundo con logo cream → look editorial/spa profesional.
-- Botones, badges, links: sage en lugar de azul.
-- Toda la app hereda automáticamente porque usa tokens semánticos.
+### Resultado para el usuario
+- El Desglose se ve completo al hacer scroll, sin necesidad de TAB.
+- Tiene un botón "Guardar Desglose" igual que Planilla → coherencia visual y feedback inmediato.
+- Los botones de acción quedan siempre visibles abajo (no scrollean).
 
-## No tocar
-
-- PDFs (Helvetica negro sobre blanco se mantiene).
-- Lógica de negocio, rutas, auth.
-
-¿Procedo con esta paleta?
+## Archivos a modificar
+- `src/components/billing/CreateBillingAccountDialog.tsx` (única edición).

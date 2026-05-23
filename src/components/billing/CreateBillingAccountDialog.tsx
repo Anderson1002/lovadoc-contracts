@@ -603,6 +603,63 @@ export function CreateBillingAccountDialog({
     }
   };
 
+  const canSaveDesglose = !!(
+    currentDraftId &&
+    saludNumero && saludValor && saludFecha &&
+    pensionNumero && pensionValor && pensionFecha &&
+    arlNumero && arlValor && arlFecha
+  );
+
+  const saveDesgloseOnly = async () => {
+    if (!currentDraftId) {
+      toast({
+        title: "Error",
+        description: "Debe guardar primero los detalles de facturación",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (!canSaveDesglose) {
+      toast({
+        title: "Error",
+        description: "Complete todos los campos de Salud, Pensión y ARL",
+        variant: "destructive"
+      });
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      const { error: updateError } = await supabase
+        .from('billing_accounts')
+        .update({
+          salud_planilla_numero: saludNumero,
+          salud_planilla_valor: parseFloat(saludValor),
+          salud_planilla_fecha: saludFecha,
+          pension_planilla_numero: pensionNumero,
+          pension_planilla_valor: parseFloat(pensionValor),
+          pension_planilla_fecha: pensionFecha,
+          arl_planilla_numero: arlNumero,
+          arl_planilla_valor: parseFloat(arlValor),
+          arl_planilla_fecha: arlFecha,
+        })
+        .eq('id', currentDraftId);
+      if (updateError) throw updateError;
+      toast({
+        title: "Desglose Guardado",
+        description: "El desglose de aportes ha sido guardado exitosamente"
+      });
+    } catch (error: any) {
+      console.error('Error saving desglose:', error);
+      toast({
+        title: "Error",
+        description: `Error al guardar desglose: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const saveActivityIndividually = async () => {
     if (!currentActivity.activityName.trim() || !currentActivity.actions.trim()) {
       toast({
@@ -999,7 +1056,7 @@ export function CreateBillingAccountDialog({
           currentTab={activeTab}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden" style={{ maxHeight: 'calc(95vh - 200px)' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden" style={{ maxHeight: 'calc(95vh - 260px)' }}>
           {/* Left Column - Tabs with Forms */}
           <ScrollArea className="h-full pr-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -1848,6 +1905,34 @@ export function CreateBillingAccountDialog({
                     </div>
                   </div>
                 </div>
+
+                {/* Save Desglose Button */}
+                <div className="pt-4 border-t">
+                  <Button
+                    type="button"
+                    onClick={saveDesgloseOnly}
+                    disabled={!canSaveDesglose || isSubmitting}
+                    className="w-full"
+                    variant={canSaveDesglose ? "outline" : "secondary"}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Save className="h-4 w-4 mr-2 animate-pulse" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Guardar Desglose
+                      </>
+                    )}
+                  </Button>
+                  {!currentDraftId && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Primero debe guardar los detalles de facturación
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -1912,42 +1997,7 @@ export function CreateBillingAccountDialog({
                 />
               </TabsContent>
             </Tabs>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Guardar y Cerrar
-              </Button>
-              
-              <Button
-                type="button"
-                onClick={handleSubmit}
-                disabled={!canSubmitAllFormats || isSubmitting}
-                className="flex-1"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Send className="h-4 w-4 mr-2 animate-pulse" />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Radicar Cuenta de Cobro
-                  </>
-                )}
-              </Button>
-            </div>
-            
-            {!canSubmitAllFormats && (
-              <p className="text-sm text-muted-foreground text-center">
-                Complete los 3 formatos para radicar la cuenta de cobro
-              </p>
-            )}
+            <div className="pb-4" />
           </ScrollArea>
 
           {/* Right Column - Preview */}
@@ -2011,6 +2061,42 @@ export function CreateBillingAccountDialog({
               </div>
             </ScrollArea>
           </div>
+        </div>
+
+        {/* Footer fijo: Action Buttons */}
+        <div className="border-t pt-4 mt-4 space-y-2">
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Guardar y Cerrar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!canSubmitAllFormats || isSubmitting}
+              className="flex-1"
+            >
+              {isSubmitting ? (
+                <>
+                  <Send className="h-4 w-4 mr-2 animate-pulse" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Radicar Cuenta de Cobro
+                </>
+              )}
+            </Button>
+          </div>
+          {!canSubmitAllFormats && (
+            <p className="text-sm text-muted-foreground text-center">
+              Complete los 3 formatos para radicar la cuenta de cobro
+            </p>
+          )}
         </div>
       </DialogContent>
 
