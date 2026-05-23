@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ShieldCheck, FileText, ClipboardCheck, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -107,141 +107,235 @@ export default function Auth() {
   };
 
 
+  const MaktubMark = ({ size = 44 }: { size?: number }) => (
+    <div
+      className="rounded-xl bg-primary flex items-center justify-center shadow-md ring-1 ring-primary/20"
+      style={{ width: size, height: size }}
+    >
+      <span
+        className="font-bold text-primary-foreground leading-none"
+        style={{ fontFamily: "Georgia, serif", fontSize: size * 0.58 }}
+      >
+        M
+      </span>
+    </div>
+  );
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-primary-soft to-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
-              <Building2 className="w-8 h-8 text-primary-foreground" />
+    <main className="min-h-screen grid lg:grid-cols-5 bg-background">
+      {/* Panel izquierdo institucional */}
+      <aside className="hidden lg:flex lg:col-span-3 relative overflow-hidden bg-primary text-primary-foreground p-12 xl:p-16 flex-col justify-between">
+        {/* Patrón geométrico decorativo */}
+        <div
+          className="absolute inset-0 opacity-[0.08] pointer-events-none"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+            backgroundSize: "28px 28px",
+          }}
+          aria-hidden
+        />
+        <div
+          className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-white/5 blur-3xl pointer-events-none"
+          aria-hidden
+        />
+        <div
+          className="absolute -bottom-40 -left-20 w-[420px] h-[420px] rounded-full bg-white/5 blur-3xl pointer-events-none"
+          aria-hidden
+        />
+
+        {/* Logo + nombre */}
+        <div className="relative flex items-center gap-3">
+          <MaktubMark size={48} />
+          <div>
+            <div className="text-2xl font-bold tracking-tight leading-none">
+              Maktub
+            </div>
+            <div className="text-xs uppercase tracking-[0.18em] text-primary-foreground/70 mt-1">
+              Gestión Hospitalaria
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Maktub</h1>
-          <p className="text-muted-foreground">Gestión Digital de Contratos</p>
         </div>
 
-        {/* Auth Form */}
-        <Card className="shadow-xl border-0">
-          <CardHeader className="text-center">
-            <CardTitle>Acceso al Sistema</CardTitle>
-            <CardDescription>
-              Ingresa tus credenciales para continuar
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSignIn} className="space-y-4">
+        {/* Tagline + bullets */}
+        <div className="relative max-w-lg">
+          <h2 className="text-4xl xl:text-5xl font-bold tracking-tight leading-[1.1]">
+            Gestión digital de contratos hospitalarios
+          </h2>
+          <p className="mt-5 text-base xl:text-lg text-primary-foreground/80 leading-relaxed">
+            Centraliza la contratación, la radicación de cuentas de cobro y la
+            supervisión de contratistas en una sola plataforma segura.
+          </p>
+
+          <ul className="mt-10 space-y-4">
+            {[
+              {
+                icon: FileText,
+                title: "Contratos centralizados",
+                desc: "Un repositorio único, trazable y consultable.",
+              },
+              {
+                icon: ClipboardCheck,
+                title: "Cuentas de cobro digitales",
+                desc: "Informe, certificación y cuenta de cobro en un flujo.",
+              },
+              {
+                icon: Activity,
+                title: "Trazabilidad y auditoría",
+                desc: "Historial completo de cada cambio y aprobación.",
+              },
+            ].map(({ icon: Icon, title, desc }) => (
+              <li key={title} className="flex gap-3">
+                <div className="mt-0.5 h-9 w-9 shrink-0 rounded-lg bg-white/10 flex items-center justify-center ring-1 ring-white/15">
+                  <Icon className="h-4.5 w-4.5 text-primary-foreground" />
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">{title}</div>
+                  <div className="text-sm text-primary-foreground/70">
+                    {desc}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="relative text-xs text-primary-foreground/60">
+          © {new Date().getFullYear()} Maktub · Sistema de gestión hospitalaria v1.0
+        </div>
+      </aside>
+
+      {/* Panel derecho con el formulario */}
+      <section className="lg:col-span-2 flex flex-col min-h-screen bg-background">
+        {/* Barra superior solo móvil */}
+        <div className="lg:hidden bg-primary text-primary-foreground px-6 py-5 flex items-center gap-3">
+          <MaktubMark size={40} />
+          <div>
+            <div className="text-lg font-bold leading-none">Maktub</div>
+            <div className="text-[11px] uppercase tracking-widest text-primary-foreground/70 mt-1">
+              Gestión Hospitalaria
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center px-6 py-10 sm:px-10">
+          <div className="w-full max-w-sm">
+            <div className="mb-8">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                Acceso al sistema
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1.5">
+                Ingresa tus credenciales institucionales para continuar.
+              </p>
+            </div>
+
+            <form onSubmit={handleSignIn} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="signin-email">Email</Label>
+                <Label htmlFor="signin-email" className="text-sm font-medium">
+                  Correo electrónico
+                </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="signin-email"
                     name="email"
                     type="email"
-                    placeholder="tu@hospital.com"
+                    placeholder="usuario@hospital.com"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="pl-10"
+                    className="pl-10 h-11"
                     required
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="signin-password">Contraseña</Label>
+                <Label htmlFor="signin-password" className="text-sm font-medium">
+                  Contraseña
+                </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="signin-password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Tu contraseña"
+                    placeholder="••••••••"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="pl-10 pr-10"
+                    className="pl-10 pr-10 h-11"
                     required
                   />
-                  <Button
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      <EyeOff className="h-4 w-4" />
                     ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <Eye className="h-4 w-4" />
                     )}
-                  </Button>
+                  </button>
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full h-11 text-sm font-semibold shadow-md hover:shadow-lg transition-shadow"
                 disabled={isLoading || isResettingPassword}
               >
-                {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
+                {isLoading ? "Verificando..." : "Ingresar"}
               </Button>
             </form>
 
-            {/* Forgot Password Link */}
             <div className="mt-4 text-center">
-              <Button
+              <button
                 type="button"
-                variant="link"
-                className="text-sm text-muted-foreground hover:text-primary p-0 h-auto"
+                className="text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline transition-colors"
                 onClick={() => setShowForgotPassword(!showForgotPassword)}
               >
                 ¿Olvidaste tu contraseña?
-              </Button>
+              </button>
             </div>
 
-            {/* Forgot Password Form */}
             {showForgotPassword && (
-              <div className="mt-4 p-4 bg-muted/30 rounded-lg border">
+              <div className="mt-4 p-4 bg-muted/40 rounded-lg border">
                 <form onSubmit={handleForgotPassword} className="space-y-3">
-                  <div className="text-center">
-                    <h3 className="font-medium text-sm mb-2">Recuperar Contraseña</h3>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña
+                  <div>
+                    <h3 className="font-semibold text-sm mb-1">Recuperar contraseña</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Te enviaremos un enlace al correo registrado para restablecerla.
                     </p>
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
+                  <Button
+                    type="submit"
+                    className="w-full"
                     disabled={isResettingPassword || !formData.email}
                     variant="outline"
                   >
-                    {isResettingPassword ? "Enviando..." : "Enviar Email de Recuperación"}
+                    {isResettingPassword ? "Enviando..." : "Enviar enlace de recuperación"}
                   </Button>
                 </form>
               </div>
             )}
-            
-            {/* Access Request Information */}
-            <div className="mt-6 p-4 bg-muted/50 rounded-lg border">
-              <div className="text-center space-y-2">
-                <h3 className="font-medium text-sm">¿No tienes acceso?</h3>
-                <p className="text-xs text-muted-foreground">
-                  Para obtener acceso al sistema, contacta a tu administrador o supervisor.
-                  Los usuarios son creados únicamente por el personal autorizado.
+
+            <div className="mt-10 pt-6 border-t border-border">
+              <div className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
+                <p>
+                  El acceso es proporcionado por el área administrativa. Si requieres
+                  credenciales, contacta a tu supervisor.
                 </p>
-                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mt-2">
-                  <Building2 className="h-3 w-3" />
-                  Sistema seguro - Acceso controlado
-                </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <div className="text-center mt-6 text-sm text-muted-foreground">
-          Sistema de gestión hospitalaria v1.0
+          </div>
         </div>
-      </div>
+
+        <div className="lg:hidden px-6 pb-6 text-center text-xs text-muted-foreground">
+          © {new Date().getFullYear()} Maktub · v1.0
+        </div>
+      </section>
     </main>
   );
 }
