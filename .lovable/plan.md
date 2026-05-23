@@ -1,84 +1,82 @@
 ## Objetivo
 
-Impedir que una cuenta de cobro pase a estado `pendiente_revision` (radicada/enviada al supervisor) si los 3 formatos requeridos no están completos: **Informe**, **Certificación** y **Cuenta de Cobro**. Aplicar defensa en dos capas (UI + base de datos) y sanear las cuentas ya enviadas que están incompletas devolviéndolas a `borrador`.
+1. Reemplazar el favicon por uno propio de **Maktub** (SVG inline, sin archivo externo, igual al patrón del HTML de KHUBA que enviaste).
+2. Elevar la página de login (`/auth`) a un look más **profesional/corporativo**, alejándola de la plantilla genérica actual.
 
 ---
 
-## Definición de "completo"
+## 1. Favicon Maktub (SVG inline)
 
-Se reutilizan las banderas que ya existen en `billing_accounts`:
+En `index.html`, dentro del `<head>`:
 
-- `informe_complete = true`
-- `certificacion_complete = true`
-- `cuenta_cobro_complete = true`
+- Eliminar la referencia al favicon actual (Lovable por defecto) y al `public/favicon.ico` (también se borra el archivo para que el navegador no caiga en él).
+- Insertar un `<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,...">` con un SVG inline:
+  - Cuadrado redondeado (rx≈20) con el azul corporativo (`hsl(--primary)` traducido a hex: `#2563EB` aprox., el mismo del botón "Iniciar Sesión").
+  - Letra **"M"** centrada en blanco, fuente serif/sans bold.
+- Agregar también `<link rel="apple-touch-icon">` con el mismo data-URI para iOS.
 
-Una cuenta solo puede transicionar a `pendiente_revision` si las tres banderas son `true`.
+Resultado: la pestaña muestra un cuadrado azul con la **M** blanca + el título "Maktub — Gestión Digital de Contratos Hospitalarios". Cero rastro de Lovable.
+
+> Nota: si en el futuro quieres un logo más elaborado (con tipografía custom tipo el KHUBA que enviaste), conviene un PNG/SVG real en `public/`. Para ahora el inline es lo más rápido y limpio.
 
 ---
 
-## Cambios
+## 2. Rediseño profesional de `/auth`
 
-### 1. Capa de base de datos (bloqueo definitivo)
+**Diagnóstico de lo actual** (`src/pages/Auth.tsx` líneas 110–122):
+- Tarjeta blanca centrada flotando sobre fondo degradado celeste muy suave.
+- Logo = ícono genérico `Building2` de Lucide dentro de un cuadrado azul → se ve "demo de Lovable".
+- Tipografía y jerarquía planas (`text-2xl` para "Maktub", sin acento visual).
+- No transmite contexto hospitalario / institucional.
 
-Modificar el trigger `validate_billing_account_transition` (y por consistencia `validate_cuenta_transition`) para que, cuando un empleado intenta pasar de `borrador`/`rechazada` → `pendiente_revision`, valide:
+**Dirección de rediseño propuesta — "Corporativo institucional"**:
+
+Layout split-screen (dos columnas en desktop, apilado en mobile):
 
 ```text
-IF NEW.informe_complete IS NOT TRUE
-   OR NEW.certificacion_complete IS NOT TRUE
-   OR NEW.cuenta_cobro_complete IS NOT TRUE
-THEN
-  RAISE EXCEPTION 'No se puede radicar: faltan documentos completos
-   (Informe, Certificación, Cuenta de Cobro)';
-END IF;
++---------------------------------+------------------------+
+|                                 |                        |
+|  Panel izquierdo (60%)          |  Formulario (40%)      |
+|  - Fondo azul corporativo        |  - Fondo blanco        |
+|    con gradiente sutil + patrón |  - Logo Maktub arriba  |
+|    geométrico opaco              |  - "Acceso al Sistema" |
+|  - Logo Maktub en grande         |  - Email + Contraseña  |
+|  - Tagline:                      |  - Botón "Ingresar"    |
+|    "Gestión Digital de           |  - Olvidé contraseña   |
+|     Contratos Hospitalarios"    |  - Aviso de seguridad  |
+|  - 3 bullets de valor:           |    discreto al pie     |
+|    · Contratos centralizados     |                        |
+|    · Cuentas de cobro digitales |                        |
+|    · Trazabilidad y auditoría    |                        |
+|  - Footer: v1.0 · año · empresa  |                        |
++---------------------------------+------------------------+
 ```
 
-Esto bloquea cualquier intento de radicar incompleto, sin importar si la UI falla.
+**Cambios visuales concretos**:
+- Logo: cuadrado redondeado con la **"M"** + wordmark "Maktub" al lado (no el ícono `Building2`).
+- Tipografía: heading con `tracking-tight` y peso 700, tamaño mayor (`text-3xl`/`text-4xl`).
+- Botón: degradado sutil del primary + sombra más marcada en hover, microanimación.
+- Inputs con altura mayor (`h-11`) y foco con anillo del primary.
+- Caja "¿No tienes acceso?" → reemplazada por una línea discreta tipo "El acceso es proporcionado por el área administrativa".
+- Pie de página: "© 2026 Maktub · Sistema de gestión hospitalaria v1.0".
+- Mobile: el panel izquierdo se colapsa a una banda superior corta con solo logo + tagline.
 
-### 2. Capa de UI (UX clara)
-
-En `BillingAccountActions.tsx` (botón "Radicar/Enviar al supervisor"):
-
-- Calcular `canSubmit = informe_complete && certificacion_complete && cuenta_cobro_complete`.
-- Si `canSubmit` es false:
-  - Deshabilitar el botón.
-  - Tooltip listando exactamente qué formato falta ("Falta: Certificación, Cuenta de Cobro").
-- Mantener el toast de error si la BD rechaza (defensa).
-
-Reutilizar `BillingCompletionProgress` para la lógica de cómputo si ya expone los flags, evitando duplicar reglas.
-
-### 3. Saneamiento de cuentas existentes (one-shot)
-
-Migración de datos: devolver a `borrador` las cuentas que actualmente están en `pendiente_revision` o `rechazada` con algún flag incompleto:
-
-```sql
-UPDATE billing_accounts
-SET status = 'borrador',
-    state_code = 'BOR',
-    enviado_el = NULL
-WHERE status IN ('pendiente_revision','rechazada')
-  AND (
-    informe_complete IS NOT TRUE
-    OR certificacion_complete IS NOT TRUE
-    OR cuenta_cobro_complete IS NOT TRUE
-  );
-```
-
-Para evitar que el trigger bloquee este saneamiento, se ejecuta como parte de la misma migración (con el trigger temporalmente deshabilitado o usando `ALTER TABLE ... DISABLE TRIGGER` solo en ese statement) y se registra cada cambio en `historial_estado_cuenta` con un comentario claro ("Devuelta automáticamente: documentos incompletos").
-
-### 4. Aviso al contratista
-
-En `BillingAccountsList`, mostrar un badge "Devuelta — completar documentos" en las cuentas que fueron devueltas por el saneamiento, para que el contratista sepa por qué su cuenta volvió a borrador. Esto se identifica por el último registro en `historial_estado_cuenta` con el comentario del paso 3.
+**Sin cambios funcionales**: login, recuperación de contraseña, validaciones y rutas siguen idénticos. Solo presentación.
 
 ---
 
 ## Archivos afectados
 
-- **Nueva migración SQL**: actualiza ambos triggers + saneamiento de datos.
-- `src/components/billing/BillingAccountActions.tsx` — bloqueo de botón + tooltip.
-- `src/components/billing/BillingAccountsList.tsx` — badge informativo (opcional, leve).
+- `index.html` — reemplazar favicon, agregar apple-touch-icon.
+- `public/favicon.ico` — eliminar (para evitar fallback al ícono Lovable).
+- `src/pages/Auth.tsx` — rediseño completo del JSX de presentación (sin tocar handlers `handleSignIn`, `handlePasswordReset`).
 
 ## Fuera de alcance
 
-- No se cambia el flujo del supervisor ni de tesorería.
-- No se modifican los criterios de "completo" de cada formato (siguen igual).
-- No se borra ninguna cuenta; solo se devuelven a `borrador`.
+- No se cambia la lógica de autenticación ni rutas.
+- No se modifica el resto de la app (sidebar, dashboard) — solo `/auth`.
+- No se sube un logo PNG/SVG externo (queda pendiente para cuando tengas el archivo final del logo Maktub).
+
+## Confirmación opcional
+
+Antes de implementar el rediseño de `/auth`, puedo generarte **3 prototipos visuales** (HTML renderizado) con variaciones de la dirección "Corporativo institucional" para que elijas el que más te guste. Si prefieres, lo construyo directamente con la propuesta descrita arriba.
