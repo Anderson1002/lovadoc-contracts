@@ -67,7 +67,7 @@ serve(async (req: Request): Promise<Response> => {
                     <path d="M10 18h4"/>
                 </svg>
             </div>
-            <h1 style="color: #333; margin: 0; font-size: 28px; font-weight: bold;">Maktub</h1>
+            <h1 style="color: #333; margin: 0; font-size: 28px; font-weight: bold;">KHUBA</h1>
             <p style="color: #666; margin: 8px 0 0 0; font-size: 16px;">Gestión Digital de Contratos</p>
         </div>
 
@@ -113,9 +113,9 @@ serve(async (req: Request): Promise<Response> => {
 </html>`;
 
     await client.send({
-      from: `Sistema Maktub <${user}>`,
+      from: `Sistema KHUBA <${user}>`,
       to: email,
-      subject: "Confirmación de registro - Sistema Maktub",
+      subject: "Confirmación de registro - Sistema KHUBA",
       content: htmlEmail,
       html: htmlEmail,
     });

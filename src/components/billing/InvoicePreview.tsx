@@ -110,7 +110,7 @@ export function InvoicePreview({
     doc.setFont('helvetica', 'normal');
     doc.text(`Ciudad y fecha: Girardot, ${formatDate(invoiceDate)}`, margin, y);
     y += 5;
-    doc.text(`Cliente: MAKTUB MA S.A.S`, margin, y);
+    doc.text(`Cliente: KHUBA MA S.A.S`, margin, y);
     y += 5;
     doc.text(`NIT: 900.827.439-4`, margin, y);
     y += 5;
@@ -284,7 +284,7 @@ export function InvoicePreview({
           {/* Client Info - Left aligned */}
           <div className="text-left text-xs space-y-0.5 pt-2">
             <p><span className="font-medium">Ciudad y fecha:</span> Girardot, {formatDate(invoiceDate)}</p>
-            <p><span className="font-medium">Cliente:</span> MAKTUB MA S.A.S</p>
+            <p><span className="font-medium">Cliente:</span> KHUBA MA S.A.S</p>
             <p><span className="font-medium">NIT:</span> 900.827.439-4</p>
             <p><span className="font-medium">Dirección:</span> CALLE 21 No 11 21 GIRARDOT</p>
             <p><span className="font-medium">Teléfono:</span> 3113988647</p>

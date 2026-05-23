@@ -162,7 +162,7 @@ serve(async (req: Request): Promise<Response> => {
 
     <div style="border-top: 1px solid #eee; padding-top: 24px; margin-top: 32px;">
       <p style="color: #999; font-size: 14px; text-align: center; margin: 0;">
-        <strong>Sistema Maktub</strong> - Gestión Digital de Contratos<br>
+        <strong>Sistema KHUBA</strong> - Gestión Digital de Contratos<br>
         <span style="font-size: 12px;">Este es un correo automático, no responda a este mensaje.</span>
       </p>
     </div>
@@ -181,7 +181,7 @@ serve(async (req: Request): Promise<Response> => {
 
     const subjectPrefix = isResubmission ? '🔄 Re-envío' : '📩 Nueva';
     await client.send({
-      from: `Sistema Maktub <${user}>`,
+      from: `Sistema KHUBA <${user}>`,
       to: supervisor.email,
       subject: `${subjectPrefix} - Cuenta de Cobro ${accountNumber} pendiente de revisión`,
       content: htmlEmail,
