@@ -107,7 +107,7 @@ export default function Auth() {
   };
 
 
-  const MaktubMark = ({ size = 44 }: { size?: number }) => (
+  const KHUBAMark = ({ size = 44 }: { size?: number }) => (
     <div
       className="rounded-xl bg-primary flex items-center justify-center shadow-md ring-1 ring-primary/20"
       style={{ width: size, height: size }}
@@ -116,7 +116,7 @@ export default function Auth() {
         className="font-bold text-primary-foreground leading-none"
         style={{ fontFamily: "Georgia, serif", fontSize: size * 0.58 }}
       >
-        M
+        K
       </span>
     </div>
   );
@@ -146,10 +146,10 @@ export default function Auth() {
 
         {/* Logo + nombre */}
         <div className="relative flex items-center gap-3">
-          <MaktubMark size={48} />
+          <KHUBAMark size={48} />
           <div>
             <div className="text-2xl font-bold tracking-tight leading-none">
-              Maktub
+              KHUBA
             </div>
             <div className="text-xs uppercase tracking-[0.18em] text-primary-foreground/70 mt-1">
               Gestión Hospitalaria
@@ -201,7 +201,7 @@ export default function Auth() {
         </div>
 
         <div className="relative text-xs text-primary-foreground/60">
-          © {new Date().getFullYear()} Maktub · Sistema de gestión hospitalaria v1.0
+          © {new Date().getFullYear()} KHUBA · Sistema de gestión hospitalaria v1.0
         </div>
       </aside>
 
@@ -209,9 +209,9 @@ export default function Auth() {
       <section className="lg:col-span-2 flex flex-col min-h-screen bg-background">
         {/* Barra superior solo móvil */}
         <div className="lg:hidden bg-primary text-primary-foreground px-6 py-5 flex items-center gap-3">
-          <MaktubMark size={40} />
+          <KHUBAMark size={40} />
           <div>
-            <div className="text-lg font-bold leading-none">Maktub</div>
+            <div className="text-lg font-bold leading-none">KHUBA</div>
             <div className="text-[11px] uppercase tracking-widest text-primary-foreground/70 mt-1">
               Gestión Hospitalaria
             </div>
@@ -333,7 +333,7 @@ export default function Auth() {
         </div>
 
         <div className="lg:hidden px-6 pb-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Maktub · v1.0
+          © {new Date().getFullYear()} KHUBA · v1.0
         </div>
       </section>
     </main>

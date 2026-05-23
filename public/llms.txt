@@ -1,4 +1,4 @@
-# Maktub
+# KHUBA
 
 > Plataforma de gestión digital de contratos hospitalarios: registro de contratos, radicación de cuentas de cobro (informe, certificación, cuenta de cobro) y supervisión de contratistas.
 
