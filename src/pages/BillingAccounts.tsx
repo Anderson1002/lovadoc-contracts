@@ -52,6 +52,7 @@ export default function BillingAccounts() {
   const [pendingCount, setPendingCount] = useState(0);
   const [currentMonthAccount, setCurrentMonthAccount] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<string>("");
+  const [employeeCounts, setEmployeeCounts] = useState({ pendientes: 0, aprobadas: 0, devueltas: 0 });
 
   useEffect(() => {
     loadUserProfile();
@@ -61,6 +62,7 @@ export default function BillingAccounts() {
     if (userProfile && canCreateBilling) {
       loadAvailableContracts();
       loadCurrentMonthAccount();
+      if (userRole === 'employee') loadEmployeeCounts();
     }
   }, [userProfile]);
 
@@ -138,17 +140,38 @@ export default function BillingAccounts() {
     }
   };
 
+  const loadEmployeeCounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('billing_accounts')
+        .select('status')
+        .eq('created_by', userProfile.id);
+      if (error) throw error;
+      const counts = { pendientes: 0, aprobadas: 0, devueltas: 0 };
+      (data || []).forEach((r: any) => {
+        if (['borrador', 'pendiente_revision', 'en_revision'].includes(r.status)) counts.pendientes++;
+        else if (['aprobada', 'causada', 'en_pago', 'pagada'].includes(r.status)) counts.aprobadas++;
+        else if (r.status === 'rechazada') counts.devueltas++;
+      });
+      setEmployeeCounts(counts);
+    } catch (e) {
+      console.error('Error loading employee counts:', e);
+    }
+  };
+
   const canCreateBilling = ['super_admin', 'admin', 'employee'].includes(userRole);
   const canReviewBilling = ['super_admin', 'admin', 'supervisor'].includes(userRole);
   const canManagePayments = ['super_admin', 'admin', 'treasury'].includes(userRole);
   const isSupervisor = userRole === 'supervisor';
   const isTreasury = userRole === 'treasury';
+  const isEmployee = userRole === 'employee';
 
   const headerConfig = HEADER_CONFIG[userRole] || HEADER_CONFIG.employee;
 
   // Calculate visible tab count for dynamic grid
   const tabCount = useMemo(() => {
     if (isSupervisor) return 2;
+    if (isEmployee) return 4;
     let count = 0;
     if (!isSupervisor && !isTreasury) count++; // Mis Cuentas
     if (canReviewBilling) count++; // Pendientes Revisión
@@ -156,13 +179,15 @@ export default function BillingAccounts() {
     count++; // Todas las Cuentas
     count++; // Comentarios
     return count;
-  }, [isSupervisor, isTreasury, canReviewBilling, canManagePayments]);
+  }, [isSupervisor, isTreasury, isEmployee, canReviewBilling, canManagePayments]);
 
   const defaultTab = isSupervisor
     ? 'pending-review'
     : isTreasury
       ? 'pending-payment'
-      : 'my-accounts';
+      : isEmployee
+        ? 'emp-pendientes'
+        : 'my-accounts';
 
   useEffect(() => {
     if (!activeTab) setActiveTab(defaultTab);
@@ -266,6 +291,34 @@ export default function BillingAccounts() {
                   Historial de Cuentas
                 </TabsTrigger>
               </>
+          ) : isEmployee ? (
+            <>
+              <TabsTrigger value="emp-pendientes" className="flex items-center gap-2">
+                <FileClock className="w-4 h-4" />
+                Pendientes
+                {employeeCounts.pendientes > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs">{employeeCounts.pendientes}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="emp-aprobadas" className="flex items-center gap-2">
+                <Receipt className="w-4 h-4" />
+                Aprobadas
+                {employeeCounts.aprobadas > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs">{employeeCounts.aprobadas}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="emp-devueltas" className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                Devueltas
+                {employeeCounts.devueltas > 0 && (
+                  <Badge variant="destructive" className="ml-1 text-xs">{employeeCounts.devueltas}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="emp-historial" className="flex items-center gap-2">
+                <Receipt className="w-4 h-4" />
+                Historial
+              </TabsTrigger>
+            </>
             ) : (
               <>
                 {!isTreasury && (
@@ -323,8 +376,45 @@ export default function BillingAccounts() {
             </>
           )}
 
+        {/* Employee tabs */}
+        {isEmployee && (
+          <>
+            <TabsContent value="emp-pendientes" className="space-y-6">
+              <BillingAccountsList
+                userProfile={userProfile}
+                userRole={userRole}
+                filterType="own"
+                statusFilter={['borrador', 'pendiente_revision', 'en_revision']}
+              />
+            </TabsContent>
+            <TabsContent value="emp-aprobadas" className="space-y-6">
+              <BillingAccountsList
+                userProfile={userProfile}
+                userRole={userRole}
+                filterType="own"
+                statusFilter={['aprobada', 'causada', 'en_pago', 'pagada']}
+              />
+            </TabsContent>
+            <TabsContent value="emp-devueltas" className="space-y-6">
+              <BillingAccountsList
+                userProfile={userProfile}
+                userRole={userRole}
+                filterType="own"
+                statusFilter={['rechazada']}
+              />
+            </TabsContent>
+            <TabsContent value="emp-historial" className="space-y-6">
+              <BillingAccountsList
+                userProfile={userProfile}
+                userRole={userRole}
+                filterType="own"
+              />
+            </TabsContent>
+          </>
+        )}
+
           {/* Non-supervisor tabs */}
-          {!isSupervisor && (
+        {!isSupervisor && !isEmployee && (
             <>
               {!isTreasury && (
                 <TabsContent value="my-accounts" className="space-y-6">
