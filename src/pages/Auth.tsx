@@ -116,7 +116,7 @@ export default function Auth() {
         className="font-bold text-primary-foreground leading-none"
         style={{ fontFamily: "Georgia, serif", fontSize: size * 0.58 }}
       >
-        M
+        K
       </span>
     </div>
   );
