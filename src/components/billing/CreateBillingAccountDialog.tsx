@@ -2062,6 +2062,42 @@ export function CreateBillingAccountDialog({
             </ScrollArea>
           </div>
         </div>
+
+        {/* Footer fijo: Action Buttons */}
+        <div className="border-t pt-4 mt-4 space-y-2">
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Guardar y Cerrar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!canSubmitAllFormats || isSubmitting}
+              className="flex-1"
+            >
+              {isSubmitting ? (
+                <>
+                  <Send className="h-4 w-4 mr-2 animate-pulse" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Radicar Cuenta de Cobro
+                </>
+              )}
+            </Button>
+          </div>
+          {!canSubmitAllFormats && (
+            <p className="text-sm text-muted-foreground text-center">
+              Complete los 3 formatos para radicar la cuenta de cobro
+            </p>
+          )}
+        </div>
       </DialogContent>
 
       {/* Evidence Preview Dialog */}
