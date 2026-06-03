@@ -1054,6 +1054,7 @@ export function CreateBillingAccountDialog({
           certificacionComplete={certificacionComplete}
           cuentaCobroComplete={cuentaCobroComplete}
           currentTab={activeTab}
+          horizontal
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden flex-1 min-h-0">
