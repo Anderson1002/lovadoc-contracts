@@ -1,50 +1,58 @@
-## Diagnóstico
+## Análisis profundo
 
-En la imagen se ve que el formulario de `Desglose de Aportes` queda cortado en la parte inferior y el usuario tiene que hacer foco en un campo, usar Tab y seguir navegando para alcanzar el botón final `Radicar Cuenta de Cobro`.
+### Problema 1 — Calendarios feos en `/contracts/new`
+En `src/pages/CreateContract.tsx` (líneas 762 y 803) los `Calendar` usan `captionLayout="dropdown-buttons"` con `fromYear`/`toYear`, lo cual hace que `react-day-picker` renderice los `<select>` nativos de mes/año. El componente `src/components/ui/calendar.tsx` actual NO tiene estilos para `caption_dropdowns`, `dropdown`, `vhidden`, etc., así que aparecen los selects nativos sin estilo (los que se ven en la imagen). Por memoria del proyecto se debe conservar el rango extendido (2020+), así que la solución correcta es **estilar los dropdowns** en `Calendar`, no eliminarlos.
 
-La causa más probable está en la estructura actual del diálogo:
+### Problema 2 — `new row violates row-level security policy` al subir el contrato firmado
+Inconsistencias entre el flujo de subida y las políticas de Storage del bucket `contracts`:
 
-- `DialogContent` tiene `max-h-[95vh] overflow-hidden`.
-- La grilla interna también tiene `overflow-hidden` y una altura calculada con `calc(95vh - 260px)`.
-- Dentro de esa grilla hay dos `ScrollArea` independientes.
-- El footer con `Guardar y Cerrar` / `Radicar Cuenta de Cobro` está fuera del `ScrollArea`, pero el alto reservado al contenido no está dejando suficiente espacio real para verlo cómodamente.
+1. La subida (línea 299) usa path `${profile.id}/${fileName}` (sin prefijo `contracts/`).
+2. La política `INSERT` `write_contract_files_by_creator` exige que el path empiece por `contracts/${contract.id}/` y que `contracts.created_by = auth.uid()`. Pero:
+   - El upload ocurre **antes** de crear el contrato (aún no hay `contract.id`).
+   - `contracts.created_by` guarda `profile.id`, no `auth.uid()` (validado en línea 333).
+3. La política `SELECT` (`read_contract_files`) sí acepta el patrón `${profile.id}/...` (primer OR: `left(name, 36) = profile.id`). O sea, lectura y escritura están desalineadas.
 
-## Mejor opción
-
-Usar una estructura de diálogo con altura fija controlada y layout vertical:
-
-```text
-DialogContent
-  Header fijo
-  Progress fijo
-  Contenido flexible con scroll interno
-    Columna izquierda: formulario con scroll
-    Columna derecha: preview con scroll
-  Footer fijo siempre visible
-```
+Resultado: el `INSERT` en storage siempre falla para el empleado → toast rojo "Error al subir el contrato: new row violates row-level security policy".
 
 ## Cambios propuestos
 
-1. Cambiar el `DialogContent` a un layout vertical estable, por ejemplo:
-   - `max-h-[95vh]`
-   - `h-[95vh]`
-   - `flex flex-col`
-   - mantener `overflow-hidden` solo en el contenedor general.
+### 1) Estilar dropdowns del calendario (`src/components/ui/calendar.tsx`)
+Agregar clases para los dropdowns que `react-day-picker` renderiza cuando `captionLayout="dropdown-buttons"`:
 
-2. Cambiar la grilla central para que ocupe el espacio restante sin cálculos manuales frágiles:
-   - reemplazar `style={{ maxHeight: 'calc(95vh - 260px)' }}` por clases tipo `flex-1 min-h-0 overflow-hidden`.
+- `caption_label: "hidden"` cuando hay dropdowns (o conservar oculto vía `vhidden`)
+- `caption_dropdowns: "flex justify-center gap-1"`
+- `dropdown: "appearance-none bg-background border border-input rounded-md px-2 py-1 text-sm font-medium cursor-pointer hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"`
+- `dropdown_month` / `dropdown_year`: contenedores con `relative`
+- `dropdown_icon: "ml-1 h-4 w-4"`
+- `vhidden: "hidden"` para ocultar los labels duplicados ("June 2026 / Month: ... / June / Year: ...") que aparecen en la captura.
 
-3. Ajustar los `ScrollArea` internos:
-   - izquierda: `h-full min-h-0 pr-4`
-   - derecha: `h-full min-h-0 pr-4`
-   - agregar padding inferior suficiente al contenido del formulario para que el último bloque no quede pegado ni oculto.
+Sin tocar el resto del componente. Resultado: dos selects limpios "Mes" y "Año" en una sola línea, con la flecha izquierda/derecha de navegación.
 
-4. Mantener el footer fuera del scroll para que `Radicar Cuenta de Cobro` esté siempre visible, sin tener que tabular ni forzar navegación por teclado.
+### 2) Alinear las políticas de Storage del bucket `contracts` (migración SQL)
 
-5. Ajustar responsive móvil/tablet:
-   - en pantallas pequeñas, usar una sola columna y permitir que el formulario conserve scroll claro.
-   - evitar que el preview robe altura al formulario.
+Reemplazar las políticas `INSERT` y `UPDATE` para que acepten el mismo patrón que ya acepta la `SELECT`:
+
+```text
+INSERT/UPDATE permitidos si:
+  bucket_id = 'contracts' AND (
+    left(name, 36) = (SELECT profiles.id::text FROM profiles WHERE user_id = auth.uid())
+    OR existe contrato c con path 'contracts/<c.id>/...' y p.user_id = auth.uid()
+    OR el usuario es supervisor/admin/super_admin
+  )
+```
+
+Esto:
+- Permite al empleado subir bajo `${profile.id}/...` (patrón actual del código).
+- Mantiene compatibilidad con el patrón `contracts/${contract.id}/...` que ya usa la política SELECT.
+- Habilita a supervisores/admins a subir/reemplazar archivos.
+
+No se cambia el flujo de subida en el cliente — el path `${profile.id}/${fileName}` queda igual y la lectura sigue funcionando porque la `SELECT` actual ya lo soporta.
+
+### 3) Sin cambios funcionales adicionales
+- No se modifican otros componentes ni lógica de negocio.
+- No se toca el `tipo` ni los campos del formulario.
+- Se respeta la memoria: rango de fechas extendido (2020+) sigue activo, solo se estiliza.
 
 ## Resultado esperado
-
-El usuario podrá bajar normalmente con rueda/trackpad/barra de scroll hasta el final del `Desglose de Aportes`, y el botón `Radicar Cuenta de Cobro` quedará siempre visible en el footer del diálogo.
+- Los popovers de "Fecha de Inicio" y "Fecha de Finalización" muestran dropdowns limpios y consistentes con el design system.
+- El empleado puede crear el contrato y subir el PDF firmado sin el error de RLS.
