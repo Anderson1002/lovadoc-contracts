@@ -172,6 +172,21 @@ export function ContractStateActions({
           { action: 'completado', label: 'Completar', icon: CheckCircle, variant: 'default' },
           { action: 'cancelado', label: 'Cancelar', icon: XCircle, variant: 'destructive' }
         ];
+      case 'cancelado':
+        // Solo super_admin/admin pueden reactivar un contrato cancelado
+        if (["super_admin", "admin"].includes(userRole)) {
+          return [
+            { action: 'registrado', label: 'Reactivar (Registrado)', icon: CheckCircle, variant: 'default' }
+          ];
+        }
+        return [];
+      case 'completado':
+        if (["super_admin", "admin"].includes(userRole)) {
+          return [
+            { action: 'registrado', label: 'Reactivar (Registrado)', icon: CheckCircle, variant: 'default' }
+          ];
+        }
+        return [];
       default:
         return [];
     }
