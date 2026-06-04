@@ -2051,6 +2051,26 @@ export function CreateBillingAccountDialog({
                   reportDeliveryDate={reportDeliveryDate}
                   onReportDeliveryDateChange={setReportDeliveryDate}
                 />
+                <div className="pt-2">
+                  <Button
+                    type="button"
+                    onClick={saveCertificacionOnly}
+                    disabled={!currentDraftId || isSubmitting}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    {isSubmitting ? (
+                      <><Save className="h-4 w-4 mr-2 animate-pulse" />Guardando...</>
+                    ) : (
+                      <><Save className="h-4 w-4 mr-2" />Guardar Borrador de Certificación</>
+                    )}
+                  </Button>
+                  {!currentDraftId && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Primero guarde los detalles de facturación en la pestaña Informe
+                    </p>
+                  )}
+                </div>
               </TabsContent>
 
               {/* Tab 3: Cuenta de Cobro */}
@@ -2083,6 +2103,26 @@ export function CreateBillingAccountDialog({
                   onBenefitEconomicDependentsChange={setBenefitEconomicDependents}
                   isComplete={cuentaCobroComplete}
                 />
+                <div className="pt-2">
+                  <Button
+                    type="button"
+                    onClick={saveCuentaCobroOnly}
+                    disabled={!currentDraftId || isSubmitting}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    {isSubmitting ? (
+                      <><Save className="h-4 w-4 mr-2 animate-pulse" />Guardando...</>
+                    ) : (
+                      <><Save className="h-4 w-4 mr-2" />Guardar Borrador de Cuenta de Cobro</>
+                    )}
+                  </Button>
+                  {!currentDraftId && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Primero guarde los detalles de facturación en la pestaña Informe
+                    </p>
+                  )}
+                </div>
               </TabsContent>
             </Tabs>
             <div className="pb-8" />
