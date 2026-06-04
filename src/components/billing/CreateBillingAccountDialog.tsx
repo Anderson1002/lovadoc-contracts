@@ -669,7 +669,6 @@ export function CreateBillingAccountDialog({
       });
       return;
     }
-
     if (!currentDraftId) {
       toast({
         title: "Error",
@@ -678,7 +677,95 @@ export function CreateBillingAccountDialog({
       });
       return;
     }
+    return await _doSaveActivity();
+  };
 
+  const saveCertificacionOnly = async () => {
+    if (!currentDraftId) {
+      toast({
+        title: "Error",
+        description: "Primero guarde los detalles de facturación en la pestaña Informe",
+        variant: "destructive"
+      });
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      const { error } = await supabase
+        .from('billing_accounts')
+        .update({
+          novedades: novedades || null,
+          certification_month: certificationMonth || null,
+          report_delivery_date: reportDeliveryDate || null,
+          valor_ejecutado_antes: valorEjecutadoAntes ? parseFloat(valorEjecutadoAntes) : 0,
+          risk_matrix_compliance: riskMatrixCompliance,
+          social_security_verified: socialSecurityVerified,
+          anexos_lista: anexosLista || null,
+          certification_date: new Date().toISOString().split('T')[0],
+        })
+        .eq('id', currentDraftId);
+      if (error) throw error;
+      toast({
+        title: "Certificación Guardada",
+        description: "Los datos de la certificación se guardaron como borrador"
+      });
+    } catch (error: any) {
+      console.error('Error saving certificación:', error);
+      toast({
+        title: "Error",
+        description: `Error al guardar certificación: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const saveCuentaCobroOnly = async () => {
+    if (!currentDraftId) {
+      toast({
+        title: "Error",
+        description: "Primero guarde los detalles de facturación en la pestaña Informe",
+        variant: "destructive"
+      });
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      const { error } = await supabase
+        .from('billing_accounts')
+        .update({
+          invoice_number: invoiceNumber || null,
+          invoice_city: invoiceCity || null,
+          invoice_date: invoiceDate || null,
+          amount_in_words: amountInWords || null,
+          declaration_single_employer: declarationSingleEmployer,
+          declaration_80_percent_income: declaration80PercentIncome,
+          benefit_prepaid_health: benefitPrepaidHealth,
+          benefit_voluntary_pension: benefitVoluntaryPension,
+          benefit_housing_interest: benefitHousingInterest,
+          benefit_health_contributions: benefitHealthContributions,
+          benefit_economic_dependents: benefitEconomicDependents,
+        })
+        .eq('id', currentDraftId);
+      if (error) throw error;
+      toast({
+        title: "Cuenta de Cobro Guardada",
+        description: "Los datos de la cuenta de cobro se guardaron como borrador"
+      });
+    } catch (error: any) {
+      console.error('Error saving cuenta de cobro:', error);
+      toast({
+        title: "Error",
+        description: `Error al guardar cuenta: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const _doSaveActivity = async () => {
     try {
       const billingAccountId = currentDraftId;
       let savedActivity;
@@ -1964,6 +2051,26 @@ export function CreateBillingAccountDialog({
                   reportDeliveryDate={reportDeliveryDate}
                   onReportDeliveryDateChange={setReportDeliveryDate}
                 />
+                <div className="pt-2">
+                  <Button
+                    type="button"
+                    onClick={saveCertificacionOnly}
+                    disabled={!currentDraftId || isSubmitting}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    {isSubmitting ? (
+                      <><Save className="h-4 w-4 mr-2 animate-pulse" />Guardando...</>
+                    ) : (
+                      <><Save className="h-4 w-4 mr-2" />Guardar Borrador de Certificación</>
+                    )}
+                  </Button>
+                  {!currentDraftId && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Primero guarde los detalles de facturación en la pestaña Informe
+                    </p>
+                  )}
+                </div>
               </TabsContent>
 
               {/* Tab 3: Cuenta de Cobro */}
@@ -1996,6 +2103,26 @@ export function CreateBillingAccountDialog({
                   onBenefitEconomicDependentsChange={setBenefitEconomicDependents}
                   isComplete={cuentaCobroComplete}
                 />
+                <div className="pt-2">
+                  <Button
+                    type="button"
+                    onClick={saveCuentaCobroOnly}
+                    disabled={!currentDraftId || isSubmitting}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    {isSubmitting ? (
+                      <><Save className="h-4 w-4 mr-2 animate-pulse" />Guardando...</>
+                    ) : (
+                      <><Save className="h-4 w-4 mr-2" />Guardar Borrador de Cuenta de Cobro</>
+                    )}
+                  </Button>
+                  {!currentDraftId && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Primero guarde los detalles de facturación en la pestaña Informe
+                    </p>
+                  )}
+                </div>
               </TabsContent>
             </Tabs>
             <div className="pb-8" />
