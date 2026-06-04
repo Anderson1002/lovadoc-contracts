@@ -669,7 +669,15 @@ export function CreateBillingAccountDialog({
       });
       return;
     }
-
+    if (!currentDraftId) {
+      toast({
+        title: "Error",
+        description: "Debe guardar primero los detalles de facturación",
+        variant: "destructive"
+      });
+      return;
+    }
+    return await _doSaveActivity();
   };
 
   const saveCertificacionOnly = async () => {
@@ -757,18 +765,7 @@ export function CreateBillingAccountDialog({
     }
   };
 
-  const _saveActivityIndividually_continue = async () => {
-    // placeholder to avoid breaking; real body resumes below
-
-    if (!currentDraftId) {
-      toast({
-        title: "Error",
-        description: "Debe guardar primero los detalles de facturación",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const _doSaveActivity = async () => {
     try {
       const billingAccountId = currentDraftId;
       let savedActivity;
