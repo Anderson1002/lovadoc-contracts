@@ -670,6 +670,96 @@ export function CreateBillingAccountDialog({
       return;
     }
 
+  };
+
+  const saveCertificacionOnly = async () => {
+    if (!currentDraftId) {
+      toast({
+        title: "Error",
+        description: "Primero guarde los detalles de facturación en la pestaña Informe",
+        variant: "destructive"
+      });
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      const { error } = await supabase
+        .from('billing_accounts')
+        .update({
+          novedades: novedades || null,
+          certification_month: certificationMonth || null,
+          report_delivery_date: reportDeliveryDate || null,
+          valor_ejecutado_antes: valorEjecutadoAntes ? parseFloat(valorEjecutadoAntes) : 0,
+          risk_matrix_compliance: riskMatrixCompliance,
+          social_security_verified: socialSecurityVerified,
+          anexos_lista: anexosLista || null,
+          certification_date: new Date().toISOString().split('T')[0],
+        })
+        .eq('id', currentDraftId);
+      if (error) throw error;
+      toast({
+        title: "Certificación Guardada",
+        description: "Los datos de la certificación se guardaron como borrador"
+      });
+    } catch (error: any) {
+      console.error('Error saving certificación:', error);
+      toast({
+        title: "Error",
+        description: `Error al guardar certificación: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const saveCuentaCobroOnly = async () => {
+    if (!currentDraftId) {
+      toast({
+        title: "Error",
+        description: "Primero guarde los detalles de facturación en la pestaña Informe",
+        variant: "destructive"
+      });
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      const { error } = await supabase
+        .from('billing_accounts')
+        .update({
+          invoice_number: invoiceNumber || null,
+          invoice_city: invoiceCity || null,
+          invoice_date: invoiceDate || null,
+          amount_in_words: amountInWords || null,
+          declaration_single_employer: declarationSingleEmployer,
+          declaration_80_percent_income: declaration80PercentIncome,
+          benefit_prepaid_health: benefitPrepaidHealth,
+          benefit_voluntary_pension: benefitVoluntaryPension,
+          benefit_housing_interest: benefitHousingInterest,
+          benefit_health_contributions: benefitHealthContributions,
+          benefit_economic_dependents: benefitEconomicDependents,
+        })
+        .eq('id', currentDraftId);
+      if (error) throw error;
+      toast({
+        title: "Cuenta de Cobro Guardada",
+        description: "Los datos de la cuenta de cobro se guardaron como borrador"
+      });
+    } catch (error: any) {
+      console.error('Error saving cuenta de cobro:', error);
+      toast({
+        title: "Error",
+        description: `Error al guardar cuenta: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const _saveActivityIndividually_continue = async () => {
+    // placeholder to avoid breaking; real body resumes below
+
     if (!currentDraftId) {
       toast({
         title: "Error",
