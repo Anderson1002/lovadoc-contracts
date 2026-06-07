@@ -11,7 +11,8 @@ import {
   Phone,
   Calendar,
   UserCheck,
-  Building2
+  Building2,
+  KeyRound
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UserForm } from "@/components/users/UserForm";
 import { ProcessFilter } from "@/components/users/ProcessFilter";
 import { Layout } from "@/components/Layout";
+import { Label } from "@/components/ui/label";
 
 interface User {
   id: string;
@@ -75,6 +77,10 @@ export default function Users() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState("");
   const [roles, setRoles] = useState<Role[]>([]);
@@ -283,6 +289,44 @@ export default function Users() {
   };
 
   const canEdit = userRole === "super_admin" || userRole === "admin" || userRole === "supervisor";
+
+  const handleSetPassword = async () => {
+    if (!selectedUser) return;
+    if (newPassword.length < 8) {
+      toast({ title: "Error", description: "La contraseña debe tener al menos 8 caracteres", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Error", description: "Las contraseñas no coinciden", variant: "destructive" });
+      return;
+    }
+    try {
+      setPasswordSubmitting(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No hay sesión activa');
+
+      const res = await fetch(`https://cwgzjahsqzloshhvlwmr.supabase.co/functions/v1/admin-set-password`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ targetUserId: selectedUser.user_id, newPassword })
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Error al cambiar contraseña');
+
+      toast({ title: "Contraseña actualizada", description: `Se actualizó la contraseña de ${selectedUser.name}` });
+      setIsPasswordDialogOpen(false);
+      setSelectedUser(null);
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setPasswordSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -555,6 +599,20 @@ export default function Users() {
                                 <Edit className="h-4 w-4" />
                                 Editar
                               </DropdownMenuItem>
+                              {userRole === 'super_admin' && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setNewPassword("");
+                                    setConfirmPassword("");
+                                    setIsPasswordDialogOpen(true);
+                                  }}
+                                  className="flex items-center gap-2"
+                                >
+                                  <KeyRound className="h-4 w-4" />
+                                  Cambiar contraseña
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem 
                                 onClick={() => handleDeleteUser(user.id)}
                                 className="flex items-center gap-2 text-destructive"
@@ -594,6 +652,56 @@ export default function Users() {
               }}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Password Dialog (Super Admin only) */}
+      <Dialog open={isPasswordDialogOpen} onOpenChange={(open) => {
+        setIsPasswordDialogOpen(open);
+        if (!open) { setNewPassword(""); setConfirmPassword(""); setSelectedUser(null); }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Cambiar contraseña
+            </DialogTitle>
+            <DialogDescription>
+              {selectedUser ? `Define una nueva contraseña para ${selectedUser.name} (${selectedUser.email})` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Nueva contraseña</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Mínimo 8 caracteres"
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirmar contraseña</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Repite la contraseña"
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)} disabled={passwordSubmitting}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSetPassword} disabled={passwordSubmitting}>
+                {passwordSubmitting ? "Actualizando..." : "Actualizar contraseña"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
       </div>
