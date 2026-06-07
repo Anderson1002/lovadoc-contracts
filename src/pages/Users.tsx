@@ -654,6 +654,56 @@ export default function Users() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Change Password Dialog (Super Admin only) */}
+      <Dialog open={isPasswordDialogOpen} onOpenChange={(open) => {
+        setIsPasswordDialogOpen(open);
+        if (!open) { setNewPassword(""); setConfirmPassword(""); setSelectedUser(null); }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Cambiar contraseña
+            </DialogTitle>
+            <DialogDescription>
+              {selectedUser ? `Define una nueva contraseña para ${selectedUser.name} (${selectedUser.email})` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Nueva contraseña</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Mínimo 8 caracteres"
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirmar contraseña</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Repite la contraseña"
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)} disabled={passwordSubmitting}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSetPassword} disabled={passwordSubmitting}>
+                {passwordSubmitting ? "Actualizando..." : "Actualizar contraseña"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </Layout>
   );
