@@ -65,7 +65,7 @@ serve(async (req) => {
 
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       targetUserId,
-      { password: newPassword }
+      { password: newPassword, email_confirm: true }
     )
     if (updateError) {
       return new Response(JSON.stringify({ error: updateError.message }), {
