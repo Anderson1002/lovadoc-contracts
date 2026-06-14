@@ -2,3 +2,9 @@ project_id = "cwgzjahsqzloshhvlwmr"
 
 [functions.send-email]
 verify_jwt = false
+
+[functions.notify-whatsapp]
+verify_jwt = false
+
+[functions.notify-expiring-contracts]
+verify_jwt = false

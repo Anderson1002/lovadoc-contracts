@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.53.0";
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
@@ -124,6 +125,32 @@ serve(async (req: Request): Promise<Response> => {
 
     await client.close();
     console.log('Approval notification sent to:', employeeEmail);
+
+    // WhatsApp notification (non-blocking)
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('phone')
+        .eq('email', employeeEmail)
+        .maybeSingle();
+
+      await supabase.functions.invoke('notify-whatsapp', {
+        body: {
+          event: 'billing_approved',
+          phone: prof?.phone,
+          recipient_name: employeeName,
+          title: 'Cuenta de Cobro Aprobada ✅',
+          message: `Hola ${employeeName}, tu cuenta ${accountNumber} (${contractNumber}) del período ${billingMonth} fue APROBADA por ${supervisorName}. Pasa al proceso de pago en Tesorería.`,
+          data: { accountNumber, contractNumber, billingMonth, supervisorName },
+        },
+      });
+    } catch (e) {
+      console.error('[notify-whatsapp] approval error (non-blocking):', e);
+    }
 
     return new Response(
       JSON.stringify({ success: true }),
