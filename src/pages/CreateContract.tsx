@@ -401,13 +401,41 @@ export default function CreateContract() {
 
       // WhatsApp notification to SUPERVISOR (non-blocking)
       try {
+        let supervisor: any = null;
         const supervisorUserId = (contract as any).supervisor_id;
         if (supervisorUserId) {
-          const { data: supervisor } = await supabase
+          const { data } = await supabase
             .from('profiles')
             .select('name, phone')
             .eq('user_id', supervisorUserId)
             .maybeSingle();
+          supervisor = data;
+        }
+        if (!supervisor) {
+          const { data: { user: au } } = await supabase.auth.getUser();
+          if (au) {
+            const { data: creator } = await supabase
+              .from('profiles')
+              .select('proceso_id')
+              .eq('user_id', au.id)
+              .maybeSingle();
+            if (creator?.proceso_id) {
+              const { data: supRole } = await supabase
+                .from('roles').select('id').eq('name', 'supervisor').maybeSingle();
+              if (supRole?.id) {
+                const { data: sup } = await supabase
+                  .from('profiles')
+                  .select('name, phone')
+                  .eq('proceso_id', creator.proceso_id)
+                  .eq('role_id', supRole.id)
+                  .limit(1)
+                  .maybeSingle();
+                supervisor = sup;
+              }
+            }
+          }
+        }
+        {
 
           // operator (creator) name
           const { data: { user: authUser } } = await supabase.auth.getUser();
