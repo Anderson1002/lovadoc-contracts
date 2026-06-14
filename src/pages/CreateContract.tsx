@@ -429,7 +429,7 @@ export default function CreateContract() {
                 recipient_name: supervisor.name || 'Supervisor',
                 data: {
                   contractNumber: contract.contract_number_original || contract.contract_number,
-                  contractType: data.contract_type,
+                  contractType: data.contractType,
                   startDate: data.startDate.toISOString().split('T')[0],
                   operatorName,
                 },
