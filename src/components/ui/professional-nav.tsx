@@ -332,28 +332,6 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
                     <p className="text-xs text-muted-foreground capitalize">{userRole.replace('_', ' ')}</p>
                   </div>
                   
-                  <DropdownMenuItem asChild>
-                    <Link 
-                      to="/profile" 
-                      className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md hover:bg-accent hover:text-accent-foreground"
-                    >
-                      <User className="h-4 w-4" />
-                      <span>Mi Perfil</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuItem asChild>
-                    <Link 
-                      to="/notifications" 
-                      className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md hover:bg-accent hover:text-accent-foreground"
-                    >
-                      <Bell className="h-4 w-4" />
-                      <span>Notificaciones</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuSeparator className="my-2" />
-                  
                   <DropdownMenuItem 
                     onClick={onLogout}
                     className="flex items-center gap-3 px-3 py-2 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer rounded-md"
