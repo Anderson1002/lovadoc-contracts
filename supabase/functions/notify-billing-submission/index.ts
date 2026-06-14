@@ -46,24 +46,45 @@ serve(async (req: Request): Promise<Response> => {
 
     const { data: contract } = await supabase
       .from('contracts')
-      .select('supervisor_id')
+      .select('supervisor_id, created_by')
       .eq('id', contractId)
       .single();
 
-    if (!contract?.supervisor_id) {
-      console.log('No supervisor assigned to contract, skipping notification');
-      return new Response(JSON.stringify({ success: true, skipped: true }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...headers },
-      });
+    // Resolve supervisor: prefer explicit contract.supervisor_id, fallback to
+    // any supervisor sharing the proceso of the contract creator.
+    let supervisor: any = null;
+    if (contract?.supervisor_id) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('email, name, phone')
+        .eq('user_id', contract.supervisor_id)
+        .maybeSingle();
+      supervisor = data;
     }
-
-    // Get supervisor profile (supervisor_id references profiles.user_id)
-    const { data: supervisor } = await supabase
-      .from('profiles')
-      .select('email, name, phone')
-      .eq('user_id', contract.supervisor_id)
-      .single();
+    if (!supervisor && contract?.created_by) {
+      const { data: creator } = await supabase
+        .from('profiles')
+        .select('proceso_id')
+        .eq('id', contract.created_by)
+        .maybeSingle();
+      if (creator?.proceso_id) {
+        const { data: supRole } = await supabase
+          .from('roles')
+          .select('id')
+          .eq('name', 'supervisor')
+          .maybeSingle();
+        if (supRole?.id) {
+          const { data: sup } = await supabase
+            .from('profiles')
+            .select('email, name, phone')
+            .eq('proceso_id', creator.proceso_id)
+            .eq('role_id', supRole.id)
+            .limit(1)
+            .maybeSingle();
+          supervisor = sup;
+        }
+      }
+    }
 
     if (!supervisor?.email) {
       console.log('Supervisor has no email, skipping notification');
