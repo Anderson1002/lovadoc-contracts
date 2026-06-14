@@ -365,6 +365,40 @@ export default function CreateContract() {
         }
       });
 
+      // WhatsApp notification to contractor (non-blocking)
+      try {
+        const { data: contractor } = await supabase
+          .from('profiles')
+          .select('name, phone')
+          .eq('id', data.clientProfileId)
+          .maybeSingle();
+
+        if (contractor) {
+          const formattedAmount = new Intl.NumberFormat('es-CO', {
+            style: 'currency', currency: 'COP', minimumFractionDigits: 0,
+          }).format(parseFloat(data.totalAmount) || 0);
+
+          await supabase.functions.invoke('notify-whatsapp', {
+            body: {
+              event: 'contract_created',
+              phone: contractor.phone,
+              recipient_name: contractor.name,
+              title: 'Nuevo Contrato Registrado 📄',
+              message: `Hola ${contractor.name}, se ha registrado tu contrato ${contract.contract_number_original || contract.contract_number} por ${formattedAmount}, con vigencia del ${data.startDate.toLocaleDateString('es-CO')} al ${data.endDate.toLocaleDateString('es-CO')}.`,
+              data: {
+                contract_number: contract.contract_number_original || contract.contract_number,
+                oid: contract.oid,
+                amount: parseFloat(data.totalAmount),
+                start_date: data.startDate.toISOString().split('T')[0],
+                end_date: data.endDate.toISOString().split('T')[0],
+              },
+            },
+          });
+        }
+      } catch (e) {
+        console.error('Error sending WhatsApp notification (non-blocking):', e);
+      }
+
       toast({
         title: "Contrato creado exitosamente",
         description: `Contrato #${contract.oid} - ${contract.contract_number_original || contract.contract_number} registrado.`,
