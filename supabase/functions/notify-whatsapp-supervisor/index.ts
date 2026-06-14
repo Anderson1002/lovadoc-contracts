@@ -5,7 +5,7 @@ const headers = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const N8N_SUPERVISOR_WEBHOOK_URL = 'https://isabella2025-n8n.higmbd.easypanel.host/webhook-test/KhubaSupervisor';
+const N8N_SUPERVISOR_WEBHOOK_URL = 'https://isabella2025-n8n.higmbd.easypanel.host/webhook/KhubaSupervisor';
 
 interface SupervisorPayload {
   event: string; // supervisor_billing_pending | supervisor_billing_corrected | supervisor_contract_pending | supervisor_contract_corrected
