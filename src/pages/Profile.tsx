@@ -35,8 +35,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/ui/app-sidebar";
+import { Layout } from "@/components/Layout";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import SignatureCanvas from "react-signature-canvas";
@@ -415,30 +414,9 @@ export default function Profile() {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar userRole={userRole} />
-        <main className="flex-1">
-          <header className="h-12 flex items-center border-b bg-card px-4">
-            <SidebarTrigger />
-            <div className="ml-auto flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                Bienvenido, {user?.email}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="flex items-center gap-2 text-destructive hover:text-destructive"
-              >
-                <LogOut className="w-4 h-4" />
-                Salir
-              </Button>
-            </div>
-          </header>
-          
-          <div className="flex-1 overflow-auto">
-            <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <Layout>
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
               {/* Header */}
               <div className="flex items-center gap-4 mb-8">
                 <div className="p-2 bg-primary/10 rounded-lg">
@@ -940,10 +918,8 @@ export default function Profile() {
                   </Card>
                 </div>
               </div>
-            </div>
-          </div>
-        </main>
+        </div>
       </div>
-    </SidebarProvider>
+    </Layout>
   );
 }
