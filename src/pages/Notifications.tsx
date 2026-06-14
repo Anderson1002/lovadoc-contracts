@@ -27,8 +27,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/ui/app-sidebar";
+import { Layout } from "@/components/Layout";
 import { format, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
