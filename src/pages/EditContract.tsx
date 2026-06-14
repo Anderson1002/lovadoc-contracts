@@ -416,6 +416,52 @@ export default function EditContract() {
           title: "Contrato Corregido",
           description: "El contrato ha sido corregido y enviado nuevamente para revisión"
         });
+
+        // WhatsApp notification to SUPERVISOR (non-blocking)
+        try {
+          const { data: contractRow } = await supabase
+            .from('contracts')
+            .select('supervisor_id, contract_number, contract_number_original, contract_type, start_date')
+            .eq('id', id)
+            .maybeSingle();
+
+          if (contractRow?.supervisor_id) {
+            const { data: supervisor } = await supabase
+              .from('profiles')
+              .select('name, phone')
+              .eq('user_id', contractRow.supervisor_id)
+              .maybeSingle();
+
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+            let operatorName = authUser?.email || 'Operador';
+            if (authUser) {
+              const { data: opProfile } = await supabase
+                .from('profiles')
+                .select('name')
+                .eq('user_id', authUser.id)
+                .maybeSingle();
+              if (opProfile?.name) operatorName = opProfile.name;
+            }
+
+            if (supervisor) {
+              await supabase.functions.invoke('notify-whatsapp-supervisor', {
+                body: {
+                  event: 'supervisor_contract_corrected',
+                  phone: supervisor.phone,
+                  recipient_name: supervisor.name || 'Supervisor',
+                  data: {
+                    contractNumber: (contractRow as any).contract_number_original || contractRow.contract_number,
+                    contractType: contractRow.contract_type,
+                    startDate: contractRow.start_date,
+                    operatorName,
+                  },
+                },
+              });
+            }
+          }
+        } catch (e) {
+          console.error('Error sending supervisor WhatsApp notification (non-blocking):', e);
+        }
       } else {
         toast({
           title: "Éxito",

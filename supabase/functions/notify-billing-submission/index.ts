@@ -207,6 +207,25 @@ serve(async (req: Request): Promise<Response> => {
       console.error('[notify-whatsapp] submission error (non-blocking):', e);
     }
 
+    // WhatsApp notification to SUPERVISOR via dedicated webhook (non-blocking)
+    try {
+      await supabase.functions.invoke('notify-whatsapp-supervisor', {
+        body: {
+          event: isResubmission ? 'supervisor_billing_corrected' : 'supervisor_billing_pending',
+          phone: supervisor.phone,
+          recipient_name: supervisor.name || 'Supervisor',
+          data: {
+            accountNumber,
+            contractNumber,
+            billingMonth,
+            operatorName: employeeName,
+          },
+        },
+      });
+    } catch (e) {
+      console.error('[notify-whatsapp-supervisor] submission error (non-blocking):', e);
+    }
+
     return new Response(
       JSON.stringify({ success: true }),
       { status: 200, headers: { 'Content-Type': 'application/json', ...headers } }

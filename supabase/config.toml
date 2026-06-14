@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.notify-expiring-contracts]
 verify_jwt = false
+
+[functions.notify-whatsapp-supervisor]
+verify_jwt = false

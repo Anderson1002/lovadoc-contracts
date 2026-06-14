@@ -399,6 +399,48 @@ export default function CreateContract() {
         console.error('Error sending WhatsApp notification (non-blocking):', e);
       }
 
+      // WhatsApp notification to SUPERVISOR (non-blocking)
+      try {
+        const supervisorUserId = (contract as any).supervisor_id;
+        if (supervisorUserId) {
+          const { data: supervisor } = await supabase
+            .from('profiles')
+            .select('name, phone')
+            .eq('user_id', supervisorUserId)
+            .maybeSingle();
+
+          // operator (creator) name
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          let operatorName = authUser?.email || 'Operador';
+          if (authUser) {
+            const { data: opProfile } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('user_id', authUser.id)
+              .maybeSingle();
+            if (opProfile?.name) operatorName = opProfile.name;
+          }
+
+          if (supervisor) {
+            await supabase.functions.invoke('notify-whatsapp-supervisor', {
+              body: {
+                event: 'supervisor_contract_pending',
+                phone: supervisor.phone,
+                recipient_name: supervisor.name || 'Supervisor',
+                data: {
+                  contractNumber: contract.contract_number_original || contract.contract_number,
+                  contractType: data.contractType,
+                  startDate: data.startDate.toISOString().split('T')[0],
+                  operatorName,
+                },
+              },
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Error sending supervisor WhatsApp notification (non-blocking):', e);
+      }
+
       toast({
         title: "Contrato creado exitosamente",
         description: `Contrato #${contract.oid} - ${contract.contract_number_original || contract.contract_number} registrado.`,
