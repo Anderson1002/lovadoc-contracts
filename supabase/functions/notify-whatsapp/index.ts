@@ -5,7 +5,7 @@ const headers = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const N8N_WEBHOOK_URL = 'https://isabella2025-n8n.higmbd.easypanel.host/webhook-test/Khuba';
+const N8N_WEBHOOK_URL = 'https://isabella2025-n8n.higmbd.easypanel.host/webhook/Khuba';
 
 interface WhatsAppPayload {
   event: string;        // e.g. 'billing_submitted' | 'billing_approved' | 'billing_rejected' | 'contract_created' | 'contract_expiring'
