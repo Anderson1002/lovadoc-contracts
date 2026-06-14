@@ -2152,6 +2152,7 @@ export function CreateBillingAccountDialog({
                     arlNumero={arlNumero}
                     arlValor={arlValor}
                     arlFecha={arlFecha}
+                    signatureUrl={profileSignatureUrl}
                   />
                 )}
                 {activeTab === 'certificacion' && (
