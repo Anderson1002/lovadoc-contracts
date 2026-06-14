@@ -429,30 +429,9 @@ export default function Notifications() {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar userRole={userRole} />
-        <main className="flex-1">
-          <header className="h-12 flex items-center border-b bg-card px-4">
-            <SidebarTrigger />
-            <div className="ml-auto flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                Bienvenido, {user?.email}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="flex items-center gap-2 text-destructive hover:text-destructive"
-              >
-                <LogOut className="w-4 h-4" />
-                Salir
-              </Button>
-            </div>
-          </header>
-          
-          <div className="flex-1 overflow-auto">
-            <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <Layout>
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
               {/* Header */}
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
@@ -616,10 +595,8 @@ export default function Notifications() {
                   })
                 )}
               </div>
-            </div>
-          </div>
-        </main>
+        </div>
       </div>
-    </SidebarProvider>
+    </Layout>
   );
 }
