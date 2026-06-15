@@ -1120,7 +1120,9 @@ export type Database = {
     }
     Functions: {
       generate_billing_account_number: { Args: never; Returns: string }
-      generate_billing_number: { Args: never; Returns: string }
+      generate_billing_number:
+        | { Args: never; Returns: string }
+        | { Args: { _created_by: string }; Returns: string }
       generate_contract_number: { Args: never; Returns: string }
       get_billing_account_state: {
         Args: { state_code: string }
