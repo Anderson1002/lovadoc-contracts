@@ -463,15 +463,27 @@ export function CreateBillingAccountDialog({
       return;
     }
 
+    if (endDate < startDate) {
+      toast({
+        title: "Error",
+        description: "La fecha fin debe ser posterior o igual a la fecha de inicio",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (isSubmitting) return;
+
     try {
       setIsSubmitting(true);
       const startDateString = format(startDate, 'yyyy-MM-dd');
-      
+      const billingMonthString = format(new Date(startDate.getFullYear(), startDate.getMonth(), 1), 'yyyy-MM-dd');
+
       const { data: existingBilling, error: searchError } = await supabase
         .from('billing_accounts')
         .select('*')
         .eq('contract_id', selectedContract)
-        .eq('billing_month', startDateString)
+        .eq('billing_month', billingMonthString)
         .eq('created_by', userProfile.id)
         .maybeSingle();
 
@@ -497,7 +509,7 @@ export function CreateBillingAccountDialog({
           .insert({
             contract_id: selectedContract,
             amount: parseFloat(amount),
-            billing_month: startDateString,
+            billing_month: billingMonthString,
             billing_start_date: startDateString,
             billing_end_date: format(endDate, 'yyyy-MM-dd'),
             created_by: userProfile.id,
