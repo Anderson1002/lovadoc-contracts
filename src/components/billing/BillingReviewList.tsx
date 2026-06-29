@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Eye, CheckCircle, XCircle, Calendar, DollarSign, FileText, History, Plus, Trash2 } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Calendar, DollarSign, FileText, History, Plus, Trash2, Download, FileWarning } from "lucide-react";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { BillingDocumentPreview } from "@/components/billing/BillingDocumentPreview";
 import { CertificationPreview } from "@/components/billing/CertificationPreview";
@@ -706,6 +706,62 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="informe">
+                {/* Archivo de Planilla de Seguridad Social */}
+                <div className="mb-4 rounded-md border bg-muted/30 p-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="h-4 w-4 text-primary shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">Archivo de Planilla de Seguridad Social</p>
+                      {previewBilling.planilla_file_url ? (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {previewBilling.planilla_file_url.split('/').pop()}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">No se ha cargado el PDF de la planilla</p>
+                      )}
+                    </div>
+                  </div>
+                  {previewBilling.planilla_file_url ? (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          const { data, error } = await supabase.storage
+                            .from('billing-documents')
+                            .createSignedUrl(previewBilling.planilla_file_url, 3600);
+                          if (error || !data?.signedUrl) {
+                            toast({ title: 'Error', description: 'No se pudo abrir la planilla', variant: 'destructive' });
+                            return;
+                          }
+                          window.open(data.signedUrl, '_blank');
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-1" /> Ver Planilla
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={async () => {
+                          const { data, error } = await supabase.storage
+                            .from('billing-documents')
+                            .createSignedUrl(previewBilling.planilla_file_url, 3600, { download: true });
+                          if (error || !data?.signedUrl) {
+                            toast({ title: 'Error', description: 'No se pudo descargar la planilla', variant: 'destructive' });
+                            return;
+                          }
+                          window.open(data.signedUrl, '_blank');
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-1" /> Descargar
+                      </Button>
+                    </div>
+                  ) : (
+                    <Badge variant="outline" className="shrink-0 border-amber-300 text-amber-700 bg-amber-50">
+                      <FileWarning className="h-3 w-3 mr-1" /> Sin archivo cargado
+                    </Badge>
+                  )}
+                </div>
                 <BillingDocumentPreview
                   userProfile={previewBilling.created_by_profile}
                   selectedContract={previewBilling.contracts}
