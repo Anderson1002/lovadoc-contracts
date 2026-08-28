@@ -1,32 +1,21 @@
-## Objetivo
-Permitir que la supervisora (y demás roles revisores) pueda **ver y descargar el PDF de la planilla de seguridad social** que carga el OPS, dentro del modal de revisión de cuentas de cobro.
+# Revertir contrato CON-202606-000021 de "Cancelado" a "Devuelto"
 
-## Cambios
+## Contexto
+El supervisor canceló por error el contrato **CON-202606-000021** (número original 013-07012026, OID 10, auditora administrativa). Actualmente está en estado `cancelado` (state_code `CAN`). Se necesita devolverlo al estado `devuelto` para que el empleado pueda corregirlo.
 
-### Único archivo a modificar
-`src/components/billing/BillingReviewList.tsx`
+## Verificación previa (ya realizada)
+- El contrato existe y está en `cancelado` / `CAN`.
+- No hay ningún trigger de base de datos que bloquee la transición `cancelado → devuelto`; el único trigger sobre `contracts` solo actualiza `updated_at`.
+- Los códigos válidos en `contract_states` incluyen `DEV` = Devuelto.
+- El trigger `validate_contract_for_billing` impide crear cuentas de cobro salvo que el contrato esté `en_ejecucion`, así que no hay riesgo de cuentas nuevas mientras esté devuelto.
 
-### Qué agregar
-En la sección de revisión donde ya se muestran los datos de planilla (Salud / Pensión / ARL), agregar un bloque nuevo **"Archivo de Planilla"** con:
+## Cambio propuesto (una sola sentencia UPDATE en la tabla `contracts`)
+Para el contrato con id `1443ddfb-dc3b-4552-ba0c-9d79b5a1fa5d`:
+- `estado` → `devuelto`
+- `state_code` → `DEV`
+- `comentarios_devolucion` → `"Devuelto por corrección administrativa: fue cancelado por error por el supervisor."`
+- `updated_at` se actualiza automáticamente por el trigger existente.
 
-1. **Si `previewBilling.planilla_file_url` existe:**
-   - Botón **"Ver Planilla"** → genera signed URL con `supabase.storage.from('billing-documents').createSignedUrl(planilla_file_url, 3600)` y abre en nueva pestaña (`window.open(url, '_blank')`).
-   - Botón secundario **"Descargar"** → mismo signed URL con `download` attribute.
-   - Mostrar el nombre del archivo (parseado del path) como referencia visual.
-
-2. **Si `planilla_file_url` está vacío o null:**
-   - Badge gris/amarillo: **"Sin archivo cargado"** para que la supervisora sepa que el OPS no subió el PDF.
-
-### Patrón a reutilizar
-Mismo patrón ya probado en la sección de evidencias de actividades (línea ~1087 del mismo archivo), que ya usa `createSignedUrl` correctamente con el bucket `billing-documents`.
-
-## Lo que NO se toca
-- Base de datos (campo `planilla_file_url` ya existe y se guarda bien).
-- RLS / Storage policies (ya permiten lectura a supervisor/admin/super_admin).
-- Carga del archivo por parte del OPS (funciona correctamente).
-- Otros componentes o vistas.
-
-## Validación post-cambio
-1. Entrar como supervisora `lidy-456@hotmail.com`.
-2. Abrir una cuenta de cobro pendiente que tenga planilla cargada → debe aparecer el botón "Ver Planilla" y abrir el PDF en pestaña nueva.
-3. Abrir una cuenta sin planilla → debe mostrar el badge "Sin archivo cargado".
+## Alcance
+- Solo cambio de datos en base de datos; no se toca código de la aplicación.
+- No se modifica el historial (`contract_state_history`); si se desea, puedo registrar manualmente una entrada de auditoría del cambio — indícame si la quieres.
