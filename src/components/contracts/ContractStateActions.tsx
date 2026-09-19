@@ -176,14 +176,16 @@ export function ContractStateActions({
         // Solo super_admin/admin pueden reactivar un contrato cancelado
         if (["super_admin", "admin"].includes(userRole)) {
           return [
-            { action: 'registrado', label: 'Reactivar (Registrado)', icon: CheckCircle, variant: 'default' }
+            { action: 'en_ejecucion', label: 'Reactivar (En ejecución)', icon: CheckCircle, variant: 'default' },
+            { action: 'registrado', label: 'Reactivar (Registrado)', icon: Clock, variant: 'default' }
           ];
         }
         return [];
       case 'completado':
         if (["super_admin", "admin"].includes(userRole)) {
           return [
-            { action: 'registrado', label: 'Reactivar (Registrado)', icon: CheckCircle, variant: 'default' }
+            { action: 'en_ejecucion', label: 'Reactivar (En ejecución)', icon: CheckCircle, variant: 'default' },
+            { action: 'registrado', label: 'Reactivar (Registrado)', icon: Clock, variant: 'default' }
           ];
         }
         return [];
