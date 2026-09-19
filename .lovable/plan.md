@@ -14,9 +14,13 @@ En el menú de acciones de un contrato:
 2. Igual para contratos en **Cancelado**: ofrecer las dos opciones de reactivación.
 3. Cada cambio sigue quedando registrado en el historial del contrato con el usuario y la fecha, como ya ocurre hoy.
 
+## Qué muestra el historial
+
+Todos los contratos hoy en "Completado" los pasó a ese estado la supervisora Vanessa Quevedo (lidy-456@hotmail.com) el 16 y 17 de septiembre de 2026, desde "En ejecución". Ninguno fue automático; cada cambio quedó registrado en el historial del contrato con usuario y fecha.
+
 ## Pendiente de tu decisión
 
-¿Dejamos que Supervisor y Jurídica sigan pudiendo marcar contratos como "Completado", o limitamos esa acción solo a Super Admin y Admin? Con lo que respondas ajusto este punto; si no dices nada, se queda como está hoy.
+¿Dejamos que Supervisor y Jurídica sigan pudiendo marcar contratos como "Completado", o limitamos esa acción solo a Super Admin y Admin? Dado que fue la supervisora quien completó todos estos contratos, esta decisión es el punto clave. Si no dices nada, se queda como está hoy.
 
 ## Detalle técnico
 
