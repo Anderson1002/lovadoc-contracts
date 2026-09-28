@@ -491,6 +491,15 @@ export function CreateBillingAccountDialog({
 
       let billingAccountId = currentDraftId;
 
+      if (existingBilling && ['aprobada', 'pendiente_revision', 'causada', 'pagada'].includes(existingBilling.status)) {
+        toast({
+          title: "Período ya radicado",
+          description: `Ya existe una cuenta de cobro (${existingBilling.account_number}) para el mes de ${format(startDate, 'MMMM yyyy', { locale: es })} y su estado es "${existingBilling.status}". Verifique las fechas: deben corresponder al mes que va a cobrar (por ejemplo 01/09/2026 a 30/09/2026), no a la vigencia total del contrato.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
       if (existingBilling) {
         const { error: updateError } = await supabase
           .from('billing_accounts')
