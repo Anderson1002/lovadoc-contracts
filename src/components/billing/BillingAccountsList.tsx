@@ -347,8 +347,8 @@ export function BillingAccountsList({ userProfile, userRole, filterType, statusF
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1 whitespace-nowrap">
-                      <BillingAccountStatusBadge status={billing.status} />
+                    <div className="space-y-1 max-w-[320px]">
+                      <div className="whitespace-nowrap"><BillingAccountStatusBadge status={billing.status} /></div>
                       {billing.status === 'rechazada' && billing.comentario_supervisor && (
                         <SupervisorObservations comment={billing.comentario_supervisor} compact />
                       )}

@@ -67,7 +67,7 @@ export function SupervisorObservations({ comment, className = '', compact = fals
               ) : (
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">General</Badge>
               )}
-              <span className="text-muted-foreground truncate">{obs.comment}</span>
+              <span className="text-muted-foreground whitespace-normal break-words line-clamp-2" title={obs.comment}>{obs.comment}</span>
             </div>
           );
         })}
