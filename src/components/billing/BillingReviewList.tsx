@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { getMultipleContractsExecution, executionTextClass, type ContractExecution } from "@/lib/contractExecution";
 import { cn } from "@/lib/utils";
+import { BillingSearchBar, matchesBillingSearch } from "@/components/billing/BillingSearchBar";
 
 interface BillingReviewListProps {
   userProfile: any;
@@ -41,6 +42,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
   const [rejectionCounts, setRejectionCounts] = useState<Record<string, number>>({});
   const [showHistoryId, setShowHistoryId] = useState<string | null>(null);
   const [executionMap, setExecutionMap] = useState<Record<string, ContractExecution>>({});
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     loadPendingBillingAccounts();
@@ -422,6 +424,8 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
     );
   }
 
+  const filteredAccounts = billingAccounts.filter((b) => matchesBillingSearch(b, search));
+
   return (
     <>
       <Card>
@@ -435,8 +439,14 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <BillingSearchBar
+            value={search}
+            onChange={setSearch}
+            shown={filteredAccounts.length}
+            total={billingAccounts.length}
+          />
           <div className="rounded-md border">
-            <Table>
+            <Table className="min-w-[1150px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-16">#</TableHead>
@@ -446,12 +456,19 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                   <TableHead>Contratista</TableHead>
                   <TableHead>Período</TableHead>
                   <TableHead>Valor</TableHead>
-                  <TableHead>Fecha Envío</TableHead>
+                  <TableHead className="whitespace-nowrap">Fecha Envío</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {billingAccounts.map((billing) => (
+                {filteredAccounts.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                      No se encontraron cuentas con esos criterios
+                    </TableCell>
+                  </TableRow>
+                )}
+                {filteredAccounts.map((billing) => (
                   <TableRow key={billing.id}>
                     <TableCell className="text-muted-foreground font-mono text-xs">
                       {billing.oid}
