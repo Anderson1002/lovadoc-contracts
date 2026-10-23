@@ -15,6 +15,7 @@ import { getMultipleContractsExecution, executionTextClass, type ContractExecuti
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
+import { BillingSearchBar, matchesBillingSearch } from "./BillingSearchBar";
 
 interface BillingAccountsListProps {
   userProfile: any;
@@ -28,6 +29,8 @@ export function BillingAccountsList({ userProfile, userRole, filterType, statusF
   const [billingAccounts, setBillingAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingAccount, setEditingAccount] = useState<any>(null);
+  const [search, setSearch] = useState("");
+  const [statusSel, setStatusSel] = useState("all");
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [executionMap, setExecutionMap] = useState<Record<string, ContractExecution>>({});
 
@@ -217,6 +220,10 @@ export function BillingAccountsList({ userProfile, userRole, filterType, statusF
     );
   }
 
+  const filteredAccounts = billingAccounts.filter(
+    (b) => (statusSel === 'all' || b.status === statusSel) && matchesBillingSearch(b, search)
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -229,14 +236,22 @@ export function BillingAccountsList({ userProfile, userRole, filterType, statusF
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <BillingSearchBar
+          value={search}
+          onChange={setSearch}
+          shown={filteredAccounts.length}
+          total={billingAccounts.length}
+          status={statusSel}
+          onStatusChange={statusFilter && statusFilter.length > 0 ? undefined : setStatusSel}
+        />
         <div className="rounded-md border">
-          <Table>
+          <Table className="min-w-[1150px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-16">#</TableHead>
                 <TableHead>Número</TableHead>
                 <TableHead>Contrato</TableHead>
-                <TableHead>
+                <TableHead className="whitespace-nowrap">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -256,23 +271,30 @@ export function BillingAccountsList({ userProfile, userRole, filterType, statusF
                 <TableHead>Estado</TableHead>
                 <TableHead>Fecha</TableHead>
                 {filterType === 'all' && ['super_admin', 'admin', 'supervisor'].includes(userRole) && (
-                  <TableHead>Creado por</TableHead>
+                  <TableHead className="whitespace-nowrap">Creado por</TableHead>
                 )}
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {billingAccounts.map((billing) => (
+              {filteredAccounts.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                    No se encontraron cuentas con esos criterios
+                  </TableCell>
+                </TableRow>
+              )}
+              {filteredAccounts.map((billing) => (
                 <TableRow key={billing.id}>
                   <TableCell className="text-muted-foreground font-mono text-xs">
                     {billing.oid}
                   </TableCell>
-                  <TableCell className="font-medium">
+                  <TableCell className="font-medium whitespace-nowrap">
                     {billing.account_number}
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{billing.contracts?.contract_number_original || billing.contracts?.contract_number}</p>
+                      <p className="font-medium whitespace-nowrap">{billing.contracts?.contract_number_original || billing.contracts?.contract_number}</p>
                       <p className="text-sm text-muted-foreground">{billing.contracts?.client?.name}</p>
                     </div>
                   </TableCell>
@@ -300,26 +322,26 @@ export function BillingAccountsList({ userProfile, userRole, filterType, statusF
                     })()}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 whitespace-nowrap">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       {formatMonth(billing.billing_month)}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 whitespace-nowrap">
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">{formatCurrency(billing.amount)}</span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
+                    <div className="space-y-1 whitespace-nowrap">
                       <BillingAccountStatusBadge status={billing.status} />
                       {billing.status === 'rechazada' && billing.comentario_supervisor && (
                         <SupervisorObservations comment={billing.comentario_supervisor} compact />
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                     {formatDate(billing.created_at)}
                   </TableCell>
                    {filterType === 'all' && ['super_admin', 'admin', 'supervisor'].includes(userRole) && (
