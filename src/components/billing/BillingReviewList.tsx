@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { getMultipleContractsExecution, executionTextClass, type ContractExecution } from "@/lib/contractExecution";
 import { cn } from "@/lib/utils";
-import { BillingSearchBar, matchesBillingSearch } from "@/components/billing/BillingSearchBar";
+import { BillingSearchBar, matchesBillingSearch, exportBillingCsv } from "@/components/billing/BillingSearchBar";
 import { TablePagination, usePagination } from "@/components/billing/TablePagination";
 
 interface BillingReviewListProps {
@@ -448,6 +448,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
             onChange={setSearch}
             shown={filteredAccounts.length}
             total={billingAccounts.length}
+            onExport={() => exportBillingCsv(filteredAccounts, "cuentas-pendientes")}
           />
           <div className="rounded-md border">
             <Table className="min-w-[1150px]">

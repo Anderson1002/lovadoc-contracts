@@ -15,7 +15,7 @@ import { getMultipleContractsExecution, executionTextClass, type ContractExecuti
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
-import { BillingSearchBar, matchesBillingSearch } from "./BillingSearchBar";
+import { BillingSearchBar, matchesBillingSearch, exportBillingCsv } from "./BillingSearchBar";
 import { TablePagination, usePagination } from "./TablePagination";
 
 interface BillingAccountsListProps {
@@ -247,6 +247,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType, statusF
           total={billingAccounts.length}
           status={statusSel}
           onStatusChange={statusFilter && statusFilter.length > 0 ? undefined : setStatusSel}
+          onExport={() => exportBillingCsv(filteredAccounts, statusFilter?.includes("aprobada") ? "cuentas-aprobadas" : statusFilter?.includes("rechazada") ? "cuentas-devueltas" : "cuentas-historial")}
         />
         <div className="rounded-md border">
           <Table className="min-w-[1150px]">
