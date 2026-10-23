@@ -69,7 +69,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
       if (creatorIds.length > 0) {
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, name, email')
+          .select('id, name, email, document_number')
           .in('id', creatorIds);
         if (profilesError) throw profilesError;
         const map = Object.fromEntries((profilesData || []).map((p: any) => [p.id, p]));
