@@ -456,7 +456,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                     <TableCell className="text-muted-foreground font-mono text-xs">
                       {billing.oid}
                     </TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium whitespace-nowrap">
                       <div className="flex flex-col gap-1">
                         {billing.account_number}
                         {(rejectionCounts[billing.id] || 0) > 0 && (
@@ -468,7 +468,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{billing.contracts?.contract_number_original || billing.contracts?.contract_number}</p>
+                        <p className="font-medium whitespace-nowrap">{billing.contracts?.contract_number_original || billing.contracts?.contract_number}</p>
                         <p className="text-sm text-muted-foreground">{billing.contracts?.profiles?.name || billing.created_by_profile?.name}</p>
                       </div>
                     </TableCell>
@@ -502,18 +502,18 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         {formatMonth(billing.billing_month)}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium">{formatCurrency(billing.amount)}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                       {formatDate(billing.enviado_el || billing.created_at)}
                     </TableCell>
                     <TableCell className="text-right">
