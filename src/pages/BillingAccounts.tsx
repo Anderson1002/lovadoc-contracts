@@ -170,7 +170,7 @@ export default function BillingAccounts() {
 
   // Calculate visible tab count for dynamic grid
   const tabCount = useMemo(() => {
-    if (isSupervisor) return 2;
+    if (isSupervisor) return 4;
     if (isEmployee) return 4;
     let count = 0;
     if (!isSupervisor && !isTreasury) count++; // Mis Cuentas
@@ -286,9 +286,17 @@ export default function BillingAccounts() {
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="history" className="flex items-center gap-2">
+                <TabsTrigger value="sup-aprobadas" className="flex items-center gap-2">
                   <Receipt className="w-4 h-4" />
-                  Historial de Cuentas
+                  Aprobadas
+                </TabsTrigger>
+                <TabsTrigger value="sup-devueltas" className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  Devueltas
+                </TabsTrigger>
+                <TabsTrigger value="history" className="flex items-center gap-2">
+                  <FileClock className="w-4 h-4" />
+                  Historial Completo
                 </TabsTrigger>
               </>
           ) : isEmployee ? (
@@ -364,6 +372,22 @@ export default function BillingAccounts() {
                   userProfile={userProfile}
                   userRole={userRole}
                   onCountChange={setPendingCount}
+                />
+              </TabsContent>
+              <TabsContent value="sup-aprobadas" className="space-y-6">
+                <BillingAccountsList
+                  userProfile={userProfile}
+                  userRole={userRole}
+                  filterType="all"
+                  statusFilter={['aprobada', 'causada', 'en_pago', 'pagada']}
+                />
+              </TabsContent>
+              <TabsContent value="sup-devueltas" className="space-y-6">
+                <BillingAccountsList
+                  userProfile={userProfile}
+                  userRole={userRole}
+                  filterType="all"
+                  statusFilter={['rechazada']}
                 />
               </TabsContent>
               <TabsContent value="history" className="space-y-6">

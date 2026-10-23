@@ -20,6 +20,7 @@ import { Progress } from "@/components/ui/progress";
 import { getMultipleContractsExecution, executionTextClass, type ContractExecution } from "@/lib/contractExecution";
 import { cn } from "@/lib/utils";
 import { BillingSearchBar, matchesBillingSearch } from "@/components/billing/BillingSearchBar";
+import { TablePagination, usePagination } from "@/components/billing/TablePagination";
 
 interface BillingReviewListProps {
   userProfile: any;
@@ -386,6 +387,10 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
     }
   };
 
+  const filteredAccounts = billingAccounts.filter((b) => matchesBillingSearch(b, search));
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const pg = usePagination(filteredAccounts, search);
+
   if (loading) {
     return (
       <Card>
@@ -424,7 +429,6 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
     );
   }
 
-  const filteredAccounts = billingAccounts.filter((b) => matchesBillingSearch(b, search));
 
   return (
     <>
@@ -468,7 +472,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
                     </TableCell>
                   </TableRow>
                 )}
-                {filteredAccounts.map((billing) => (
+                {pg.pageItems.map((billing) => (
                   <TableRow key={billing.id}>
                     <TableCell className="text-muted-foreground font-mono text-xs">
                       {billing.oid}
@@ -580,6 +584,14 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
               </TableBody>
             </Table>
           </div>
+          <TablePagination
+            page={pg.page}
+            pageSize={pg.pageSize}
+            totalPages={pg.totalPages}
+            total={pg.total}
+            onPageChange={pg.setPage}
+            onPageSizeChange={pg.setPageSize}
+          />
         </CardContent>
       </Card>
 

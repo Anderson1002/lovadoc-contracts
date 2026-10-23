@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import { BillingSearchBar, matchesBillingSearch } from "./BillingSearchBar";
+import { TablePagination, usePagination } from "./TablePagination";
 
 interface BillingAccountsListProps {
   userProfile: any;
@@ -179,6 +180,12 @@ export function BillingAccountsList({ userProfile, userRole, filterType, statusF
     });
   };
 
+  const filteredAccounts = billingAccounts.filter(
+    (b) => (statusSel === 'all' || b.status === statusSel) && matchesBillingSearch(b, search)
+  );
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const pg = usePagination(filteredAccounts, `${search}|${statusSel}`);
+
   if (loading) {
     return (
       <Card>
@@ -220,9 +227,6 @@ export function BillingAccountsList({ userProfile, userRole, filterType, statusF
     );
   }
 
-  const filteredAccounts = billingAccounts.filter(
-    (b) => (statusSel === 'all' || b.status === statusSel) && matchesBillingSearch(b, search)
-  );
 
   return (
     <Card>
@@ -284,7 +288,7 @@ export function BillingAccountsList({ userProfile, userRole, filterType, statusF
                   </TableCell>
                 </TableRow>
               )}
-              {filteredAccounts.map((billing) => (
+              {pg.pageItems.map((billing) => (
                 <TableRow key={billing.id}>
                   <TableCell className="text-muted-foreground font-mono text-xs">
                     {billing.oid}
@@ -369,6 +373,14 @@ export function BillingAccountsList({ userProfile, userRole, filterType, statusF
             </TableBody>
           </Table>
         </div>
+        <TablePagination
+          page={pg.page}
+          pageSize={pg.pageSize}
+          totalPages={pg.totalPages}
+          total={pg.total}
+          onPageChange={pg.setPage}
+          onPageSizeChange={pg.setPageSize}
+        />
       </CardContent>
 
       <EditBillingAccountDialog
