@@ -247,7 +247,15 @@ export function BillingAccountsList({ userProfile, userRole, filterType, statusF
           total={billingAccounts.length}
           status={statusSel}
           onStatusChange={statusFilter && statusFilter.length > 0 ? undefined : setStatusSel}
-          onExport={() => exportBillingCsv(filteredAccounts, statusFilter?.includes("aprobada") ? "cuentas-aprobadas" : statusFilter?.includes("rechazada") ? "cuentas-devueltas" : "cuentas-historial")}
+          onExport={() => {
+            const isAprob = statusFilter?.includes("aprobada");
+            const isDev = statusFilter?.includes("rechazada");
+            exportBillingCsv(
+              filteredAccounts,
+              isAprob ? "cuentas-aprobadas" : isDev ? "cuentas-devueltas" : "cuentas-historial",
+              { tab: isAprob ? "Aprobadas" : isDev ? "Devueltas" : "Historial", search, status: statusSel }
+            );
+          }}
         />
         <div className="rounded-md border">
           <Table className="min-w-[1150px]">

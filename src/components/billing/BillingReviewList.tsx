@@ -448,7 +448,7 @@ export function BillingReviewList({ userProfile, userRole, onCountChange }: Bill
             onChange={setSearch}
             shown={filteredAccounts.length}
             total={billingAccounts.length}
-            onExport={() => exportBillingCsv(filteredAccounts, "cuentas-pendientes")}
+            onExport={() => exportBillingCsv(filteredAccounts, "cuentas-pendientes", { tab: "Pendientes de Revisión", search })}
           />
           <div className="rounded-md border">
             <Table className="min-w-[1150px]">

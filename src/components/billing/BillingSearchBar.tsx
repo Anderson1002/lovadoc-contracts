@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { parseLocalDate } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 const normalize = (s: any) =>
   String(s ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -13,7 +14,31 @@ const STATUS_LABELS: Record<string, string> = {
   rechazada: "Devuelta", causada: "Causada", pagada: "Pagada",
 };
 
-export function exportBillingCsv(rows: any[], fileLabel = "cuentas") {
+const slug = (s: string) =>
+  normalize(s).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+
+export function exportBillingCsv(
+  rows: any[],
+  fileLabel = "cuentas",
+  filters?: { tab?: string; search?: string; status?: string }
+) {
+  const parts = [fileLabel];
+  if (filters?.status && filters.status !== "all") parts.push(`estado-${slug(STATUS_LABELS[filters.status] || filters.status)}`);
+  if (filters?.search?.trim()) parts.push(`busqueda-${slug(filters.search)}`);
+  const finalLabel = parts.filter(Boolean).join("_");
+  doExport(rows, finalLabel);
+  const details = [
+    filters?.tab && `Pestaña: ${filters.tab}`,
+    filters?.status && filters.status !== "all" && `Estado: ${STATUS_LABELS[filters.status] || filters.status}`,
+    filters?.search?.trim() && `Búsqueda: "${filters.search.trim()}"`,
+  ].filter(Boolean).join(" · ");
+  toast({
+    title: `${rows.length} ${rows.length === 1 ? "cuenta exportada" : "cuentas exportadas"}`,
+    description: details || "Sin filtros aplicados",
+  });
+}
+
+function doExport(rows: any[], fileLabel: string) {
   const fmtDate = (d: any) => {
     if (!d) return "";
     try { return parseLocalDate(String(d).slice(0, 10)).toLocaleDateString("es-CO"); } catch { return String(d); }
