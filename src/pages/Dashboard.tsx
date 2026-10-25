@@ -31,6 +31,7 @@ import { JuridicaDashboard } from "@/components/dashboard/JuridicaDashboard";
 import { ContractExecutionSummary } from "@/components/dashboard/ContractExecutionSummary";
 import { ContractExecutionComparison } from "@/components/dashboard/ContractExecutionComparison";
 import { Search, Settings, Shield, Upload, Building2, Eye } from "lucide-react";
+import dashboardArchitecture from "@/assets/khuba-dashboard-architecture.jpg";
 
 interface DashboardStats {
   totalContracts: number;
@@ -305,9 +306,11 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
+    <div className="dashboard-surface container mx-auto px-4 py-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="dashboard-banner">
+        <img src={dashboardArchitecture} alt="" width={1920} height={512} />
+        <div className="dashboard-banner-content flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div>
           <h1 className="text-3xl font-bold text-foreground">{dashboardConfig.title}</h1>
           <p className="text-muted-foreground">
@@ -322,6 +325,7 @@ export default function Dashboard() {
             </Link>
           </Button>
         )}
+        </div>
       </div>
 
       {/* Alert for employees with returned contracts */}
@@ -343,8 +347,8 @@ export default function Dashboard() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
-        <div className="lg:col-span-1">
+      <div className="dashboard-metrics grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+        <div className="min-w-0">
           <ProcessCard />
         </div>
         <StatsCard
@@ -395,11 +399,11 @@ export default function Dashboard() {
           <BillingSummaryCard {...billingSummary} />
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-7">
-          <div className="md:col-span-3">
+        <div className="grid gap-5 lg:grid-cols-2">
+          <div className="min-w-0">
             <ContractStatusChart data={chartData} />
           </div>
-          <div className="md:col-span-4">
+          <div className="min-w-0">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -420,7 +424,7 @@ export default function Dashboard() {
               <CardContent className="space-y-4">
                 {recentContracts.length > 0 ? (
                   recentContracts.map((contract: any) => (
-                    <div key={contract.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div key={contract.id} className="dashboard-recent-item">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-medium">{contract.contract_number_original || contract.contract_number}</p>
@@ -484,7 +488,7 @@ export default function Dashboard() {
           <CardContent className="space-y-4">
             {recentContracts.length > 0 ? (
               recentContracts.map((contract: any) => (
-                <div key={contract.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={contract.id} className="dashboard-recent-item">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{contract.contract_number_original || contract.contract_number}</p>
