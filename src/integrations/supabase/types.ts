@@ -1092,6 +1092,146 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_notification_attempts: {
+        Row: {
+          attempt_number: number
+          completed_at: string | null
+          created_at: string
+          error: string | null
+          http_status: number | null
+          id: string
+          notification_id: string
+          request_id: number | null
+          response_body: string | null
+          webhook_url: string
+        }
+        Insert: {
+          attempt_number: number
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          http_status?: number | null
+          id?: string
+          notification_id: string
+          request_id?: number | null
+          response_body?: string | null
+          webhook_url: string
+        }
+        Update: {
+          attempt_number?: number
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          http_status?: number | null
+          id?: string
+          notification_id?: string
+          request_id?: number | null
+          response_body?: string | null
+          webhook_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_notification_attempts_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_notification_outbox"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_notification_outbox: {
+        Row: {
+          accepted_at: string | null
+          attempts: number
+          created_at: string
+          delivered_at: string | null
+          entity_id: string
+          entity_type: string
+          event: string
+          http_status: number | null
+          id: string
+          last_error: string | null
+          last_response: string | null
+          next_attempt_at: string | null
+          payload: Json
+          recipient_key: string
+          recipient_profile_id: string | null
+          request_id: number | null
+          status: string
+          transition_id: string
+          updated_at: string
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          attempts?: number
+          created_at?: string
+          delivered_at?: string | null
+          entity_id: string
+          entity_type: string
+          event: string
+          http_status?: number | null
+          id?: string
+          last_error?: string | null
+          last_response?: string | null
+          next_attempt_at?: string | null
+          payload: Json
+          recipient_key: string
+          recipient_profile_id?: string | null
+          request_id?: number | null
+          status?: string
+          transition_id: string
+          updated_at?: string
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          attempts?: number
+          created_at?: string
+          delivered_at?: string | null
+          entity_id?: string
+          entity_type?: string
+          event?: string
+          http_status?: number | null
+          id?: string
+          last_error?: string | null
+          last_response?: string | null
+          next_attempt_at?: string | null
+          payload?: Json
+          recipient_key?: string
+          recipient_profile_id?: string | null
+          request_id?: number | null
+          status?: string
+          transition_id?: string
+          updated_at?: string
+          whatsapp_message_id?: string | null
+        }
+        Relationships: []
+      }
+      whatsapp_notification_settings: {
+        Row: {
+          base_url: string
+          created_at: string
+          enabled: boolean
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          base_url?: string
+          created_at?: string
+          enabled?: boolean
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          base_url?: string
+          created_at?: string
+          enabled?: boolean
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       v_billing_accounts_last_review: {
@@ -1147,6 +1287,21 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["user_role_type"]
       }
+      khuba_enqueue_whatsapp: {
+        Args: {
+          p_data: Json
+          p_entity: string
+          p_event: string
+          p_kind: string
+          p_recipient: string
+          p_resolution_error?: string
+          p_transition: string
+        }
+        Returns: string
+      }
+      khuba_process_whatsapp_outbox: { Args: never; Returns: number }
+      khuba_whatsapp_observations: { Args: { p_text: string }; Returns: Json }
+      khuba_whatsapp_path: { Args: { p_event: string }; Returns: string }
     }
     Enums: {
       contract_state:

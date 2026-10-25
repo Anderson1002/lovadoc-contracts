@@ -417,76 +417,7 @@ export default function EditContract() {
           description: "El contrato ha sido corregido y enviado nuevamente para revisión"
         });
 
-        // WhatsApp notification to SUPERVISOR (non-blocking)
-        try {
-          const { data: contractRow } = await supabase
-            .from('contracts')
-            .select('supervisor_id, created_by, contract_number, contract_number_original, contract_type, start_date')
-            .eq('id', id)
-            .maybeSingle();
-
-          let supervisor: any = null;
-          if (contractRow?.supervisor_id) {
-            const { data } = await supabase
-              .from('profiles')
-              .select('name, phone')
-              .eq('user_id', contractRow.supervisor_id)
-              .maybeSingle();
-            supervisor = data;
-          }
-          if (!supervisor && contractRow?.created_by) {
-            const { data: creator } = await supabase
-              .from('profiles')
-              .select('proceso_id')
-              .eq('id', contractRow.created_by)
-              .maybeSingle();
-            if (creator?.proceso_id) {
-              const { data: supRole } = await supabase
-                .from('roles').select('id').eq('name', 'supervisor').maybeSingle();
-              if (supRole?.id) {
-                const { data: sup } = await supabase
-                  .from('profiles')
-                  .select('name, phone')
-                  .eq('proceso_id', creator.proceso_id)
-                  .eq('role_id', supRole.id)
-                  .limit(1)
-                  .maybeSingle();
-                supervisor = sup;
-              }
-            }
-          }
-          if (contractRow) {
-
-            const { data: { user: authUser } } = await supabase.auth.getUser();
-            let operatorName = authUser?.email || 'Operador';
-            if (authUser) {
-              const { data: opProfile } = await supabase
-                .from('profiles')
-                .select('name')
-                .eq('user_id', authUser.id)
-                .maybeSingle();
-              if (opProfile?.name) operatorName = opProfile.name;
-            }
-
-            if (supervisor) {
-              await supabase.functions.invoke('notify-whatsapp-supervisor', {
-                body: {
-                  event: 'supervisor_contract_corrected',
-                  phone: supervisor.phone,
-                  recipient_name: supervisor.name || 'Supervisor',
-                  data: {
-                    contractNumber: (contractRow as any).contract_number_original || contractRow.contract_number,
-                    contractType: contractRow.contract_type,
-                    startDate: contractRow.start_date,
-                    operatorName,
-                  },
-                },
-              });
-            }
-          }
-        } catch (e) {
-          console.error('Error sending supervisor WhatsApp notification (non-blocking):', e);
-        }
+        // The confirmed devuelto → corregido transition enqueues WhatsApp in the database.
       } else {
         toast({
           title: "Éxito",

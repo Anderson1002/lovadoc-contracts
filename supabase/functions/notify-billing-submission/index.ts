@@ -212,40 +212,7 @@ serve(async (req: Request): Promise<Response> => {
     await client.close();
     console.log('Submission notification sent to supervisor:', supervisor.email);
 
-    // WhatsApp notification (non-blocking)
-    try {
-      await supabase.functions.invoke('notify-whatsapp', {
-        body: {
-          event: isResubmission ? 'billing_resubmitted' : 'billing_submitted',
-          phone: supervisor.phone,
-          recipient_name: supervisor.name || 'Supervisor',
-          title: isResubmission ? 'Cuenta de Cobro Re-enviada' : 'Nueva Cuenta de Cobro',
-          message: `Hola ${supervisor.name || 'Supervisor'}, el contratista ${employeeName} ${isResubmission ? 're-envió' : 'envió'} la cuenta ${accountNumber} (${contractNumber}) por ${formattedAmount} - período ${billingMonth}. Ingresa al sistema para revisarla.`,
-          data: { accountNumber, contractNumber, billingMonth, employeeName, employeeEmail, amount, isResubmission },
-        },
-      });
-    } catch (e) {
-      console.error('[notify-whatsapp] submission error (non-blocking):', e);
-    }
-
-    // WhatsApp notification to SUPERVISOR via dedicated webhook (non-blocking)
-    try {
-      await supabase.functions.invoke('notify-whatsapp-supervisor', {
-        body: {
-          event: isResubmission ? 'supervisor_billing_corrected' : 'supervisor_billing_pending',
-          phone: supervisor.phone,
-          recipient_name: supervisor.name || 'Supervisor',
-          data: {
-            accountNumber,
-            contractNumber,
-            billingMonth,
-            operatorName: employeeName,
-          },
-        },
-      });
-    } catch (e) {
-      console.error('[notify-whatsapp-supervisor] submission error (non-blocking):', e);
-    }
+    // WhatsApp is independent of SMTP and captured atomically by database triggers.
 
     return new Response(
       JSON.stringify({ success: true }),

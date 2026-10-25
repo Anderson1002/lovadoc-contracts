@@ -151,36 +151,7 @@ serve(async (req: Request): Promise<Response> => {
     await client.close();
     console.log('Rejection notification sent to:', employeeEmail);
 
-    // WhatsApp notification (non-blocking)
-    try {
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-      );
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('phone')
-        .eq('email', employeeEmail)
-        .maybeSingle();
-
-      const obsText = (observations || [])
-        .filter(o => o.documentType && o.comment)
-        .map(o => `• ${o.documentType}: ${o.comment}`)
-        .join('\n');
-
-      await supabase.functions.invoke('notify-whatsapp', {
-        body: {
-          event: 'billing_rejected',
-          phone: prof?.phone,
-          recipient_name: employeeName,
-          title: 'Cuenta de Cobro Devuelta ⚠️',
-          message: `Hola ${employeeName}, tu cuenta ${accountNumber} (${contractNumber}) del período ${billingMonth} fue DEVUELTA por ${supervisorName}.\n\nObservaciones:\n${obsText || 'Revisa el sistema para más detalles.'}\n\nIngresa al sistema para corregir y reenviar.`,
-          data: { accountNumber, contractNumber, billingMonth, supervisorName, observations },
-        },
-      });
-    } catch (e) {
-      console.error('[notify-whatsapp] rejection error (non-blocking):', e);
-    }
+    // WhatsApp is independent of SMTP and captured atomically by database triggers.
 
     return new Response(
       JSON.stringify({ success: true }),
