@@ -12,4 +12,4 @@
 - [x] Retire duplicate legacy WhatsApp calls without changing emails or business rules.
 - [x] Run controlled database tests without contacting real recipients and report verification limits.
 - [ ] Verify production URLs and real WhatsApp response — blocked: no n8n connection and no authorized test recipient.
-- [ ] Enable production delivery — blocked: awaiting authorized controlled end-to-end test; real events remain persisted pending.
+- [ ] Audit current dispatcher and authentic queued events, activate authorized production delivery, and report observed results.
