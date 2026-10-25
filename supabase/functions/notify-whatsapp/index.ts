@@ -22,6 +22,13 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const payload: WhatsAppPayload = await req.json();
 
+    // Keep the independent expiry flow; prevent legacy calls duplicating the ten outbox events.
+    if (payload.event !== 'contract_expiring') {
+      return new Response(JSON.stringify({ success: false, error: 'Business notifications now use the transactional outbox' }), {
+        status: 410, headers: { 'Content-Type': 'application/json', ...headers },
+      });
+    }
+
     if (!payload.event || !payload.title || !payload.message) {
       return new Response(
         JSON.stringify({ success: false, error: 'Missing event, title or message' }),
