@@ -1,6 +1,7 @@
 import { ReactNode, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import "@/styles/platform.css";
 import { ProfessionalNav } from "@/components/ui/professional-nav";
 
 interface LayoutProps {
@@ -94,14 +95,14 @@ export function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="khuba-platform min-h-screen bg-background">
       <ProfessionalNav 
         userRole={userRole} 
         userEmail={user?.email}
         userName={userName}
         onLogout={handleLogout}
       />
-      <main className="flex-1">
+      <main className="platform-content min-w-0 flex-1">
         {children}
       </main>
     </div>

@@ -34,14 +34,8 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const SERIES_COLORS = [
-  "hsl(var(--primary))",
-  "hsl(142 76% 36%)",
-  "hsl(38 92% 50%)",
-  "hsl(0 84% 60%)",
-  "hsl(262 83% 58%)",
-  "hsl(199 89% 48%)",
-  "hsl(24 75% 50%)",
-  "hsl(173 80% 40%)",
+  "hsl(var(--primary))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))", "hsl(var(--chart-6))", "hsl(var(--chart-7))", "hsl(var(--chart-8))",
 ];
 
 export function ContractExecutionComparison({ userRole, userProfileId }: Props) {

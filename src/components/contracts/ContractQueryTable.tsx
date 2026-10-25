@@ -125,9 +125,9 @@ export function ContractQueryTable({
 
   const getTypeBadge = (type: string) => {
     const typeConfig = {
-      fixed_amount: { label: "Monto Fijo", color: "bg-blue-100 text-blue-800" },
-      variable_amount: { label: "Monto Variable", color: "bg-green-100 text-green-800" },
-      company_contract: { label: "Contrato Empresa", color: "bg-purple-100 text-purple-800" }
+      fixed_amount: { label: "Monto Fijo", color: "bg-primary-soft text-primary" },
+      variable_amount: { label: "Monto Variable", color: "bg-secondary text-secondary-foreground" },
+      company_contract: { label: "Contrato Empresa", color: "bg-muted text-foreground" }
     };
 
     const config = typeConfig[type as keyof typeof typeConfig] || 
@@ -558,7 +558,7 @@ export function ContractQueryTable({
                                 </div>
                                 <div className="space-y-2">
                                   <Label className="text-sm font-semibold">Valor Total</Label>
-                                  <p className="text-lg font-bold text-green-600">
+                                  <p className="text-lg font-bold text-primary">
                                     {formatCurrency(selectedContract.total_amount)}
                                   </p>
                                 </div>

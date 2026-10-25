@@ -32,6 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import khubaLogo from "@/assets/khuba-logo.png";
 import { cn } from "@/lib/utils";
 
 interface MenuItem {
@@ -197,25 +198,23 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
   };
 
   return (
-    <nav className="bg-gradient-to-r from-card via-card to-card border-b border-border shadow-lg">
-      <div className="container mx-auto px-6">
-        <div className="flex items-center justify-between h-16">
+    <nav className="platform-nav bg-card border-b border-border">
+      <div className="platform-nav-inner mx-auto px-4 lg:px-6">
+        <div className="platform-nav-row flex items-center justify-between gap-4">
           {/* Logo/Brand */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl">
-                <Building2 className="h-6 w-6 text-primary" />
-              </div>
+              <img src={khubaLogo} alt="KHUBA Servicios especializados" className="platform-brand-logo" />
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-foreground">KHUBA Pro</span>
-                <span className="text-xs text-muted-foreground">Gestor de Contratos y Cuentas Médicas</span>
+                <span className="text-base font-bold text-foreground">KHUBA Pro</span>
+                <span className="platform-brand-description text-muted-foreground">Gestor de Contratos y Cuentas Médicas</span>
               </div>
             </div>
           </div>
 
           {/* Navigation Menu */}
-          <div className="flex-1 mx-8">
-            <div className="flex items-center space-x-1">
+          <div className="platform-nav-menus min-w-0">
+            <div className="flex items-center gap-1">
               {getFilteredMenuItems().map((menu) => {
                 const Icon = menu.icon;
                 const isActive = isActiveMenu(menu.items);
@@ -226,7 +225,7 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
                       <Button
                         variant="ghost"
                         className={cn(
-                          "flex items-center gap-2 px-4 py-2 h-10 rounded-lg transition-all duration-300 font-medium",
+                          "flex items-center gap-2 px-3 py-2 h-10 rounded-md transition-colors font-medium text-xs",
                           "bg-transparent hover:bg-accent/50 hover:text-accent-foreground",
                           "data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
                           "focus:bg-accent focus:text-accent-foreground",
@@ -239,7 +238,7 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent 
-                      className="w-80 p-4 bg-card border border-border shadow-xl rounded-lg z-50"
+                      className="w-80 max-w-[calc(100vw-2rem)] p-4 bg-card border border-border shadow-xl rounded-lg z-50"
                       align="start"
                       sideOffset={8}
                     >
@@ -290,7 +289,7 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
           </div>
 
           {/* User Menu */}
-          <div className="flex items-center gap-4">
+          <div className="platform-user flex items-center gap-3">
             {/* Notifications Quick Access */}
             <Link 
               to="/notifications"
@@ -305,7 +304,7 @@ export function ProfessionalNav({ userRole, userEmail, userName, onLogout }: Pro
             <div className="h-6 w-px bg-border" />
 
             <div className="flex items-center gap-3">
-              <div className="hidden md:flex flex-col items-end">
+              <div className="platform-user-name hidden md:flex flex-col items-end">
                 <span className="text-sm font-medium text-foreground">{userName || userEmail}</span>
                 <span className="text-xs text-muted-foreground capitalize">{userRole.replace('_', ' ')}</span>
               </div>

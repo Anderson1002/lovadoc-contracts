@@ -23,17 +23,17 @@ export function StatsCard({
   className
 }: StatsCardProps) {
   return (
-    <Card className={cn("transition-all duration-200 hover:shadow-md", className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+    <Card className={cn("dashboard-stat transition-all duration-200 hover:shadow-md", className)}>
+      <CardHeader className="dashboard-stat-heading space-y-0">
+        <span className="dashboard-stat-icon"><Icon className="h-4 w-4" /></span>
+        <CardTitle className="text-xs font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-foreground">{value}</div>
+      <CardContent className="px-4 pb-4">
+        <div className="dashboard-stat-value font-bold text-foreground">{value}</div>
         {description && (
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="dashboard-stat-description text-xs text-muted-foreground mt-1">
             {description}
           </p>
         )}

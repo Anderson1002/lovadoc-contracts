@@ -79,32 +79,32 @@ export function ContractStats({ contracts, isLoading = false }: ContractStatsPro
       value: totalContracts.toString(),
       description: "Contratos encontrados",
       icon: FileText,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100"
+      color: "text-primary",
+      bgColor: "bg-primary-soft"
     },
     {
       title: "Valor Total",
       value: formatCurrency(totalValue),
       description: "Suma de todos los contratos",
       icon: DollarSign,
-      color: "text-green-600",
-      bgColor: "bg-green-100"
+      color: "text-state-executing",
+      bgColor: "bg-primary-soft"
     },
     {
       title: "Valor Promedio",
       value: formatCurrency(averageValue),
       description: "Promedio por contrato",
       icon: TrendingUp,
-      color: "text-purple-600",
-      bgColor: "bg-purple-100"
+      color: "text-primary",
+      bgColor: "bg-secondary"
     },
     {
       title: "Contratos en Ejecución",
       value: activeContracts.toString(),
       description: `${completedContracts} completados, ${cancelledContracts} cancelados`,
       icon: CheckCircle,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-100"
+      color: "text-state-executing",
+      bgColor: "bg-primary-soft"
     }
   ];
 
@@ -115,21 +115,21 @@ export function ContractStats({ contracts, isLoading = false }: ContractStatsPro
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <Card key={index} className="border-2 shadow-md hover:shadow-lg transition-shadow">
+            <Card key={index} className="border shadow-sm hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-2">
+                  <div className="space-y-2 min-w-0">
                     <p className="text-sm font-medium text-muted-foreground">
                       {stat.title}
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-xl font-bold text-foreground break-words">
                       {stat.value}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {stat.description}
                     </p>
                   </div>
-                  <div className={`p-3 rounded-lg ${stat.bgColor}`}>
+                  <div className={`p-3 shrink-0 rounded-lg ${stat.bgColor}`}>
                     <Icon className={`w-6 h-6 ${stat.color}`} />
                   </div>
                 </div>
@@ -142,7 +142,7 @@ export function ContractStats({ contracts, isLoading = false }: ContractStatsPro
       {/* Distribución por estado y tipo */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Estados */}
-        <Card className="border-2 shadow-md">
+        <Card className="border shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="w-5 h-5" />
@@ -156,11 +156,11 @@ export function ContractStats({ contracts, isLoading = false }: ContractStatsPro
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <CheckCircle className="w-4 h-4 text-state-executing" />
                   <span className="text-sm">Activos</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="default" className="bg-green-100 text-green-800">
+                  <Badge variant="default" className="bg-primary-soft text-state-executing">
                     {activeContracts}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
@@ -171,7 +171,7 @@ export function ContractStats({ contracts, isLoading = false }: ContractStatsPro
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-blue-600" />
+                  <CheckCircle className="w-4 h-4 text-primary" />
                   <span className="text-sm">Completados</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -205,7 +205,7 @@ export function ContractStats({ contracts, isLoading = false }: ContractStatsPro
         </Card>
 
         {/* Tipos */}
-        <Card className="border-2 shadow-md">
+        <Card className="border shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5" />

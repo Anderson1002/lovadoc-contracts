@@ -396,7 +396,7 @@ export default function Profile() {
       case 'super_admin': return 'bg-red-500';
       case 'admin': return 'bg-purple-500';
       case 'supervisor': return 'bg-blue-500';
-      case 'employee': return 'bg-green-500';
+      case 'employee': return 'bg-primary';
       default: return 'bg-gray-500';
     }
   };
