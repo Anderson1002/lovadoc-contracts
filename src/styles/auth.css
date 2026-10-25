@@ -1,0 +1,108 @@
+.khuba-auth {
+  --background: 40 23% 98%;
+  --foreground: 218 59% 12%;
+  --primary: 212 42% 44%;
+  --primary-foreground: 0 0% 100%;
+  --muted: 217 71% 96%;
+  --muted-foreground: 219 16% 47%;
+  --border: 215 37% 86%;
+  --input: 215 47% 89%;
+  --ring: 212 42% 44%;
+  --accent: 215 60% 93%;
+  --accent-foreground: 212 42% 44%;
+  --auth-panel: 40 23% 98%;
+  --auth-button-shadow: 0 4px 12px hsl(var(--primary) / 0.2);
+  display: grid;
+  grid-template-columns: 61.5% 38.5%;
+  min-height: 100svh;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: Arial, Helvetica, sans-serif;
+  letter-spacing: 0;
+}
+
+.auth-institutional {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100svh;
+  overflow: hidden;
+  padding: 56px 7%;
+}
+.auth-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.auth-institutional-content { position: relative; width: 60%; max-width: 480px; }
+.auth-brand { width: 290px; max-width: 100%; height: auto; mix-blend-mode: multiply; }
+.auth-institutional-title { margin-top: 30px; font-size: 44px; line-height: 1.06; font-weight: 800; }
+.auth-institutional-title span { color: hsl(var(--primary)); }
+.auth-description { margin-top: 16px; font-size: 16px; line-height: 1.45; color: hsl(var(--muted-foreground)); }
+.auth-features { margin-top: 26px; display: flex; flex-direction: column; gap: 17px; }
+.auth-feature { display: flex; align-items: center; gap: 13px; }
+.auth-feature-icon { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; flex-shrink: 0; border-radius: 12px; color: hsl(var(--primary)); background: hsl(var(--muted) / 0.92); }
+.auth-feature-icon svg { width: 23px; height: 23px; stroke-width: 1.7; }
+.auth-feature-title { font-size: 14px; line-height: 1.35; font-weight: 700; color: hsl(var(--primary)); }
+.auth-feature-description { font-size: 12px; line-height: 1.4; color: hsl(var(--muted-foreground)); }
+.auth-copyright { position: absolute; bottom: 30px; left: 7%; font-size: 11px; color: hsl(var(--muted-foreground) / 0.8); }
+.auth-form-panel { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; padding: 44px 15%; background: hsl(var(--auth-panel)); border-radius: 6px 0 0 6px; }
+.auth-form-content { width: 100%; max-width: 420px; }
+.auth-form-logo { display: block; width: 250px; max-width: 90%; height: auto; margin: 0 auto 36px; mix-blend-mode: multiply; }
+.auth-form-heading { font-size: 27px; font-weight: 750; line-height: 1.2; }
+.auth-form-subtitle { margin-top: 6px; margin-bottom: 28px; font-size: 13px; line-height: 1.45; color: hsl(var(--muted-foreground)); }
+.auth-label { font-size: 13px; font-weight: 700; }
+.auth-input { height: 43px; border-radius: 7px; background: hsl(var(--muted)); font-size: 13px; color: hsl(var(--foreground)); }
+.auth-input::placeholder { color: hsl(var(--muted-foreground)); }
+.auth-submit { height: 44px; margin-top: 2px; border-radius: 7px; box-shadow: var(--auth-button-shadow); font-size: 14px; font-weight: 600; transition: background-color 160ms, box-shadow 160ms; }
+.auth-recovery { font-size: 13px; }
+.auth-access-notice { display: flex; align-items: center; gap: 10px; border-top: 1px solid hsl(var(--border)); margin-top: 26px; padding-top: 18px; font-size: 11px; line-height: 1.4; color: hsl(var(--muted-foreground)); }
+.auth-security-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 43px; height: 43px; border-radius: 50%; background: hsl(var(--muted)); color: hsl(var(--primary)); }
+.auth-mobile-copyright { display: none; }
+
+@media (min-width: 1600px) {
+  .auth-institutional-content { max-width: 560px; }
+  .auth-brand { width: 360px; }
+  .auth-institutional-title { font-size: 52px; margin-top: 38px; }
+  .auth-description { font-size: 18px; }
+  .auth-feature-title { font-size: 16px; }
+  .auth-feature-description { font-size: 14px; }
+  .auth-features { gap: 22px; margin-top: 34px; }
+  .auth-form-logo { width: 280px; }
+}
+@media (max-width: 1100px) {
+  .auth-institutional { padding: 40px 7%; }
+  .auth-institutional-content { width: 64%; }
+  .auth-brand { width: 240px; }
+  .auth-institutional-title { font-size: 36px; }
+  .auth-description { font-size: 14px; }
+  .auth-form-panel { padding: 36px 12%; }
+  .auth-form-heading { font-size: 24px; }
+}
+@media (min-width: 701px) and (max-width: 850px) {
+  .khuba-auth { grid-template-columns: 52% 48%; }
+  .auth-institutional-content { width: 86%; }
+  .auth-background { object-position: 35% center; opacity: 0.55; }
+  .auth-institutional-title { font-size: 32px; }
+  .auth-form-panel { padding-inline: 9%; }
+  .auth-copyright { right: 20px; line-height: 1.5; }
+}
+@media (max-width: 700px) {
+  .khuba-auth { display: flex; flex-direction: column; }
+  .auth-institutional { display: none; }
+  .auth-form-panel { flex: 1; min-height: 100svh; padding: 42px 26px 28px; border-radius: 0; }
+  .auth-form-content { max-width: 390px; }
+  .auth-form-logo { width: 245px; margin-bottom: 38px; }
+  .auth-form-heading { font-size: 26px; }
+  .auth-form-subtitle { font-size: 13px; margin-bottom: 28px; }
+  .auth-input { height: 46px; }
+  .auth-submit { height: 46px; }
+  .auth-mobile-copyright { display: block; margin-top: 36px; font-size: 10px; text-align: center; color: hsl(var(--muted-foreground)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .khuba-auth *, .khuba-auth *::before, .khuba-auth *::after { transition: none !important; }
+}
