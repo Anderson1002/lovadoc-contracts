@@ -11,5 +11,6 @@
 - [x] Add atomic persistent notification outbox, deduplication, dispatch and retries.
 - [x] Retire duplicate legacy WhatsApp calls without changing emails or business rules.
 - [x] Run controlled database tests without contacting real recipients and report verification limits.
-- [ ] Verify production URLs and real WhatsApp response — blocked: no n8n connection and no authorized test recipient.
-- [ ] Audit current dispatcher and authentic queued events, activate authorized production delivery, and report observed results.
+- [x] Verify actual n8n/WhatsApp acceptance for the two authentic queued events (HTTP 202, provider IDs recorded).
+- [x] Audit current dispatcher and authentic queued events, activate authorized production delivery, and report observed results.
+- [ ] Inspect remaining eight n8n Webhook nodes/execution IDs and final delivery receipts — blocked: no accessible n8n connection or delivery callback; production sending remains enabled.

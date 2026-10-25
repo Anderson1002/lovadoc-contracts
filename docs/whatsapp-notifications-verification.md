@@ -35,9 +35,19 @@ Database tests executed through the migration service, with all fixture mutation
 - PASS: simulated 200 with `success:false` is rejected; timeout becomes uncertain with no automatic resend.
 - Edge functions deployed successfully; application preview build reported OK.
 
-## Not verified / activation gate
-Delivery is intentionally disabled pending a controlled authorized end-to-end check. Real business events continue to be durably queued, not dropped. The ten supplied paths are configured, but were not checked against Webhook nodes because no accessible n8n connection exists. No production POST or real WhatsApp test was sent. No authenticated browser test is available for this external Supabase project.
+## Production activation — 2026-10-25
+The user explicitly authorized legitimate production events. Audit found `enabled=false`, no active recovery job, and two authentic never-attempted events from billing account OID 111. Their creation/radication timestamps matched the account and its state history; database recipients and phones matched the persisted payload. No payloads were changed or fixtures created.
 
-Next requirement: authorize one controlled recipient and provide access to inspect existing n8n workflow URLs/response contracts. Confirm whether n8n deduplicates the Idempotency-Key header; exactly-once external delivery cannot be guaranteed solely by KHUBA if a workflow partially sends before returning an error. Then enable through the authenticated administration endpoint. Unknown/blocked/failed events must be reconciled before any manual resend.
+Delivery is now enabled. The activation trigger dispatched both events once; n8n returned HTTP 202 and `success:true`, `status:accepted`, with a WhatsApp `messageId` for each. The worker parser was extended to capture this actual camelCase response, and a read-only regression assertion passed. No accepted message was resent.
+
+- `bbd41ad5-7b68-43f0-8ecc-c4cd009ddd56`: `billing_registered`, recipient Ops2, production path `/webhook/khuba/billing-registered`, request ID 1.
+- `7e200fb2-e473-4dcc-90cd-a74dfc7944cf`: `supervisor_billing_pending`, recipient Supervisor Ejemplo, production path `/webhook/khuba/supervisor-billing-pending`, request ID 2.
+
+Root cause: the temporary delivery flag was still false, so the worker returned before posting and the recovery job was not armed. No current recipient_key ambiguity or wrong-table NEW.status defect remained in the audited database definitions.
+
+## Remaining verification limits
+The ten supplied paths are configured; only the two legitimate event paths above were exercised. No accessible n8n connection exists to inspect the other eight Webhook nodes or execution IDs. The actual n8n response confirms acceptance by WhatsApp API, not final delivery. No authenticated browser test is available for this external Supabase project. These inspection limits do not pause production delivery.
+
+Optional next requirement: provide access to inspect existing n8n workflow URLs/executions and delivery receipts. Confirm whether n8n deduplicates the Idempotency-Key header; exactly-once external delivery cannot be guaranteed solely by KHUBA if a workflow partially sends before returning an error. Unknown/blocked/failed events must be reconciled before any manual resend.
 
 Seven pre-existing Supabase warnings were reported, unrelated to these migrations: public/signed-in execution of older security-definer functions, long OTP expiry, disabled leaked-password protection and available PostgreSQL security patches. They were not changed because authentication and permissions were outside scope.
