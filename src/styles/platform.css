@@ -20,6 +20,8 @@
 .platform-user-name { max-width: 150px; overflow-wrap: anywhere; }
 .platform-card { box-shadow: var(--shadow-card); }
 .platform-dialog { box-shadow: var(--shadow-popup); }
+.platform-dialog { font-family: Arial, Helvetica, sans-serif; }
+.platform-dialog :is(h2, h3) { color: hsl(var(--foreground)); letter-spacing: 0; overflow-wrap: anywhere; }
 .platform-tabs { height: auto; }
 .khuba-platform h1 { letter-spacing: 0; line-height: 1.25; overflow-wrap: anywhere; }
 .khuba-platform input:not([type=checkbox]):not([type=radio]):not([type=file]),
@@ -73,6 +75,11 @@
   .khuba-platform [role=tablist] { max-width: 100%; }
   .khuba-platform [role=tab] { font-size: 12px; padding-inline: 8px; }
   .status-chart-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 1023px) {
+  .billing-create-dialog { overflow-y: auto; }
+  .billing-create-columns { overflow: visible; flex: none; }
+  .billing-create-columns > div { min-height: 420px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .khuba-platform *, .platform-dialog { animation-duration: .01ms !important; transition-duration: .01ms !important; }

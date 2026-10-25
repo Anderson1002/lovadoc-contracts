@@ -44,6 +44,13 @@
     --radius: 0.5rem;
     --decorative: 33 40% 90%;
     --overlay: 218 59% 12%;
+    --chart-2: 211 35% 63%;
+    --chart-3: 36 64% 72%;
+    --chart-4: 211 18% 44%;
+    --chart-5: 197 47% 50%;
+    --chart-6: 218 32% 76%;
+    --chart-7: 28 40% 56%;
+    --chart-8: 205 22% 34%;
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--ring)));
     --gradient-hero: linear-gradient(110deg, hsl(var(--card)), hsl(var(--primary-soft)));
     --shadow-card: 0 3px 14px -5px hsl(var(--foreground) / 0.1);
