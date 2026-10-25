@@ -1,138 +1,49 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, CheckCircle, XCircle } from "lucide-react";
+import { PieChart as PieIcon } from "lucide-react";
 
-interface ContractStatusData {
-  name: string;
-  value: number;
-  color: string;
-}
-
-interface ContractStatusChartProps {
-  data: ContractStatusData[];
-}
+interface ContractStatusData { name: string; value: number; color: string; }
+interface ContractStatusChartProps { data: ContractStatusData[]; }
 
 export function ContractStatusChart({ data }: ContractStatusChartProps) {
-  const RADIAN = Math.PI / 180;
-  
-  const renderCustomizedLabel = ({
-    cx, cy, midAngle, innerRadius, outerRadius, percent
-  }: any) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.7;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    if (percent < 0.05) return null; // No mostrar porcentajes muy pequeños
-
-    return (
-      <text 
-        x={x} 
-        y={y} 
-        fill="white" 
-        textAnchor={x > cx ? 'start' : 'end'} 
-        dominantBaseline="central"
-        fontSize={14}
-        fontWeight="600"
-        style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
-      >
-        {`${(percent * 100).toFixed(0)}%`}
-      </text>
-    );
-  };
-
+  const total = data.reduce((sum, item) => sum + item.value, 0);
   const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      return (
-        <div className="bg-white p-3 border rounded-lg shadow-lg border-border">
-          <div className="flex items-center gap-2">
-            <div 
-              className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: data.payload.color }}
-            />
-            <span className="font-medium">{data.payload.name}</span>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            {data.value} contrato{data.value !== 1 ? 's' : ''}
-          </p>
-        </div>
-      );
-    }
-    return null;
+    const entry = payload?.[0];
+    if (!active || !entry) return null;
+    return <div className="bg-popover text-popover-foreground p-3 border rounded-md shadow-lg">
+      <p className="font-medium">{entry.payload.name}</p>
+      <p className="text-sm text-muted-foreground">{entry.value} contrato{entry.value !== 1 ? 's' : ''}</p>
+    </div>;
   };
-
-  const CustomLegend = ({ payload }: any) => {
-    const getIcon = (name: string) => {
-      switch (name.toLowerCase()) {
-        case 'activos':
-          return <Clock className="w-4 h-4" />;
-        case 'completados':
-          return <CheckCircle className="w-4 h-4" />;
-        case 'cancelados':
-          return <XCircle className="w-4 h-4" />;
-        default:
-          return null;
-      }
-    };
-
-    return (
-      <div className="flex justify-center gap-6 mt-4">
-        {payload?.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center gap-2">
-            <div 
-              className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: entry.color }}
-            />
-            {getIcon(entry.value)}
-            <span className="text-sm font-medium text-foreground">
-              {entry.value}
-            </span>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
-    <Card className="shadow-lg border-2">
+    <Card className="h-full">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-primary"></div>
-          Estado de Contratos
+          <PieIcon className="h-5 w-5 text-primary" />Estado de Contratos
         </CardTitle>
         <p className="text-sm text-muted-foreground">Estado actual de los contratos</p>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={320}>
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={renderCustomizedLabel}
-              outerRadius={100}
-              innerRadius={40}
-              fill="#8884d8"
-              dataKey="value"
-              stroke="white"
-              strokeWidth={3}
-            >
-              {data.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={entry.color}
-                  style={{
-                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
-                    transition: 'all 0.3s ease'
-                  }}
-                />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomTooltip />} />
-            <Legend content={<CustomLegend />} />
-          </PieChart>
-        </ResponsiveContainer>
+        <div className="status-chart-grid">
+          <div className="status-donut">
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie data={data} cx="50%" cy="50%" outerRadius={100} innerRadius={64}
+                  dataKey="value" stroke="hsl(var(--card))" strokeWidth={2}>
+                  {data.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="status-donut-total"><strong className="text-2xl text-foreground">{total}</strong><span className="text-xs text-muted-foreground">Contratos</span></div>
+          </div>
+          <div className="status-chart-legend">
+            {data.map(entry => <div key={entry.name} className="status-chart-legend-row">
+              <span className="status-chart-legend-name"><svg className="status-chart-legend-dot" viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4" fill={entry.color} /></svg>{entry.name}</span>
+              <strong>{entry.value}</strong><span className="text-muted-foreground">{total ? Math.round(entry.value / total * 100) : 0}%</span>
+            </div>)}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
