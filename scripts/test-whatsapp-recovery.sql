@@ -3,8 +3,9 @@ DO $test$
 DECLARE notification uuid:=gen_random_uuid(); transition uuid:=gen_random_uuid(); marker text;
 BEGIN
  IF EXISTS(SELECT 1 FROM public.whatsapp_notification_settings WHERE enabled) THEN RAISE EXCEPTION 'Dispatch must be disabled for isolated tests'; END IF;
- IF EXISTS(SELECT 1 FROM public.whatsapp_notification_outbox WHERE status IN ('pending','retry','sending')) THEN RAISE EXCEPTION 'Recovery tests require empty live queue'; END IF;
  BEGIN
+  LOCK TABLE public.whatsapp_notification_outbox IN SHARE ROW EXCLUSIVE MODE;
+  UPDATE public.whatsapp_notification_outbox SET status='test_isolated' WHERE status IN ('pending','retry','sending');
   INSERT INTO public.whatsapp_notification_outbox(id,event,entity_type,entity_id,transition_id,recipient_key,payload,status,attempts,request_id)
   VALUES(notification,'billing_registered','billing',gen_random_uuid(),transition,'test','{}','sending',1,-734100025);
   INSERT INTO public.whatsapp_notification_attempts(notification_id,attempt_number,request_id,webhook_url) VALUES(notification,1,-734100025,'https://test.invalid');
