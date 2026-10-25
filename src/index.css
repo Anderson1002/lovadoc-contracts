@@ -6,114 +6,87 @@
 
 @layer base {
   :root {
-    /* KHUBA Brand - Sage & Cream professional palette */
-    --primary: 100 14% 32%;
-    --primary-foreground: 40 33% 96%;
-    --primary-soft: 95 22% 92%;
-    
-    /* Backgrounds - warm cream */
-    --background: 40 33% 97%;
-    --foreground: 90 18% 16%;
-    
+    /* KHUBA Pro institutional identity */
+    --primary: 213 42% 44%;
+    --primary-foreground: 0 0% 100%;
+    --primary-soft: 212 68% 95%;
+    --background: 216 45% 98%;
+    --foreground: 218 59% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 90 18% 16%;
-    
+    --card-foreground: 218 59% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 90 18% 16%;
-    
-    /* Status colors */
+    --popover-foreground: 218 59% 12%;
     --success: 145 45% 38%;
     --success-foreground: 0 0% 100%;
     --warning: 38 80% 50%;
-    --warning-foreground: 90 18% 16%;
+    --warning-foreground: 218 59% 12%;
     --destructive: 5 65% 48%;
     --destructive-foreground: 0 0% 100%;
-    
-    /* Contract specific state colors */
-    --state-registered: 100 18% 50%;
-    --state-registered-foreground: 0 0% 100%;
+    --state-registered: 212 36% 69%;
+    --state-registered-foreground: 218 59% 12%;
     --state-returned: 15 70% 50%;
     --state-returned-foreground: 0 0% 100%;
-    --state-executing: 145 45% 40%;
+    --state-executing: 210 52% 39%;
     --state-executing-foreground: 0 0% 100%;
-    --state-completed: 100 14% 32%;
+    --state-completed: 211 19% 53%;
     --state-completed-foreground: 0 0% 100%;
     --state-cancelled: 5 65% 48%;
     --state-cancelled-foreground: 0 0% 100%;
-    
-    /* Neutrals tinted with cream/sage */
-    --secondary: 95 22% 90%;
-    --secondary-foreground: 90 18% 22%;
-    --muted: 40 20% 93%;
-    --muted-foreground: 90 10% 40%;
-    --accent: 100 18% 53%;
-    --accent-foreground: 40 33% 97%;
-    
-    /* Borders and inputs */
-    --border: 90 12% 84%;
-    --input: 90 12% 88%;
-    --ring: 100 14% 32%;
-
+    --secondary: 212 68% 95%;
+    --secondary-foreground: 218 59% 12%;
+    --muted: 214 35% 96%;
+    --muted-foreground: 218 16% 47%;
+    --accent: 212 68% 95%;
+    --accent-foreground: 213 42% 35%;
+    --border: 214 32% 91%;
+    --input: 213 40% 90%;
+    --ring: 213 51% 44%;
     --radius: 0.5rem;
-    
-    /* Gradients and patterns */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(100 18% 45%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary-soft)) 0%, hsl(var(--background)) 50%, hsl(var(--primary-soft)) 100%);
-    
-    /* Shadows */
-    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-card-hover: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    
-    /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-    --sidebar-background: 40 25% 95%;
-    --sidebar-foreground: 90 18% 22%;
-    --sidebar-primary: 100 14% 32%;
-    --sidebar-primary-foreground: 40 33% 97%;
-    --sidebar-accent: 95 22% 90%;
-    --sidebar-accent-foreground: 90 18% 22%;
-    --sidebar-border: 90 12% 84%;
-    --sidebar-ring: 100 14% 32%;
+    --decorative: 33 40% 90%;
+    --overlay: 218 59% 12%;
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--ring)));
+    --gradient-hero: linear-gradient(110deg, hsl(var(--card)), hsl(var(--primary-soft)));
+    --shadow-card: 0 3px 14px -5px hsl(var(--foreground) / 0.1);
+    --shadow-card-hover: 0 7px 22px -7px hsl(var(--foreground) / 0.15);
+    --shadow-popup: 0 18px 60px -15px hsl(var(--foreground) / 0.22);
+    --transition-smooth: all 0.2s ease;
+    --sidebar-background: 216 45% 98%;
+    --sidebar-foreground: 218 59% 12%;
+    --sidebar-primary: 213 42% 44%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 212 68% 95%;
+    --sidebar-accent-foreground: 218 59% 12%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 213 51% 44%;
   }
 
   .dark {
-    --background: 90 18% 8%;
-    --foreground: 40 33% 95%;
-
-    --card: 90 18% 10%;
-    --card-foreground: 40 33% 95%;
-
-    --popover: 90 18% 10%;
-    --popover-foreground: 40 33% 95%;
-
-    --primary: 100 18% 60%;
-    --primary-foreground: 90 18% 10%;
-    --primary-soft: 100 14% 18%;
-
-    --secondary: 90 15% 16%;
-    --secondary-foreground: 40 33% 95%;
-
-    --muted: 90 15% 16%;
-    --muted-foreground: 90 8% 65%;
-
-    --accent: 100 18% 45%;
-    --accent-foreground: 40 33% 95%;
-
-    --destructive: 5 55% 40%;
-    --destructive-foreground: 40 33% 95%;
-
-    --border: 90 15% 20%;
-    --input: 90 15% 20%;
-    --ring: 100 18% 60%;
-    --sidebar-background: 90 18% 10%;
-    --sidebar-foreground: 40 33% 95%;
-    --sidebar-primary: 100 18% 60%;
-    --sidebar-primary-foreground: 90 18% 10%;
-    --sidebar-accent: 90 15% 16%;
-    --sidebar-accent-foreground: 40 33% 95%;
-    --sidebar-border: 90 15% 20%;
-    --sidebar-ring: 100 18% 60%;
+    --background: 218 35% 9%;
+    --foreground: 214 35% 96%;
+    --card: 218 30% 13%;
+    --card-foreground: 214 35% 96%;
+    --popover: 218 30% 13%;
+    --popover-foreground: 214 35% 96%;
+    --primary: 211 55% 65%;
+    --primary-foreground: 218 59% 12%;
+    --primary-soft: 213 32% 19%;
+    --secondary: 213 32% 19%;
+    --secondary-foreground: 214 35% 96%;
+    --muted: 216 25% 18%;
+    --muted-foreground: 215 22% 70%;
+    --accent: 213 32% 23%;
+    --accent-foreground: 212 68% 90%;
+    --border: 216 25% 24%;
+    --input: 216 25% 27%;
+    --ring: 211 55% 65%;
+    --sidebar-background: 218 30% 13%;
+    --sidebar-foreground: 214 35% 96%;
+    --sidebar-primary: 211 55% 65%;
+    --sidebar-primary-foreground: 218 59% 12%;
+    --sidebar-accent: 213 32% 19%;
+    --sidebar-accent-foreground: 214 35% 96%;
+    --sidebar-border: 216 25% 24%;
+    --sidebar-ring: 211 55% 65%;
   }
 }
 

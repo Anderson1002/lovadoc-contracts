@@ -19,6 +19,8 @@ export default {
 		},
 		extend: {
 			colors: {
+				overlay: 'hsl(var(--overlay))',
+				decorative: 'hsl(var(--decorative))',
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
