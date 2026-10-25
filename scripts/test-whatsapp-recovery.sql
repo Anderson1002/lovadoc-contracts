@@ -16,6 +16,7 @@ BEGIN
   UPDATE public.whatsapp_notification_outbox SET status='sending',attempts=1 WHERE id=notification;
   PERFORM public.khuba_process_whatsapp_outbox();
   IF NOT EXISTS(SELECT 1 FROM public.whatsapp_notification_outbox WHERE id=notification AND status='retry' AND next_attempt_at>now() AND http_status=429) THEN RAISE EXCEPTION '429 must schedule recoverable retry'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.whatsapp_notification_outbox WHERE id=notification AND next_attempt_at>=now()+interval '120 seconds') THEN RAISE EXCEPTION 'Retry-After must be respected'; END IF;
   IF NOT EXISTS(SELECT 1 FROM cron.job WHERE jobname='khuba-whatsapp-recovery') THEN RAISE EXCEPTION 'Recovery must remain armed'; END IF;
   UPDATE net._http_response SET status_code=400,content='{"error":"invalid payload"}' WHERE id=-734100025;
   UPDATE public.whatsapp_notification_outbox SET status='sending' WHERE id=notification;
@@ -30,12 +31,10 @@ BEGIN
   UPDATE public.whatsapp_notification_outbox SET status='sending',attempts=1 WHERE id=notification;
   PERFORM public.khuba_process_whatsapp_outbox();
   IF NOT EXISTS(SELECT 1 FROM public.whatsapp_notification_outbox WHERE id=notification AND status='failed') THEN RAISE EXCEPTION 'HTTP 200 with success false must not be accepted'; END IF;
-  UPDATE public.whatsapp_notification_outbox SET status='sending',request_id=-734100026,updated_at=now()-interval '5 minutes' WHERE id=notification;
-  -- The updated_at trigger resets the timestamp, so use transaction-local time only through response timeout tests.
   UPDATE net._http_response SET status_code=NULL,timed_out=true,error_msg='timeout' WHERE id=-734100025;
   UPDATE public.whatsapp_notification_outbox SET request_id=-734100025,status='sending' WHERE id=notification;
   PERFORM public.khuba_process_whatsapp_outbox();
-  IF NOT EXISTS(SELECT 1 FROM public.whatsapp_notification_outbox WHERE id=notification AND status IN ('retry','uncertain')) THEN RAISE EXCEPTION 'Timeout must remain recoverable or uncertain'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.whatsapp_notification_outbox WHERE id=notification AND status='uncertain' AND next_attempt_at IS NULL) THEN RAISE EXCEPTION 'Timeout must not risk a duplicate automatic resend'; END IF;
   RAISE EXCEPTION USING MESSAGE='KHUBA_RECOVERY_ROLLBACK_OK';
  EXCEPTION WHEN raise_exception THEN
   GET STACKED DIAGNOSTICS marker=MESSAGE_TEXT;
