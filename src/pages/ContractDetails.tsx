@@ -321,7 +321,7 @@ export default function ContractDetails() {
             <CardContent>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Valor Total</label>
-                <p className="text-2xl font-bold font-mono text-green-600">
+                <p className="text-2xl font-bold font-mono text-primary">
                   {formatCurrency(contract.total_amount)}
                 </p>
               </div>

@@ -1168,7 +1168,7 @@ export function CreateBillingAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl h-[95vh] max-h-[95vh] overflow-hidden flex flex-col p-6">
+      <DialogContent className="billing-create-dialog max-w-7xl h-[95dvh] max-h-[95dvh] overflow-hidden flex flex-col p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Nueva Cuenta de Cobro</DialogTitle>
           <DialogDescription>
@@ -1185,7 +1185,7 @@ export function CreateBillingAccountDialog({
           horizontal
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden flex-1 min-h-0">
+        <div className="billing-create-columns grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden flex-1 min-h-0">
           {/* Left Column - Tabs with Forms */}
           <ScrollArea className="h-full min-h-0 pr-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
